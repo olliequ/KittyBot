@@ -34,4 +34,7 @@ FORTUNE_DIRECTORY=/usr/share/games/fortunes # Location of where fortunes is inst
 ## Further Ideas // Ways to Contribute
 - Resolve outstanding issues noted in `Issues`.
 - Perhaps a unimelb-handbook webscraping related command? The repo already uses a webscraper (`BeautifulSoup`) you could use!
+- Greeting new people when they join the server in `#general`.
+- Getting Kitti to reply to someone if they thank Kitti (e.g.: `Thanks @Kitti!` ... `You're welcome @____ 🐱`.
+- Implement some sort of natural language processing thing (neural network?) that does something to do with text analysis (e.g. off a message that someone sends). This is some next level stuff but hey, if there's an interest then why not :D
 - Implement a creative command you have of your own!
