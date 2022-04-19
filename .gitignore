@@ -3,3 +3,4 @@
 .vimspector.json
 exampleScraper.py
 wiki.py
+/venv
