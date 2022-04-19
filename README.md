@@ -8,4 +8,7 @@
 - Important: You will need to create a `.env` file and inside it add your bot token (as explained in the guide), and the 'default guild' IDs. It will need to be like: `BOT_TOKEN = 123456` and `DEFAULT_GUILDS = (123456,)`. Specifying the guild ID to the bot isn't neccessary, but specifying certain IDs to it (can be many guilds) means that slash commands will only appear in those guild(s). Btw, 'guild' means a Discord server. 
 - For readability purposes, if you want to add an extensive function, please write it in a new python file placed in the `extensions` folder -- just like the `userinfo` command is.
 - You can install the required dependencies (listed in `requirements.txt`) using the command `pip install -r requirements.txt`.
-- The `fortune` module requires the fortune files to be installed and pointed to by the `FORTUNE_DIRECTORY` variable. Generally this means installing the `fortunes` package and setting `FORTUNE_DIRECTORY=/usr/share/games/fortunes`. You may optionally white- and black-list database files by settings `FORTUNE_WHITELIST` and/or `FORTUNE_BLACKLIST` to a space-separates list of database file names.
+- The `fortune` command requires the fortune files to be installed and pointed to by the `FORTUNE_DIRECTORY` variable in `.env`. 
+  - If you're on Linux you can install `fortunes` with `sudo apt-get install -y fortune` and in `.env` set `FORTUNE_DIRECTORY=/usr/share/games/fortunes`
+  - If you're on macOS you can install `fortunes` with `brew install fortune` and in `.env` set `FORTUNE_DIRECTORY=/usr/local/Cellar/fortune/9708/share/games/fortunes`
+  - You may optionally white- and black-list database files by settings `FORTUNE_WHITELIST` and/or `FORTUNE_BLACKLIST` to a space-separates list of database file names.
