@@ -19,7 +19,7 @@ FORTUNE_DIRECTORY=/usr/share/games/fortunes # Location of where fortunes is inst
   - If you're on Linux you can install `fortunes` with `sudo apt-get install -y fortune` and in `.env` set `FORTUNE_DIRECTORY=/usr/share/games/fortunes`
   - If you're on macOS you can install `fortunes` with `brew install fortune` and in `.env` set `FORTUNE_DIRECTORY=/usr/local/Cellar/fortune/9708/share/games/fortunes`
   - I don't have Windows so if you develop on Windows you'll have to find how to download the `fortunes` package yourself. If you can't find it it's fine, it just means the `+fortune` command won't work during testing (but everything else should).
-  - You may optionally white-list and black-list database files by setting `FORTUNE_WHITELIST` and/or `FORTUNE_BLACKLIST` to a space-separates list of database file names.
+  - You may optionally white-list and black-list database files by setting `FORTUNE_WHITELIST` and/or `FORTUNE_BLACKLIST` to a space-separated list of database file names.
 - The bot is deployed on a cloud server (droplet on Digital Ocean) which runs Ubuntu 20.04. 
 
 ## Current Functionality
