@@ -1,5 +1,5 @@
 .env
 ./extensions/__pycache__/
-./vimspector.json
+.vimspector.json
 exampleScraper.py
 wiki.py
