@@ -79,12 +79,12 @@ async def give_role(event):
             hasRole = False
             for role in currentRoles:
                 print(f"{role}: {type(role)}")
-                if role.id == 938871141110517761:
+                if role.id == 847009026817654805:
                     print("Already has role.\n")
                     hasRole = True
             if hasRole is False: # User doesn't have the role yet, and we need to give it to them.
                 print("Giving role now.\n")
-                await event.get_member().add_role(938871141110517761)
+                await event.get_member().add_role(847009026817654805)
 
 """
 The below command demonstrates input parameters.
