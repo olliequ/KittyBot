@@ -7,3 +7,4 @@
 - If you want to play around with it, you will need to use your own bot token. You could then invite your own bot (with the token you got) to your own personal server and play around with it there for testing (this is all in the above guide) :)
 - For readability purposes, if you want to add an extensive function, please write it in a new python file placed in the `extensions` folder -- just like the `userinfo` command is.
 - You can install the required dependencies (listed in `requirements.txt`) using the command `pip install -r requirements.txt`.
+- The fortune module requires the fortune files to be installed and pointed to by the FORTUNE_DIRECTORY variable. Generally this means installing the `fortunes` package and setting `FORTUNE_DIRECTORY=/usr/share/games/fortunes`. You may optionally white- and black-list database files by settings FORTUNE_WHITELIST and/or FORTUNE_BLACKLIST to a space-separates list of database file names.
