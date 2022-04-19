@@ -11,4 +11,7 @@
 - The `fortune` command requires the fortune files to be installed and pointed to by the `FORTUNE_DIRECTORY` variable in `.env`. 
   - If you're on Linux you can install `fortunes` with `sudo apt-get install -y fortune` and in `.env` set `FORTUNE_DIRECTORY=/usr/share/games/fortunes`
   - If you're on macOS you can install `fortunes` with `brew install fortune` and in `.env` set `FORTUNE_DIRECTORY=/usr/local/Cellar/fortune/9708/share/games/fortunes`
-  - You may optionally white- and black-list database files by settings `FORTUNE_WHITELIST` and/or `FORTUNE_BLACKLIST` to a space-separates list of database file names.
+  - You may optionally white-list and black-list database files by setting `FORTUNE_WHITELIST` and/or `FORTUNE_BLACKLIST` to a space-separates list of database file names.
+
+## Further ideas
+- Perhaps a unimelb-handbook web-scraping related command? The repo already uses a webscraper (BeautifulSoup) you could use!
