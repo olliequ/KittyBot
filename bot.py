@@ -10,7 +10,7 @@ bot = lightbulb.BotApp(
         prefix="+",
         banner=None,
         intents=hikari.Intents.ALL,
-        default_enabled_guilds=(int(os.environ["DEFAULT_GUILD"]))
+        default_enabled_guilds=tuple(int(v) for v in os.environ["DEFAULT_GUILDS"].split(','))
         )
 
 misconceptionsURL = "https://en.wikipedia.org/wiki/List_of_common_misconceptions"
@@ -100,7 +100,7 @@ The below command demonstrates input parameters.
 @lightbulb.option('num1', 'First number', type=int) # Options must be under the @bot.command and above the @lightbulb.command
 @lightbulb.option('num2', 'Second number', type=int)
 @lightbulb.command('numberadder', 'Adds 2 numbers together')
-@lightbulb.implements(lightbulb.SlashCommand)
+@lightbulb.implements(lightbulb.PrefixCommand, lightbulb.SlashCommand)
 async def add(ctx):
     await ctx.respond(ctx.options.num1+ctx.options.num2) # Because we want the bot to respond back with some information.
 
