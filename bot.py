@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import hikari, lightbulb, dotenv, os, aiohttp, requests, re, random
 from bs4 import BeautifulSoup
 
@@ -8,7 +10,7 @@ bot = lightbulb.BotApp(
         prefix="+",
         banner=None,
         intents=hikari.Intents.ALL,
-        default_enabled_guilds=(798180001101905940)
+        default_enabled_guilds=(int(os.environ["DEFAULT_GUILD"]))
         )
 
 misconceptionsURL = "https://en.wikipedia.org/wiki/List_of_common_misconceptions"
