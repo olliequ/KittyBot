@@ -15,10 +15,12 @@ BOT_TOKEN = 123456 # Your bot’s token from the Discord Developer Portal.
 DEFAULT_GUILDS = 123456,56789 # The 'default guilds' -- these instantly load slash comamands. Can be empty.
 FORTUNE_DIRECTORY=/usr/share/games/fortunes # Location of where fortunes is installed on your machine.
 ```
-- The `fortune` command requires the fortune files to be installed and pointed to by the `FORTUNE_DIRECTORY` variable in `.env`. 
+- The `+fortune` command requires the `fortunes` package to be installed and pointed to by the `FORTUNE_DIRECTORY` variable in `.env`. 
   - If you're on Linux you can install `fortunes` with `sudo apt-get install -y fortune` and in `.env` set `FORTUNE_DIRECTORY=/usr/share/games/fortunes`
   - If you're on macOS you can install `fortunes` with `brew install fortune` and in `.env` set `FORTUNE_DIRECTORY=/usr/local/Cellar/fortune/9708/share/games/fortunes`
+  - I don't have Windows so if you develop on Windows you'll have to find how to download the `fortunes` package yourself. If you can't find it it's fine, it just means the `+fortune` command won't work during testing (but everything else should).
   - You may optionally white-list and black-list database files by setting `FORTUNE_WHITELIST` and/or `FORTUNE_BLACKLIST` to a space-separates list of database file names.
+- The bot is deployed on a cloud server (droplet on Digital Ocean) which runs Ubuntu 20.04. 
 
 ## Current Functionality
 - Automatically assigns the `#NotALurker` role to members who qualify for it (previously mods had to manually assign it).
@@ -31,5 +33,5 @@ FORTUNE_DIRECTORY=/usr/share/games/fortunes # Location of where fortunes is inst
 
 ## Further Ideas // Ways to Contribute
 - Resolve outstanding issues noted in `Issues`.
-- Perhaps a unimelb-handbook web-scraping related command? The repo already uses a webscraper (`BeautifulSoup`) you could use!
+- Perhaps a unimelb-handbook webscraping related command? The repo already uses a webscraper (`BeautifulSoup`) you could use!
 - Implement a creative command you have of your own!
