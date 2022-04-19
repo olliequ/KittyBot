@@ -13,9 +13,12 @@
   - If you're on Linux you can install `fortunes` with `sudo apt-get install -y fortune` and in `.env` set `FORTUNE_DIRECTORY=/usr/share/games/fortunes`
   - If you're on macOS you can install `fortunes` with `brew install fortune` and in `.env` set `FORTUNE_DIRECTORY=/usr/local/Cellar/fortune/9708/share/games/fortunes`
   - You may optionally white-list and black-list database files by setting `FORTUNE_WHITELIST` and/or `FORTUNE_BLACKLIST` to a space-separates list of database file names.
-  - So, to be clear, your `.env` file should be located in the top layer of the repository (same level as `bot.py` and `requirements.txt` and could look like this:```BOT_TOKEN = 123456
+ - So, to be clear, your `.env` file should be located in the top layer of the repository (same level as `bot.py` and `requirements.txt` and could look like this:
+```
+BOT_TOKEN = 123456
 DEFAULT_GUILDS = 123456,56789
-FORTUNE_DIRECTORY=/usr/share/games/fortunes```
+FORTUNE_DIRECTORY=/usr/share/games/fortunes
+```
 
 ## Current functionality
 - Automatically assigns the `#NotALurker` role to members who qualify for it (previously mods had to manually assign it).
@@ -26,7 +29,7 @@ FORTUNE_DIRECTORY=/usr/share/games/fortunes```
 - `+userinfo` command: Returns an embed containing useful information of a specified member of the server. If no member is specified, it returns that of the user who issued the command.
 - All commands have a 10-second cooldown period (per user).
 
-## Further ideas // ways to contribute
+## Further ideas // Ways to contribute
 - Resolve outstanding issues noted in `Issues`.
 - Perhaps a unimelb-handbook web-scraping related command? The repo already uses a webscraper (`BeautifulSoup`) you could use!
 - Implement a creative command you have of your own!
