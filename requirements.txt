@@ -1,0 +1,6 @@
+beautifulsoup4
+regex
+hikari>=2.0.0.dev104
+hikari-lightbulb>=2.1.1
+python-dotenv>=0.19.2
+uvloop>=0.16; sys_platform != "win32"
