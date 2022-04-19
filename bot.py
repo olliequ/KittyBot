@@ -48,36 +48,43 @@ async def give_fact(ctx: lightbulb.Context) -> None:
     randomNumber = random.randint(0,322)
     target = ctx.get_guild().get_member(ctx.user)
     print(f"---> Hi @{target.display_name}! Did you know this? :disguised_face:\n{randomFacts[randomNumber]}")
-    await ctx.respond(f"---> Hi {ctx.author.mention}! Did you know this?  :disguised_face:\n\n{randomFacts[randomNumber]}", user_mentions=[target, True])
+    await ctx.respond(f"---> {ctx.author.mention}, did you know this?  :cat:\n\n{randomFacts[randomNumber]}", user_mentions=[target, True])
+
+@bot.listen(hikari.GuildMessageCreateEvent)
+async def tags_bot(event):
+    if event.is_bot or not event.content:
+        return
+    messageContent = event.content
+    if "<@940684135687659581>" in messageContent:
+        await event.message.respond(f"Hey {event.author.mention}, I am a cat. With robot intestines. If you're bored, you should check out my `+info` or `fact` commands :cat:")
 
 """
 Bot adds #notalurker role for those who comment.
 """
 @bot.listen(hikari.GuildMessageCreateEvent)
-async def print_message(event):
+async def give_role(event):
+
+    if event.is_bot or not event.content:
+        return
+    
     channelSentIn = event.channel_id
-    sender = event.get_member().user
     if channelSentIn != 938847222601240656 and channelSentIn != 938894077519356004 and event.get_member().id != 940684135687659581:
         messageContent = event.content
         messageContent = re.sub(r'<.+?>', "", messageContent)
         print(f"Sender: {event.author} | Content: {messageContent}")
+
         if any(c.isalpha() for c in messageContent):
             print("Message contains valid symbols.")
             currentRoles = (await event.get_member().fetch_roles())[1:]
             hasRole = False
             for role in currentRoles:
                 print(f"{role}: {type(role)}")
-                if role.name == "Alumni":
+                if role.id == 938871141110517761:
                     print("Already has role.\n")
                     hasRole = True
-            possibleRoles = event.get_guild().get_roles() # possibleRoles[role].name
-            # for role in possibleRoles:
-            #     print(role)
-            #     print(possibleRoles[role].name)
-            #     print(f"{possibleRoles[role].name}: {possibleRoles[role].id}")
             if hasRole is False: # User doesn't have the role yet, and we need to give it to them.
                 print("Giving role now.\n")
-                await sender.add_role(938871141110517761)
+                await event.get_member().add_role(938871141110517761)
 
 """
 The below command demonstrates input parameters.
