@@ -56,7 +56,7 @@ async def tags_bot(event):
         return
     messageContent = event.content
     if "<@940684135687659581>" in messageContent:
-        await event.message.respond(f"Hey {event.author.mention}, I am a cat. With robot intestines. If you're bored, you should check out my `+info` or `fact` commands :cat:")
+        await event.message.respond(f"Hey {event.author.mention}, I am a cat. With robot intestines. If you're bored, you should check out my `+userinfo`, `+ping` and `+fact` commands :cat:")
 
 """
 Bot adds #notalurker role for those who comment.
