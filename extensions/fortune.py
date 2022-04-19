@@ -1,7 +1,6 @@
 import os
 import re
 import random
-import hikari
 import lightbulb
 from fortune import get_random_fortune
 
