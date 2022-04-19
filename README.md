@@ -20,7 +20,7 @@ DEFAULT_GUILDS = 123456,56789 # The 'default guilds' -- these instantly load sla
 FORTUNE_DIRECTORY=/usr/share/games/fortunes # Location of where fortunes is installed on your machine.
 ```
 
-## Current functionality
+## Current Functionality
 - Automatically assigns the `#NotALurker` role to members who qualify for it (previously mods had to manually assign it).
 - `+ping` command: Kitti returns to you a heartbeat latency message.
 - `+numberadder` command: Takes 2 numbers as input and returns the sum of them.
@@ -29,7 +29,7 @@ FORTUNE_DIRECTORY=/usr/share/games/fortunes # Location of where fortunes is inst
 - `+userinfo` command: Returns an embed containing useful information of a specified member of the server. If no member is specified, it returns that of the user who issued the command.
 - All commands have a 10-second cooldown period (per user), and can also be called via slash command form.
 
-## Further ideas // Ways to contribute
+## Further Ideas // Ways to Contribute
 - Resolve outstanding issues noted in `Issues`.
 - Perhaps a unimelb-handbook web-scraping related command? The repo already uses a webscraper (`BeautifulSoup`) you could use!
 - Implement a creative command you have of your own!
