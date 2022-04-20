@@ -11,10 +11,10 @@ plugin = lightbulb.Plugin("Cowsay")
 async def main(ctx: lightbulb.Context) -> None:
     msg = code_block(moo(ctx.option.moossage)})
     if len(msg) > 2000:
-        await ctx.respond()
-    else:
         await ctx.respond(code_block(moo("I can only moo so much.\n"
                                          "That moossage was too long.")))
+    else:
+        await ctx.respond(msg)
         
 def moo(msg: str) -> str:
     return cowsay.get_output_string(char_name="cow", text=msg)
