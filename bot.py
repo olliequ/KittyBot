@@ -20,6 +20,7 @@ results = soup.find(class_="mw-parser-output")
 
 lists = results.find_all("ul") # Returns an iterable of all lists on the page.
 randomFacts = []
+tips = []
 
 for i in range(13, 79):
     for line in lists[i]:
@@ -27,7 +28,12 @@ for i in range(13, 79):
             line = re.sub("[\[].*?[\]]", "", line.text)
             # print(f"- {line}\n")
             randomFacts.append(line)
-    # print("-----\n")
+
+eight_ball_responses = [ "It is certain.", "It is decidedly so.", "Without a doubt.", "Yes, definitely.",
+               "You may rely on it.", "As I see it, yes.", "Most likely.", "Outlook good.",
+               "Yes.", "Signs point to yes.", "Reply hazy, try again.", "Ask again later.",
+               "Better not tell you now.", "Cannot predict now.", "Concentrate and ask again.",
+               "Don't count on it.", "My reply is no.", "My sources say no.", "Outlook not so good.", "Very Doubtful."]
 
 @bot.listen(hikari.StartedEvent)
 async def botStartup(event):
@@ -57,8 +63,12 @@ async def tags_bot(event):
     if event.is_bot or not event.content:
         return
     messageContent = event.content
-    if "<@940684135687659581>" in messageContent:
-        await event.message.respond(f"Hey {event.author.mention}, I am a cat. With robot intestines. If you're bored, you should check out my `+userinfo`, `+ping` and `+fact` commands :cat:")
+    regexp = re.compile('\w\?(\s|$)')
+    if ("<@940684135687659581>" in messageContent) and regexp.search(messageContent):
+        print("Giving 8-ball response.")
+        await event.message.respond(random.choice(eight_ball_responses))
+    elif "<@940684135687659581>" in messageContent:
+        await event.message.respond(f"Hey {event.author.mention}, I am a cat. With robot intestines. If you're bored, you should ask me a question, or check out my `+userinfo`, `+ping`, `+fortune` and `+fact` commands :cat:")
 
 """
 Bot adds #notalurker role for those who comment.
@@ -80,7 +90,7 @@ async def give_role(event):
             currentRoles = (await event.get_member().fetch_roles())[1:]
             hasRole = False
             for role in currentRoles:
-                print(f"{role}: {type(role)}")
+                # print(f"{role}: {type(role)}")
                 if role.id == 847009026817654805 or role.id == 938871141110517761:
                     print("Already has role.\n")
                     hasRole = True

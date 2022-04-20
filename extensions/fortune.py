@@ -12,7 +12,7 @@ plugin = lightbulb.Plugin("Fortune")
 )
 @lightbulb.implements(lightbulb.PrefixCommand, lightbulb.SlashCommand)
 async def main(ctx: lightbulb.Context) -> None:
-    await ctx.respond(get_random_fortune(choose_file()))
+    await ctx.respond(f"new: {get_random_fortune(choose_file())}")
 
 def choose_file() -> str:
     basedir = os.environ["FORTUNE_DIRECTORY"]

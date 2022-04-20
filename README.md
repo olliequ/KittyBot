@@ -24,6 +24,7 @@ FORTUNE_DIRECTORY=/usr/share/games/fortunes # Location of where fortunes is inst
 
 ## Current Functionality
 - Automatically assigns the `#NotALurker` role to members who qualify for it (previously mods had to manually assign it).
+- Answers questions with a magic 8 ball response.
 - `+ping` command: Kitti returns to you a heartbeat latency message.
 - `+numberadder` command: Takes 2 numbers as input and returns the sum of them.
 - `+fact` command: Returns a random fact // common misconception.
