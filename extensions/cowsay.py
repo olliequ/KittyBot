@@ -9,7 +9,7 @@ plugin = lightbulb.Plugin("Cowsay")
 @lightbulb.command("cowsay", "Moo.")
 @lightbulb.implements(lightbulb.PrefixCommand, lightbulb.SlashCommand)
 async def main(ctx: lightbulb.Context) -> None:
-    msg = code_block(moo(ctx.option.moossage)})
+    msg = code_block(moo(ctx.options.moossage))
     if len(msg) > 2000:
         await ctx.respond(code_block(moo("I can only moo so much.\n"
                                          "That moossage was too long.")))

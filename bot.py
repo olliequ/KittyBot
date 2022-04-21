@@ -58,17 +58,28 @@ async def give_fact(ctx: lightbulb.Context) -> None:
     print(f"---> Hi @{target.display_name}! Did you know this? :disguised_face:\n{randomFacts[randomNumber]}")
     await ctx.respond(f"---> {ctx.author.mention}, did you know this?  :cat:\n\n{randomFacts[randomNumber]}", user_mentions=[target, True])
 
+def findWholeWord(w):
+    return re.compile(r'\b({0})\b'.format(w), flags=re.IGNORECASE).search
+
 @bot.listen(hikari.GuildMessageCreateEvent)
 async def tags_bot(event):
     if event.is_bot or not event.content:
         return
     messageContent = event.content
-    regexp = re.compile('\w\?(\s|$)')
+    regexp = re.compile('(\S|\s)\?(\s|$)')
     if ("<@940684135687659581>" in messageContent) and regexp.search(messageContent):
         print("Giving 8-ball response.")
         await event.message.respond(random.choice(eight_ball_responses))
-    elif "<@940684135687659581>" in messageContent:
+    elif "<@940684135687659581>" in messageContent and (findWholeWord('broken')(messageContent)):
+        await event.message.respond(f"No {event.author.mention}, you're broken :disguised_face:")
+    elif "<@940684135687659581>" in messageContent and (findWholeWord('thanks')(messageContent) or findWholeWord('thank')(messageContent)):
+        await event.message.respond(f"You're welcome :heart:")
+    elif "<@940684135687659581>" in messageContent and (findWholeWord('work')(messageContent)):
+        await event.message.respond(f"{event.author.mention} I do work.")
+    elif "<@940684135687659581>" in messageContent and (findWholeWord('hey')(messageContent) or findWholeWord('hi')(messageContent) or findWholeWord('hello')(messageContent)):
         await event.message.respond(f"Hey {event.author.mention}, I am a cat. With robot intestines. If you're bored, you should ask me a question, or check out my `+userinfo`, `+ping`, `+fortune` and `+fact` commands :cat:")
+    elif "<@940684135687659581>" in messageContent:
+        await event.message.respond(f"{event.author.mention}, did you forget a question mark? <:mmhmmm:872809423939174440>")
 
 """
 Bot adds #notalurker role for those who comment.
