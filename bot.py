@@ -65,20 +65,23 @@ def findWholeWord(w):
 async def tags_bot(event):
     if event.is_bot or not event.content:
         return
+    mentioned_ids = event.message.mentions.user_ids
+    if bot.application.id not in mentioned_ids:
+        return
     messageContent = event.content
     regexp = re.compile('(\S|\s)\?(\s|$)')
-    if ("<@940684135687659581>" in messageContent) and regexp.search(messageContent):
+    if regexp.search(messageContent):
         print("Giving 8-ball response.")
         await event.message.respond(random.choice(eight_ball_responses))
-    elif "<@940684135687659581>" in messageContent and (findWholeWord('broken')(messageContent)):
+    elif findWholeWord('broken')(messageContent):
         await event.message.respond(f"No {event.author.mention}, you're broken :disguised_face:")
-    elif "<@940684135687659581>" in messageContent and (findWholeWord('thanks')(messageContent) or findWholeWord('thank')(messageContent)):
+    elif findWholeWord('thanks')(messageContent) or findWholeWord('thank')(messageContent):
         await event.message.respond(f"You're welcome :heart:")
-    elif "<@940684135687659581>" in messageContent and (findWholeWord('work')(messageContent)):
+    elif findWholeWord('work')(messageContent):
         await event.message.respond(f"{event.author.mention} I do work.")
-    elif "<@940684135687659581>" in messageContent and (findWholeWord('hey')(messageContent) or findWholeWord('hi')(messageContent) or findWholeWord('hello')(messageContent)):
+    elif findWholeWord('hey')(messageContent) or findWholeWord('hi')(messageContent) or findWholeWord('hello')(messageContent):
         await event.message.respond(f"Hey {event.author.mention}, I am a cat. With robot intestines. If you're bored, you should ask me a question, or check out my `+userinfo`, `+ping`, `+fortune` and `+fact` commands :cat:")
-    elif "<@940684135687659581>" in messageContent:
+    else:
         await event.message.respond(f"{event.author.mention}, did you forget a question mark? <:mmhmmm:872809423939174440>")
 
 """
