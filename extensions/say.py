@@ -12,7 +12,7 @@ plugin = lightbulb.Plugin("Say")
 @lightbulb.option("message", "Message to say", 
                   required=True)
 @lightbulb.command("say", "Say a message with an ASCII character")
-@lightbulb.implements(lightbulb.PrefixCommand, lightbulb.SlashCommand)
+@lightbulb.implements(lightbulb.SlashCommand)
 async def main(ctx: lightbulb.Context) -> None:
     character = ctx.options.character
     if character not in cowsay.char_names:
@@ -20,7 +20,7 @@ async def main(ctx: lightbulb.Context) -> None:
     else:
         message = ctx.options.message.strip()
         if message == "fortune" or ctx.prefix + message == "fortune":
-            message = fortune.fortune()
+            message = extensions.fortune.fortune()
         message = say(message, character)
 
     if len(message) > 2000:
