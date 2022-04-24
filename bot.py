@@ -58,8 +58,8 @@ async def give_fact(ctx: lightbulb.Context) -> None:
     print(f"---> Hi @{target.display_name}! Did you know this? :disguised_face:\n{randomFacts[randomNumber]}")
     await ctx.respond(f"---> {ctx.author.mention}, did you know this?  :cat:\n\n{randomFacts[randomNumber]}", user_mentions=[target, True])
 
-def findWholeWord(w):
-    return re.compile(r'\b({0})\b'.format(w), flags=re.IGNORECASE).search
+def findWholeWord(word, text):
+    return re.compile(r'\b({0})\b'.format(word), flags=re.IGNORECASE).search(text)
 
 @bot.listen(hikari.GuildMessageCreateEvent)
 async def tags_bot(event):
@@ -73,13 +73,13 @@ async def tags_bot(event):
     if regexp.search(messageContent):
         print("Giving 8-ball response.")
         await event.message.respond(random.choice(eight_ball_responses))
-    elif findWholeWord('broken')(messageContent):
+    elif findWholeWord('broken', messageContent):
         await event.message.respond(f"No {event.author.mention}, you're broken :disguised_face:")
-    elif findWholeWord('thanks')(messageContent) or findWholeWord('thank')(messageContent):
+    elif findWholeWord('thanks', messageContent) or findWholeWord('thank', messageContent):
         await event.message.respond(f"You're welcome :heart:")
-    elif findWholeWord('work')(messageContent):
+    elif findWholeWord('work', messageContent):
         await event.message.respond(f"{event.author.mention} I do work.")
-    elif findWholeWord('hey')(messageContent) or findWholeWord('hi')(messageContent) or findWholeWord('hello')(messageContent):
+    elif findWholeWord('hey', messageContent) or findWholeWord('hi', messageContent) or findWholeWord('hello', messageContent):
         await event.message.respond(f"Hey {event.author.mention}, I am a cat. With robot intestines. If you're bored, you should ask me a question, or check out my `+userinfo`, `+ping`, `+fortune` and `+fact` commands :cat:")
     else:
         await event.message.respond(f"{event.author.mention}, did you forget a question mark? <:mmhmmm:872809423939174440>")
