@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import hikari, lightbulb, dotenv, os, aiohttp, requests, re, random
+import hikari, lightbulb, dotenv, os, aiohttp, requests, re, random, hashlib
 from bs4 import BeautifulSoup
 
 dotenv.load_dotenv()
@@ -58,6 +58,10 @@ async def give_fact(ctx: lightbulb.Context) -> None:
     print(f"---> Hi @{target.display_name}! Did you know this? :disguised_face:\n{randomFacts[randomNumber]}")
     await ctx.respond(f"---> {ctx.author.mention}, did you know this?  :cat:\n\n{randomFacts[randomNumber]}", user_mentions=[target, True])
 
+def choose_eightball_response(message):
+    index = hashlib.md5(message.encode()).digest()[0] % len(eight_ball_responses)
+    return eight_ball_responses[index]
+    
 def findWholeWord(word, text):
     return re.compile(r'\b({0})\b'.format(word), flags=re.IGNORECASE).search(text)
 
@@ -72,7 +76,7 @@ async def tags_bot(event):
     regexp = re.compile('(\S|\s)\?(\s|$)')
     if regexp.search(messageContent):
         print("Giving 8-ball response.")
-        await event.message.respond(random.choice(eight_ball_responses))
+        await event.message.respond(choose_eightball_response(messageContent))
     elif findWholeWord('broken', messageContent):
         await event.message.respond(f"No {event.author.mention}, you're broken :disguised_face:")
     elif findWholeWord('thanks', messageContent) or findWholeWord('thank', messageContent):
