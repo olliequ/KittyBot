@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
-import hikari, lightbulb, dotenv, os, aiohttp, requests, re, random, hashlib
+import os, re, random, hashlib, datetime
+import dotenv, aiohttp, requests
+import hikari, lightbulb
 from bs4 import BeautifulSoup
 
 dotenv.load_dotenv()
@@ -59,7 +61,9 @@ async def give_fact(ctx: lightbulb.Context) -> None:
     await ctx.respond(f"---> {ctx.author.mention}, did you know this?  :cat:\n\n{randomFacts[randomNumber]}", user_mentions=[target, True])
 
 def choose_eightball_response(message):
-    index = hashlib.md5(message.encode()).digest()[0] % len(eight_ball_responses)
+    # Add current date down to hour precision to vary the response periodically
+    hash_input = message + datetime.datetime.now().strftime('%Y%m%d%H')
+    index = hashlib.md5(hash_input.encode()).digest()[0] % len(eight_ball_responses)
     return eight_ball_responses[index]
     
 def findWholeWord(word, text):
