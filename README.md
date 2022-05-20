@@ -30,6 +30,8 @@ FORTUNE_DIRECTORY=/usr/share/games/fortunes # Location of where fortunes is inst
 - `+fact` command: Returns a random fact // common misconception.
 - `+fortune` command: Returns a random fortune. Beware!
 - `+userinfo` command: Returns an embed containing useful information of a specified member of the server. If no member is specified, it returns that of the user who issued the command.
+- `/say`: Writes a custom text message encapsulated in something rather interesting... 
+- For `/translate` there's 2 options. The first is the text, and the second is the language you want to translate into (you write the language code, e.g. `fr` for french). If you don't specify the language code, then it assumes you want to translate the text you write into English.
 - All commands have a 10-second cooldown period (per user), and can also be called in slash command form.
 
 ## Further Ideas // Ways to Contribute
