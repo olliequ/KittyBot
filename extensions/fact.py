@@ -16,7 +16,6 @@ def init():
         for line in lists[i]:
             if line != '\n':
                 line = re.sub(r"\[[^\]]+]", "", line.text)
-                print(line)
                 randomFacts.append(line)
 
 @plugin.command
