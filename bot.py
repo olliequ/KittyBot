@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 
 import os, re, random, hashlib, datetime
-import dotenv, aiohttp, requests
+import dotenv, aiohttp
 import hikari, lightbulb
-from bs4 import BeautifulSoup
 
 dotenv.load_dotenv()
 
@@ -15,21 +14,6 @@ bot = lightbulb.BotApp(
         default_enabled_guilds=tuple(int(v) for v in os.environ["DEFAULT_GUILDS"].split(','))
         )
 
-misconceptionsURL = "https://en.wikipedia.org/wiki/List_of_common_misconceptions"
-page = requests.get(misconceptionsURL) 
-soup = BeautifulSoup(page.content, "html.parser") 
-results = soup.find(class_="mw-parser-output")
-
-lists = results.find_all("ul") # Returns an iterable of all lists on the page.
-randomFacts = []
-tips = []
-
-for i in range(13, 79):
-    for line in lists[i]:
-        if line != '\n':
-            line = re.sub("[\[].*?[\]]", "", line.text)
-            # print(f"- {line}\n")
-            randomFacts.append(line)
 
 eight_ball_responses = [ "It is certain.", "It is decidedly so.", "Without a doubt.", "Yes, definitely.",
                "You may rely on it.", "As I see it, yes.", "Most likely.", "Outlook good.",
@@ -48,17 +32,6 @@ async def botStartup(event):
 @lightbulb.implements(lightbulb.PrefixCommand)
 async def ping(ctx: lightbulb.Context) -> None:
     await ctx.respond(f"Pong! Latency: {bot.heartbeat_latency*1000:.2f}ms")
-
-# Random fact.
-@bot.command
-@lightbulb.add_cooldown(10, 1, lightbulb.UserBucket)
-@lightbulb.command("fact", description="Gives a random fact!")
-@lightbulb.implements(lightbulb.PrefixCommand)
-async def give_fact(ctx: lightbulb.Context) -> None:
-    randomNumber = random.randint(0,322)
-    target = ctx.get_guild().get_member(ctx.user)
-    print(f"---> Hi @{target.display_name}! Did you know this? :disguised_face:\n{randomFacts[randomNumber]}")
-    await ctx.respond(f"---> {ctx.author.mention}, did you know this?  :cat:\n\n{randomFacts[randomNumber]}", user_mentions=[target, True])
 
 def choose_eightball_response(message):
     # Add current date down to hour precision to vary the response periodically
