@@ -61,16 +61,6 @@ async def give_role(event):
                     print("Personal server.")
                     await event.get_member().add_role(938871141110517761)
 
-"""
-The below command demonstrates input parameters.
-"""
-@bot.command
-@lightbulb.option('num1', 'First number', type=int) # Options must be under the @bot.command and above the @lightbulb.command
-@lightbulb.option('num2', 'Second number', type=int)
-@lightbulb.command('numberadder', 'Adds 2 numbers together')
-@lightbulb.implements(lightbulb.PrefixCommand, lightbulb.SlashCommand)
-async def add(ctx):
-    await ctx.respond(ctx.options.num1+ctx.options.num2) # Because we want the bot to respond back with some information.
 
 @bot.listen(lightbulb.CommandErrorEvent)
 async def on_error(event: lightbulb.CommandErrorEvent) -> None:
