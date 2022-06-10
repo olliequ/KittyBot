@@ -27,18 +27,20 @@ async def main(event) -> None:
         return
     messageContent = event.content
     regexp = re.compile(r'(\S|\s)\?(\s|$)')
+    response = None
     if regexp.search(messageContent):
-        await event.message.respond(choose_eightball_response(messageContent))
+        response = choose_eightball_response(messageContent)
     elif find_whole_word('broken', messageContent):
-        await event.message.respond(f"No {event.author.mention}, you're broken :disguised_face:")
+        response = f"No {event.author.mention}, you're broken :disguised_face:"
     elif find_whole_word('thanks', messageContent) or find_whole_word('thank', messageContent):
-        await event.message.respond(f"You're welcome :heart:")
+        response = f"You're welcome :heart:"
     elif find_whole_word('work', messageContent):
-        await event.message.respond(f"{event.author.mention} I do work.")
+        response = f"{event.author.mention} I do work."
     elif find_whole_word('hey', messageContent) or find_whole_word('hi', messageContent) or find_whole_word('hello', messageContent):
-        await event.message.respond(f"Hey {event.author.mention}, I am a cat. With robot intestines. If you're bored, you should ask me a question, or check out my `+userinfo`, `+ping`, `+fortune` and `+fact` commands :cat:")
+        response = f"Hey {event.author.mention}, I am a cat. With robot intestines. If you're bored, you should ask me a question, or check out my `+userinfo`, `+ping`, `+fortune` and `+fact` commands :cat:"
     else:
-        await event.message.respond(f"{event.author.mention}, did you forget a question mark? <:mmhmmm:872809423939174440>")
+        response = f"{event.author.mention}, did you forget a question mark? <:mmhmmm:872809423939174440>"
+    await event.message.respond(response, user_mentions=True)
 
 def load(bot: lightbulb.BotApp) -> None:
     bot.add_plugin(plugin)

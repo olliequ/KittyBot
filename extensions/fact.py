@@ -23,9 +23,8 @@ def init():
 @lightbulb.command("fact", description="Gives a random fact!")
 @lightbulb.implements(lightbulb.PrefixCommand)
 async def main(ctx: lightbulb.Context) -> None:
-    target = ctx.get_guild().get_member(ctx.user)
     fact = random.choice(randomFacts)
-    await ctx.respond(f"---> {ctx.author.mention}, did you know this?  :cat:\n\n{fact}", user_mentions=[target, True])
+    await ctx.respond(f"---> {ctx.author.mention}, did you know this?  :cat:\n\n{fact}", user_mentions=True)
 
 def load(bot: lightbulb.BotApp) -> None:
     init()
