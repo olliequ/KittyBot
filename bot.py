@@ -28,40 +28,6 @@ async def ping(ctx: lightbulb.Context) -> None:
     await ctx.respond(f"Pong! Latency: {bot.heartbeat_latency*1000:.2f}ms")
 
 
-"""
-Bot adds #notalurker role for those who comment.
-"""
-@bot.listen(hikari.GuildMessageCreateEvent)
-async def give_role(event):
-
-    if event.is_bot or not event.content:
-        return
-    
-    channelSentIn = event.channel_id
-    if channelSentIn != 938847222601240656 and channelSentIn != 938894077519356004 and event.get_member().id != 940684135687659581:
-        messageContent = event.content
-        messageContent = re.sub(r'<.+?>', "", messageContent)
-        print(f"Sender: {event.author} | Content: {messageContent}")
-
-        if any(c.isalpha() for c in messageContent):
-            print("Message contains valid symbols.")
-            currentRoles = (await event.get_member().fetch_roles())[1:]
-            hasRole = False
-            for role in currentRoles:
-                # print(f"{role}: {type(role)}")
-                if role.id == 847009026817654805 or role.id == 938871141110517761:
-                    print("Already has role.\n")
-                    hasRole = True
-            if hasRole is False: # User doesn't have the role yet, and we need to give it to them.
-                print("Giving role now.\n")
-                if event.guild_id == 813213508036067348: # CS
-                    print("CS server.")
-                    await event.get_member().add_role(847009026817654805) 
-                elif event.guild_id == 798180001101905940: # Personal
-                    print("Personal server.")
-                    await event.get_member().add_role(938871141110517761)
-
-
 @bot.listen(lightbulb.CommandErrorEvent)
 async def on_error(event: lightbulb.CommandErrorEvent) -> None:
     if isinstance(event.exception, lightbulb.CommandInvocationError):
