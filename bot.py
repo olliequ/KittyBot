@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import os, re, random
+import os
 import dotenv, aiohttp
 import hikari, lightbulb
 
@@ -18,14 +18,6 @@ bot = lightbulb.BotApp(
 @bot.listen(hikari.StartedEvent)
 async def botStartup(event):
     print("Bot has started up!")
-
-# Simple ping-pong command example.
-@bot.command
-@lightbulb.add_cooldown(10, 1, lightbulb.UserBucket)
-@lightbulb.command("ping", description="The bot's ping")
-@lightbulb.implements(lightbulb.PrefixCommand)
-async def ping(ctx: lightbulb.Context) -> None:
-    await ctx.respond(f"Pong! Latency: {bot.heartbeat_latency*1000:.2f}ms")
 
 
 @bot.listen(lightbulb.CommandErrorEvent)
