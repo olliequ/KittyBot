@@ -27,4 +27,3 @@ async def main(event):
 
 def load(bot: lightbulb.BotApp):
     bot.add_plugin(plugin)
-
