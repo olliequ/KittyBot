@@ -116,7 +116,7 @@ async def show_message_stats(ctx: lightbulb.Context) -> None:
             display_name = user.display_name
         max_name_length = max(max_name_length, len(display_name))
         users_counts.append((display_name, message_count))
-    message = ['---> Messages Leaderboard :cat:```']
+    message = ['**Messages Leaderboard** :cat:```']
     for (name, count) in users_counts:
         line = f'{name.rjust(max_name_length)} : {str(count).rjust(max_messages_width)} '
         slices = int((MAX_BAR_LENGTH * SLICES_PER_CHAR) * (count / max_messages))

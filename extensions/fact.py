@@ -21,10 +21,10 @@ def init():
 @plugin.command
 @lightbulb.add_cooldown(10, 1, lightbulb.UserBucket)
 @lightbulb.command("fact", description="Gives a random fact!")
-@lightbulb.implements(lightbulb.PrefixCommand)
+@lightbulb.implements(lightbulb.PrefixCommand, lightbulb.SlashCommand)
 async def main(ctx: lightbulb.Context) -> None:
     fact = random.choice(randomFacts)
-    await ctx.respond(f"---> {ctx.author.mention}, did you know this?  :cat:\n\n{fact}", user_mentions=True)
+    await ctx.respond(f"{fact}")
 
 def load(bot: lightbulb.BotApp) -> None:
     init()
