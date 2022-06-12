@@ -6,14 +6,6 @@ def cursor():
 def commit():
     conn.commit()
 
-def insert(table, data):
-    c = cursor()
-    keys = [*data]
-    template_list = ','.join(['?'] * len(data))
-    query = f"INSERT INTO {table} ({','.join(keys)}) VALUES ({template_list})"
-    c.execute(query, tuple(data[k] for k in keys))
-    commit()
-
 def start():
     c = cursor()
     c.execute("CREATE TABLE IF NOT EXISTS emoji_counts (user TEXT, emoji TEXT, count INTEGER)");
