@@ -40,7 +40,8 @@ async def analyse_message(event) -> None:
         return
     cursor = db.cursor()
     add_message_count(cursor, str(event.author_id))
-    custom_emoji = re.findall(r'<:.+?:\d+>', event.content)
+    print(event.content)
+    custom_emoji = re.findall(r'<.?:.+?:\d+>', event.content)
     unicode_emoji = emoji_list(event.content)
     emoji = custom_emoji + [x['emoji'] for x in unicode_emoji]
     if len(emoji):
@@ -54,9 +55,12 @@ async def show_user_stats(ctx: lightbulb.Context, user) -> None:
         SELECT emoji, count FROM emoji_counts
         WHERE user = ?
         ORDER BY count DESC
-        LIMIT 10""",
+        LIMIT 5""",
         (user_id,))
     emoji = cursor.fetchall()
+    emoji_list = []
+    for rank in range(len(emoji)):
+        emoji_list.append(f'`#{rank + 1}` {emoji[rank][0]} used `{emoji[rank][1]}` time(s)!')
     cursor.execute("""
         SELECT count FROM message_counts
         WHERE user = ?""",
@@ -64,20 +68,23 @@ async def show_user_stats(ctx: lightbulb.Context, user) -> None:
     message_count = cursor.fetchone()
     embed = (
         hikari.Embed(
-            title=f"User Stats = {user.display_name}",
-            description=f"ID: `{user.id}`",
+            title=f"{user.display_name}'s Message Stats",
             colour=0x3B9DFF,
             timestamp=datetime.now().astimezone()
         )
+        .set_footer(
+            text=f"Requested by {ctx.member.display_name}",
+            icon=ctx.member.avatar_url or ctx.member.default_avatar_url,
+        )
         .set_thumbnail(user.avatar_url or user.default_avatar_url)
         .add_field(
-            "Messages sent",
+            "Total messages sent:",
             message_count[0] if message_count else 'None',
             inline=False
         )
         .add_field(
-            "Top 10 emoji",
-            ', '.join([f'{name} ({count})' for (name, count) in emoji]) if len(emoji) else 'None',
+            "Top 5 emojis:",
+            '\n'.join(emoji_list) if len(emoji_list) else 'None',
             inline=False
         )
     )
@@ -109,7 +116,7 @@ async def show_message_stats(ctx: lightbulb.Context) -> None:
             display_name = user.display_name
         max_name_length = max(max_name_length, len(display_name))
         users_counts.append((display_name, message_count))
-    message = ['```']
+    message = ['---> Messages Leaderboard :cat:```']
     for (name, count) in users_counts:
         line = f'{name.rjust(max_name_length)} : {str(count).rjust(max_messages_width)} '
         slices = int((MAX_BAR_LENGTH * SLICES_PER_CHAR) * (count / max_messages))
