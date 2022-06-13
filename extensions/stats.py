@@ -1,7 +1,7 @@
 import re
 from datetime import datetime
 from itertools import chain
-from emoji import emoji_list
+from emoji import emoji_list, replace_emoji
 import hikari, lightbulb
 import db
 
@@ -113,7 +113,7 @@ async def show_message_stats(ctx: lightbulb.Context) -> None:
         if not user:
             display_name = str(user_id)
         else:
-            display_name = user.display_name
+            display_name = replace_emoji(user.display_name, '')
         max_name_length = max(max_name_length, len(display_name))
         users_counts.append((display_name, message_count))
     message = ['**Messages Leaderboard** :cat:```']
