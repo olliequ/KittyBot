@@ -1,7 +1,7 @@
 import re
 from datetime import datetime
 from itertools import chain
-from emoji import emoji_list
+from emoji import emoji_list, replace_emoji
 import hikari, lightbulb
 import db
 
@@ -90,19 +90,6 @@ async def show_user_stats(ctx: lightbulb.Context, user) -> None:
     )
     await ctx.respond(embed)
 
-def display_width(s):
-    length = len(s)
-    for emoji in emoji_list(s):
-        elen = emoji['match_end'] - emoji['match_start']
-        length = length - elen + 2
-    return length
-
-def rjustify(s, width):
-    length = display_width(s)
-    if length >= width:
-        return s
-    return ' ' * (width - length) + s
-
 async def show_message_stats(ctx: lightbulb.Context) -> None:
     MAX_BAR_LENGTH = 30
     SLICES_PER_CHAR = 8
@@ -126,12 +113,12 @@ async def show_message_stats(ctx: lightbulb.Context) -> None:
         if not user:
             display_name = str(user_id)
         else:
-            display_name = user.display_name
-        max_name_length = max(max_name_length, display_width(display_name))
+            display_name = replace_emoji(user.display_name, '')
+        max_name_length = max(max_name_length, len(display_name))
         users_counts.append((display_name, message_count))
-    message = ['**Messages Leaderboard** :cat:```']
+    message = ['**Messages Tally** :cat:```']
     for (name, count) in users_counts:
-        line = f'{rjustify(name, max_name_length)} : {str(count).rjust(max_messages_width)} '
+        line = f'{name.rjust(max_name_length)} : {str(count).rjust(max_messages_width)} '
         slices = int((MAX_BAR_LENGTH * SLICES_PER_CHAR) * (count / max_messages))
         bar = chr(BLOCK_CODEPOINT) * (slices // SLICES_PER_CHAR)
         if slices % SLICES_PER_CHAR > 0:
