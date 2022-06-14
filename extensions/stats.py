@@ -152,7 +152,7 @@ async def show_message_stats(ctx: lightbulb.Context, plot_type) -> None:
         ax.set_title('Messages Tally!', pad=15, color='#333333', weight='bold', fontsize='15')
         ax.set_facecolor('#f5f5f5')
         plt.yticks(fontsize=8)
-        plt.xticks(fontsize=(130/max_name_length))
+        plt.xticks(fontsize=(110/max_name_length))
 
         from io import BytesIO
         buffer = BytesIO()
