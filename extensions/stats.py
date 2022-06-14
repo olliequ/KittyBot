@@ -147,12 +147,12 @@ async def show_message_stats(ctx: lightbulb.Context, plot_type) -> None:
         fig, ax = plt.subplots(figsize=(11,5))
         bars = ax.bar(users, counts, color=['#C9B037', '#D7D7D7', '#6A3805', '#9fdbed', '#9fdbed', '#9fdbed', '#9fdbed', '#9fdbed', '#9fdbed', '#9fdbed'], edgecolor='black')
         ax.bar_label(bars)
-        ax.set_xlabel('Members', labelpad=10, color='#333333', fontsize='12')
+        # ax.set_xlabel('Members', labelpad=10, color='#333333', fontsize='12')
         ax.set_ylabel('Total Messages', labelpad=15, color='#333333', fontsize='12')
         ax.set_title('Messages Tally!', pad=15, color='#333333', weight='bold', fontsize='15')
         ax.set_facecolor('#f5f5f5')
         plt.yticks(fontsize=8)
-        plt.xticks(fontsize=(120/max_name_length))
+        plt.xticks(fontsize=(160/max_name_length))
 
         from io import BytesIO
         buffer = BytesIO()
