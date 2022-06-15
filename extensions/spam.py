@@ -10,7 +10,7 @@ plugin = lightbulb.Plugin("Spam")
 @lightbulb.option("n", "Number of Times",
                   required=True)
 @lightbulb.command(
-    "spam", "Prints the same Shit again and again"
+    "spam", "Prints the same Shit again and again as many times as you want"
 )
 @lightbulb.implements(lightbulb.PrefixCommand, lightbulb.SlashCommand)
 async def main(ctx: lightbulb.Context) -> None:

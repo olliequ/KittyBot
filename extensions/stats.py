@@ -6,8 +6,10 @@ import hikari, lightbulb
 import db
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.font_manager import FontProperties
 
 plugin = lightbulb.Plugin("Stats")
+
 
 def add_emoji_count(cursor, usages):
     cursor.execute(f"""
@@ -15,7 +17,8 @@ def add_emoji_count(cursor, usages):
         VALUES {','.join(['(?, ?, 1)'] * len(usages))} 
         ON CONFLICT (user, emoji) DO UPDATE
         SET count = emoji_counts.count + 1""",
-        tuple(chain.from_iterable(usages)))
+                   tuple(chain.from_iterable(usages)))
+
 
 def add_message_count(cursor, user_id):
     cursor.execute("""
@@ -23,7 +26,8 @@ def add_message_count(cursor, user_id):
         VALUES (?, 1)
         ON CONFLICT (user) DO UPDATE
         SET count = message_counts.count + 1""",
-        (user_id,))
+                   (user_id,))
+
 
 @plugin.listener(hikari.GuildReactionAddEvent)
 async def analyse_reaction(event) -> None:
@@ -35,6 +39,7 @@ async def analyse_reaction(event) -> None:
         # Discord specific
         add_emoji_count(cursor, [(event.user_id, f'<:{event.emoji_name}:{event.emoji_id}>')])
     db.commit()
+
 
 @plugin.listener(hikari.GuildMessageCreateEvent)
 async def analyse_message(event) -> None:
@@ -50,6 +55,7 @@ async def analyse_message(event) -> None:
         add_emoji_count(cursor, [(str(event.author_id), e) for e in emoji])
     db.commit()
 
+
 async def show_user_stats(ctx: lightbulb.Context, user) -> None:
     user_id = user.id
     cursor = db.cursor()
@@ -58,7 +64,7 @@ async def show_user_stats(ctx: lightbulb.Context, user) -> None:
         WHERE user = ?
         ORDER BY count DESC
         LIMIT 5""",
-        (user_id,))
+                   (user_id,))
     emoji = cursor.fetchall()
     emoji_list = []
     for rank in range(len(emoji)):
@@ -66,7 +72,7 @@ async def show_user_stats(ctx: lightbulb.Context, user) -> None:
     cursor.execute("""
         SELECT count FROM message_counts
         WHERE user = ?""",
-        (user_id,))
+                   (user_id,))
     message_count = cursor.fetchone()
     embed = (
         hikari.Embed(
@@ -74,23 +80,24 @@ async def show_user_stats(ctx: lightbulb.Context, user) -> None:
             colour=0x3B9DFF,
             timestamp=datetime.now().astimezone()
         )
-        .set_footer(
+            .set_footer(
             text=f"Requested by {ctx.member.display_name}",
             icon=ctx.member.avatar_url or ctx.member.default_avatar_url,
         )
-        .set_thumbnail(user.avatar_url or user.default_avatar_url)
-        .add_field(
+            .set_thumbnail(user.avatar_url or user.default_avatar_url)
+            .add_field(
             "Total messages sent:",
             message_count[0] if message_count else 'None',
             inline=False
         )
-        .add_field(
+            .add_field(
             "Top 5 emojis:",
             '\n'.join(emoji_list) if len(emoji_list) else 'None',
             inline=False
         )
     )
     await ctx.respond(embed)
+
 
 async def show_message_stats(ctx: lightbulb.Context, plot_type) -> None:
     guild = ctx.get_guild()
@@ -144,27 +151,44 @@ async def show_message_stats(ctx: lightbulb.Context, plot_type) -> None:
         counts = [pair[1] for pair in users_counts]
         print(f'{users}\n{counts}')
 
-        fig, ax = plt.subplots(figsize=(11,5))
-        bars = ax.bar(users, counts, color=['#C9B037', '#D7D7D7', '#6A3805', '#9fdbed', '#9fdbed', '#9fdbed', '#9fdbed', '#9fdbed', '#9fdbed', '#9fdbed'], edgecolor='black')
-        ax.bar_label(bars)
+        fig, ax = plt.subplots(figsize=(11, 5))
+        bars = ax.bar(users, counts,
+                      color=['#ff2cdf', '#00ff5b', '#ffe53b', '#00ffff', '#ff2525', '#ffe53b', '#fdecef', '#e55646',
+                             '#7756a7', '#1b3e3b'])
+        ax.bar_label(bars, color='#fff')
         # ax.set_xlabel('Members', labelpad=10, color='#333333', fontsize='12')
-        ax.set_ylabel('Total Messages', labelpad=15, color='#333333', fontsize='12')
-        ax.set_title('Messages Tally!', pad=15, color='#333333', weight='bold', fontsize='15')
-        ax.set_facecolor('#f5f5f5')
+        ax.set_ylabel(r'Total Messages', labelpad=15, color='#e6e7e7', fontsize='12')
+        ax.set_title('Messages Tally!', pad=15, color='#e6e7e7', weight='bold', fontsize='15')
+
+        # Set Background Colour to default Discord Background
+        ax.set_facecolor('#36393f')
+        fig.patch.set_facecolor('#36393f')
+
+        # Set the color of borders
+        ax.spines['bottom'].set_color('#7289da')
+        ax.spines['top'].set_color('#7289da')
+        ax.spines['left'].set_color('#7289da')
+        ax.spines['right'].set_color('#7289da')
+
+        # Set color for ticks
+        ax.tick_params(axis='x', colors='#fff')
+        ax.tick_params(axis='y', colors='#fff')
+
         plt.yticks(fontsize=8)
-        plt.xticks(fontsize=(95/max_name_length))
+        plt.xticks(fontsize=(95 / max_name_length))
 
         from io import BytesIO
         buffer = BytesIO()
         plt.savefig(buffer, format='png')
         await ctx.respond(hikari.Bytes(buffer.getvalue(), 'leaderboard.png'))
 
+
 @plugin.command
 @lightbulb.add_cooldown(10, 1, lightbulb.UserBucket)
 @lightbulb.option("target", "The member to show stats about!", hikari.User, required=False)
 @lightbulb.option("prettify", "Which graph to show!", type=bool, required=False)
 @lightbulb.command("userstats", "Get message stats")
-@lightbulb.implements(lightbulb.PrefixCommand,lightbulb.SlashCommand)
+@lightbulb.implements(lightbulb.PrefixCommand, lightbulb.SlashCommand)
 async def main(ctx: lightbulb.Context) -> None:
     if ctx.options.target:
         user = ctx.get_guild().get_member(ctx.options.target)
@@ -173,6 +197,7 @@ async def main(ctx: lightbulb.Context) -> None:
         await show_message_stats(ctx, 2)
     else:
         await show_message_stats(ctx, 1)
-    
+
+
 def load(bot: lightbulb.BotApp) -> None:
     bot.add_plugin(plugin)
