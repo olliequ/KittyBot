@@ -4,3 +4,5 @@ __pycache__
 exampleScraper.py
 wiki.py
 /venv
+persist.sqlite
+persist_copy.sqlite

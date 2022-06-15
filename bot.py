@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 
-import hikari, lightbulb, dotenv, os, aiohttp, requests, re, random
-from bs4 import BeautifulSoup
+import os
+import dotenv, aiohttp
+import hikari, lightbulb
 
 dotenv.load_dotenv()
 
@@ -13,120 +14,11 @@ bot = lightbulb.BotApp(
         default_enabled_guilds=tuple(int(v) for v in os.environ["DEFAULT_GUILDS"].split(','))
         )
 
-misconceptionsURL = "https://en.wikipedia.org/wiki/List_of_common_misconceptions"
-page = requests.get(misconceptionsURL) 
-soup = BeautifulSoup(page.content, "html.parser") 
-results = soup.find(class_="mw-parser-output")
-
-lists = results.find_all("ul") # Returns an iterable of all lists on the page.
-randomFacts = []
-tips = []
-
-for i in range(13, 79):
-    for line in lists[i]:
-        if line != '\n':
-            line = re.sub("[\[].*?[\]]", "", line.text)
-            # print(f"- {line}\n")
-            randomFacts.append(line)
-
-eight_ball_responses = [ "It is certain.", "It is decidedly so.", "Without a doubt.", "Yes, definitely.",
-               "You may rely on it.", "As I see it, yes.", "Most likely.", "Outlook good.",
-               "Yes.", "Signs point to yes.", "Reply hazy, try again.", "Ask again later.",
-               "Better not tell you now.", "Cannot predict now.", "Concentrate and ask again.",
-               "Don't count on it.", "My reply is no.", "My sources say no.", "Outlook not so good.", "Very Doubtful."]
 
 @bot.listen(hikari.StartedEvent)
 async def botStartup(event):
     print("Bot has started up!")
 
-# Simple ping-pong command example.
-@bot.command
-@lightbulb.add_cooldown(10, 1, lightbulb.UserBucket)
-@lightbulb.command("ping", description="The bot's ping")
-@lightbulb.implements(lightbulb.PrefixCommand)
-async def ping(ctx: lightbulb.Context) -> None:
-    await ctx.respond(f"Pong! Latency: {bot.heartbeat_latency*1000:.2f}ms")
-
-# Random fact.
-@bot.command
-@lightbulb.add_cooldown(10, 1, lightbulb.UserBucket)
-@lightbulb.command("fact", description="Gives a random fact!")
-@lightbulb.implements(lightbulb.PrefixCommand)
-async def give_fact(ctx: lightbulb.Context) -> None:
-    randomNumber = random.randint(0,322)
-    target = ctx.get_guild().get_member(ctx.user)
-    print(f"---> Hi @{target.display_name}! Did you know this? :disguised_face:\n{randomFacts[randomNumber]}")
-    await ctx.respond(f"---> {ctx.author.mention}, did you know this?  :cat:\n\n{randomFacts[randomNumber]}", user_mentions=[target, True])
-
-def findWholeWord(w):
-    return re.compile(r'\b({0})\b'.format(w), flags=re.IGNORECASE).search
-
-@bot.listen(hikari.GuildMessageCreateEvent)
-async def tags_bot(event):
-    if event.is_bot or not event.content:
-        return
-    mentioned_ids = event.message.mentions.user_ids
-    if bot.application.id not in mentioned_ids:
-        return
-    messageContent = event.content
-    regexp = re.compile('(\S|\s)\?(\s|$)')
-    if regexp.search(messageContent):
-        print("Giving 8-ball response.")
-        await event.message.respond(random.choice(eight_ball_responses))
-    elif findWholeWord('broken')(messageContent):
-        await event.message.respond(f"No {event.author.mention}, you're broken :disguised_face:")
-    elif findWholeWord('thanks')(messageContent) or findWholeWord('thank')(messageContent):
-        await event.message.respond(f"You're welcome :heart:")
-    elif findWholeWord('work')(messageContent):
-        await event.message.respond(f"{event.author.mention} I do work.")
-    elif findWholeWord('hey')(messageContent) or findWholeWord('hi')(messageContent) or findWholeWord('hello')(messageContent):
-        await event.message.respond(f"Hey {event.author.mention}, I am a cat. With robot intestines. If you're bored, you should ask me a question, or check out my `+userinfo`, `+ping`, `+fortune` and `+fact` commands :cat:")
-    else:
-        await event.message.respond(f"{event.author.mention}, did you forget a question mark? <:mmhmmm:872809423939174440>")
-
-"""
-Bot adds #notalurker role for those who comment.
-"""
-@bot.listen(hikari.GuildMessageCreateEvent)
-async def give_role(event):
-
-    if event.is_bot or not event.content:
-        return
-    
-    channelSentIn = event.channel_id
-    if channelSentIn != 938847222601240656 and channelSentIn != 938894077519356004 and event.get_member().id != 940684135687659581:
-        messageContent = event.content
-        messageContent = re.sub(r'<.+?>', "", messageContent)
-        print(f"Sender: {event.author} | Content: {messageContent}")
-
-        if any(c.isalpha() for c in messageContent):
-            print("Message contains valid symbols.")
-            currentRoles = (await event.get_member().fetch_roles())[1:]
-            hasRole = False
-            for role in currentRoles:
-                # print(f"{role}: {type(role)}")
-                if role.id == 847009026817654805 or role.id == 938871141110517761:
-                    print("Already has role.\n")
-                    hasRole = True
-            if hasRole is False: # User doesn't have the role yet, and we need to give it to them.
-                print("Giving role now.\n")
-                if event.guild_id == 813213508036067348: # CS
-                    print("CS server.")
-                    await event.get_member().add_role(847009026817654805) 
-                elif event.guild_id == 798180001101905940: # Personal
-                    print("Personal server.")
-                    await event.get_member().add_role(938871141110517761)
-
-"""
-The below command demonstrates input parameters.
-"""
-@bot.command
-@lightbulb.option('num1', 'First number', type=int) # Options must be under the @bot.command and above the @lightbulb.command
-@lightbulb.option('num2', 'Second number', type=int)
-@lightbulb.command('numberadder', 'Adds 2 numbers together')
-@lightbulb.implements(lightbulb.PrefixCommand, lightbulb.SlashCommand)
-async def add(ctx):
-    await ctx.respond(ctx.options.num1+ctx.options.num2) # Because we want the bot to respond back with some information.
 
 @bot.listen(lightbulb.CommandErrorEvent)
 async def on_error(event: lightbulb.CommandErrorEvent) -> None:

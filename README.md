@@ -20,6 +20,7 @@ FORTUNE_DIRECTORY=/usr/share/games/fortunes # Location of where fortunes is inst
   - If you're on macOS you can install `fortunes` with `brew install fortune` and in `.env` set `FORTUNE_DIRECTORY=/usr/local/Cellar/fortune/9708/share/games/fortunes`
   - I don't have Windows so if you develop on Windows you'll have to find how to download the `fortunes` package yourself. If you can't find it it's fine, it just means the `+fortune` command won't work during testing (but everything else should).
   - You may optionally white-list and black-list database files by setting `FORTUNE_WHITELIST` and/or `FORTUNE_BLACKLIST` to a space-separated list of database file names.
+- The bot can grant a role to members when they first send a text message. Conventionally, this role is called `#NotALurker`. To enable this feature the `NOTALURKER_ROLE` parameter in `.env` must be set to the role ID to grant. The bot's role must be higher than this role to have permission to grant it.
 - The bot is deployed on a cloud server (droplet on Digital Ocean) which runs Ubuntu 20.04. 
 
 ## Current Functionality
@@ -30,6 +31,9 @@ FORTUNE_DIRECTORY=/usr/share/games/fortunes # Location of where fortunes is inst
 - `+fact` command: Returns a random fact // common misconception.
 - `+fortune` command: Returns a random fortune. Beware!
 - `+userinfo` command: Returns an embed containing useful information of a specified member of the server. If no member is specified, it returns that of the user who issued the command.
+- `/say`: Writes a custom text message encapsulated in something rather interesting... 
+- For `/translate` there's 2 options. The first is the text, and the second is the language you want to translate into (you write the language code, e.g. `fr` for french). If you don't specify the language code, then it assumes you want to translate the text you write into English.
+- `/userstats`: By default, show a bar chart of the top 10 users' message counts. If the optional argument, a user, is given then show the message and emoji counts for that user.
 - All commands have a 10-second cooldown period (per user), and can also be called in slash command form.
 
 ## Further Ideas // Ways to Contribute
