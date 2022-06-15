@@ -68,6 +68,13 @@ async def show_user_stats(ctx: lightbulb.Context, user) -> None:
         WHERE user = ?""",
         (user_id,))
     message_count = cursor.fetchone()
+    if message_count:
+        cursor.execute("""
+            SELECT COUNT(*) + 1 FROM message_counts
+            WHERE count > ?""",
+            (message_count[0],))
+        rank = cursor.fetchone()[0]
+
     embed = (
         hikari.Embed(
             title=f"{user.display_name}'s Message Stats",
@@ -81,7 +88,7 @@ async def show_user_stats(ctx: lightbulb.Context, user) -> None:
         .set_thumbnail(user.avatar_url or user.default_avatar_url)
         .add_field(
             "Total messages sent:",
-            message_count[0] if message_count else 'None',
+            f'{message_count[0]} (#{rank})' if message_count else 'None',
             inline=False
         )
         .add_field(
