@@ -17,6 +17,13 @@ def add_emoji_count(cursor, usages):
         SET count = emoji_counts.count + 1""",
         tuple(chain.from_iterable(usages)))
 
+def remove_emoji_count(cursor, user_id, emoji):
+    cursor.execute(f"""
+        UPDATE emoji_counts
+        SET count = count - 1
+        WHERE user = ? AND emoji = ? AND count > 0""",
+        (user_id, emoji))
+
 def add_message_count(cursor, user_id):
     cursor.execute("""
         INSERT INTO message_counts (user, count)
@@ -34,6 +41,17 @@ async def analyse_reaction(event) -> None:
     else:
         # Discord specific
         add_emoji_count(cursor, [(event.user_id, f'<:{event.emoji_name}:{event.emoji_id}>')])
+    db.commit()
+
+@plugin.listener(hikari.GuildReactionDeleteEvent)
+async def remove_reaction(event) -> None:
+    cursor = db.cursor()
+    if event.emoji_id is None:
+        # Standard unicode emoji character
+        remove_emoji_count(cursor, event.user_id, event.emoji_name)
+    else:
+        # Discord specific
+        remove_emoji_count(cursor, event.user_id, f'<:{event.emoji_name}:{event.emoji_id}>')
     db.commit()
 
 @plugin.listener(hikari.GuildMessageCreateEvent)
@@ -55,7 +73,7 @@ async def show_user_stats(ctx: lightbulb.Context, user) -> None:
     cursor = db.cursor()
     cursor.execute("""
         SELECT emoji, count FROM emoji_counts
-        WHERE user = ?
+        WHERE user = ? AND count > 0
         ORDER BY count DESC
         LIMIT 5""",
         (user_id,))
