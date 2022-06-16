@@ -16,12 +16,9 @@ async def main(event):
     channelSentIn = event.channel_id
     messageContent = event.content
     messageContent = re.sub(r'<.+?>', "", messageContent)
-    print(f"Sender: {event.author} | Content: {messageContent}")
 
     if not any(c.isalpha() for c in messageContent):
         return
-
-    print("Message contains valid symbols.")
 
     if find_whole_word('payed', messageContent):
         corrected_message = messageContent.replace("payed", "*paid*")
@@ -29,7 +26,8 @@ async def main(event):
         response = f"> {corrected_message}\n\n{output_message}"
         await event.message.respond(response, reply=True, user_mentions=True)
     else:
-        print("Sentence doesn't contain 'payed'.")
+        # print("Sentence doesn't contain 'payed'.")
+        return
 
 def load(bot: lightbulb.BotApp):
     bot.add_plugin(plugin)
