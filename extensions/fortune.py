@@ -12,7 +12,12 @@ plugin = lightbulb.Plugin("Fortune")
 )
 @lightbulb.implements(lightbulb.PrefixCommand, lightbulb.SlashCommand)
 async def main(ctx: lightbulb.Context) -> None:
-    await ctx.respond(fortune())
+    message = fortune()
+    print(message)
+    str2 = message.replace("\n", " ")
+    new = re.sub(r"(?:(?!\n)\s)+", " ",str2)
+    print(new)
+    await ctx.respond(new)
 
 def fortune() -> str:
     return get_random_fortune(choose_file())
