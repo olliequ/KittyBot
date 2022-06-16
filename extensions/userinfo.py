@@ -7,7 +7,7 @@ import db
 import numpy as np
 import matplotlib.pyplot as plt
 
-plugin = lightbulb.Plugin("Stats")
+plugin = lightbulb.Plugin("userstats")
 
 def add_emoji_count(cursor, usages):
     cursor.execute(f"""
@@ -68,7 +68,7 @@ async def analyse_message(event) -> None:
         add_emoji_count(cursor, [(str(event.author_id), e) for e in emoji])
     db.commit()
 
-async def show_user_stats(ctx: lightbulb.Context, user) -> None:
+async def emoji_stats(ctx: lightbulb.Context, user) -> None:
     user_id = user.id
     cursor = db.cursor()
     cursor.execute("""
@@ -117,87 +117,65 @@ async def show_user_stats(ctx: lightbulb.Context, user) -> None:
     )
     await ctx.respond(embed)
 
-async def show_message_stats(ctx: lightbulb.Context, plot_type) -> None:
-    guild = ctx.get_guild()
-    cursor = db.cursor()
-    cursor.execute("""
-        SELECT user, count FROM message_counts
-        ORDER BY count DESC
-        LIMIT 10""")
-    data = cursor.fetchall()
-    if len(data) == 0:
-        await ctx.respond("No one has said anything. How bizarre.")
+async def general_info(ctx: lightbulb.Context, target) -> None:
+    target = ctx.get_guild().get_member(ctx.options.target or ctx.user)
+
+    if not target:
+        await ctx.respond("That user is not in the server.")
         return
-    max_messages = data[0][1]
-    max_messages_width = len(str(max_messages))
-    max_name_length = 0
-    users_counts = []
 
-    if plot_type == 1:
-        for (user_id, message_count) in data:
-            user = guild.get_member(user_id)
-            if not user:
-                display_name = str(user_id)
-            else:
-                display_name = replace_emoji(user.display_name, '')
-            max_name_length = max(max_name_length, len(display_name))
-            users_counts.append((display_name, message_count))
-        MAX_BAR_LENGTH = 30
-        SLICES_PER_CHAR = 8
-        BLOCK_CODEPOINT = 0x2588
-        message = ['**Messages Tally** :cat:```']
-        for (name, count) in users_counts:
-            line = f'{name.rjust(max_name_length)} : {str(count).rjust(max_messages_width)} '
-            slices = int((MAX_BAR_LENGTH * SLICES_PER_CHAR) * (count / max_messages))
-            bar = chr(BLOCK_CODEPOINT) * (slices // SLICES_PER_CHAR)
-            if slices % SLICES_PER_CHAR > 0:
-                bar += chr(BLOCK_CODEPOINT + SLICES_PER_CHAR - (slices % SLICES_PER_CHAR))
-            message.append(line + bar)
-        message.append('```')
-        await ctx.respond('\n'.join(message))
+    created_at = int(target.created_at.timestamp())
+    joined_at = int(target.joined_at.timestamp())
 
-    elif plot_type == 2:
-        for (user_id, message_count) in data:
-            user = guild.get_member(user_id)
-            if not user:
-                display_name = str(user_id)
-            else:
-                display_name = user.display_name
-            max_name_length = max(max_name_length, len(display_name))
-            users_counts.append((display_name, message_count))
-        users = [pair[0] for pair in users_counts]
-        counts = [pair[1] for pair in users_counts]
-        print(f'{users}\n{counts}')
+    roles = (await target.fetch_roles())[:]  # All but @everyone
 
-        fig, ax = plt.subplots(figsize=(11,5))
-        bars = ax.bar(users, counts, color=['#C9B037', '#D7D7D7', '#6A3805', '#9fdbed', '#9fdbed', '#9fdbed', '#9fdbed', '#9fdbed', '#9fdbed', '#9fdbed'], edgecolor='black')
-        ax.bar_label(bars)
-        # ax.set_xlabel('Members', labelpad=10, color='#333333', fontsize='12')
-        ax.set_ylabel('Total Messages', labelpad=15, color='#333333', fontsize='12')
-        ax.set_title('Messages Tally!', pad=15, color='#333333', weight='bold', fontsize='15')
-        ax.set_facecolor('#f5f5f5')
-        plt.yticks(fontsize=8)
-        plt.xticks(fontsize=(95/max_name_length))
-
-        from io import BytesIO
-        buffer = BytesIO()
-        plt.savefig(buffer, format='png')
-        await ctx.respond(hikari.Bytes(buffer.getvalue(), 'leaderboard.png'))
+    embed = (
+        hikari.Embed(
+            title=f"User Info - {target.display_name}",
+            description=f"ID: `{target.id}`",
+            colour=0x3B9DFF,
+            timestamp=datetime.now().astimezone(),
+        )
+        .set_footer(
+            text=f"Requested by {ctx.member.display_name}",
+            icon=ctx.member.avatar_url or ctx.member.default_avatar_url,
+        )
+        .set_thumbnail(target.avatar_url or target.default_avatar_url)
+        .add_field(
+            "Bot?",
+            str(target.is_bot),
+            inline=True,
+        )
+        .add_field(
+            "Created account on",
+            f"<t:{created_at}:d>\n(<t:{created_at}:R>)",
+            inline=True,
+        )
+        .add_field(
+            "Joined server on",
+            f"<t:{joined_at}:d>\n(<t:{joined_at}:R>)",
+            inline=True,
+        )
+        .add_field(
+            "Roles",
+            ", ".join(r.mention for r in roles),
+            inline=False,
+        )
+    )
+    await ctx.respond(embed) # Respond to the interaction with the embed.
 
 @plugin.command
 @lightbulb.add_cooldown(10, 1, lightbulb.UserBucket)
-@lightbulb.option("target", "The member to show stats about!", hikari.User, required=False)
-@lightbulb.option("prettify", "Which graph to show!", type=bool, required=False)
-@lightbulb.command("userstats", "Get message stats")
+@lightbulb.option("target", "The member to get information about.", hikari.User, required=True)
+@lightbulb.option("type", "Which type of stats to show.", choices=["emoji", "general"], required=False)
+@lightbulb.command("userinfo", "Get information/state about someone!")
 @lightbulb.implements(lightbulb.PrefixCommand,lightbulb.SlashCommand)
 async def main(ctx: lightbulb.Context) -> None:
-    if ctx.options.target:
-        user = ctx.get_guild().get_member(ctx.options.target)
-        await show_user_stats(ctx, user)
-    elif ctx.options.prettify:
-        await show_message_stats(ctx, 2)
-    else:
-        await show_message_stats(ctx, 1)
+    user = ctx.get_guild().get_member(ctx.options.target)
+    if ctx.options.target and ctx.options.type == "general":
+        await general_info(ctx, user)
+    elif (ctx.options.target and ctx.options.type == "emoji") or not ctx.options.type:
+        await emoji_stats(ctx, user)
     
 def load(bot: lightbulb.BotApp) -> None:
     bot.add_plugin(plugin)
