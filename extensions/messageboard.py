@@ -6,6 +6,7 @@ import hikari, lightbulb
 import db
 import numpy as np
 import matplotlib.pyplot as plt
+from io import BytesIO
 
 plugin = lightbulb.Plugin("MessageBoard.")
 
@@ -75,24 +76,24 @@ async def show_message_stats(ctx: lightbulb.Context, plot_type) -> None:
         plt.yticks(fontsize=8)
         plt.xticks(fontsize=(95/max_name_length))
 
-        from io import BytesIO
         buffer = BytesIO()
         plt.savefig(buffer, format='png')
         await ctx.respond(hikari.Bytes(buffer.getvalue(), 'leaderboard.png'))
 
-    # Light mode graph.
+    # Dark mode graph.
     elif plot_type == 3:
         print("Darkmode graph requested.")
         """
         DuckDivinity write your darkmode code here!
         """
-        await ctx.message.respond("Message.")
+        message = "Darkmode is pending DuckDivinity -- coming soon:tm: !"
+        await ctx.respond(message)
 
 @plugin.command
 @lightbulb.add_cooldown(10, 1, lightbulb.UserBucket)
 @lightbulb.option("type", "Which type of graph to show!", choices=["lightmode", "darkmode", "native"], required=False)
-@lightbulb.command("messageboard", "Display top 10 'messagers'.")
-@lightbulb.implements(lightbulb.PrefixCommand, lightbulb.SlashCommand)
+@lightbulb.command("messageboard", "Displays the top 10 'messagers' of all-time.")
+@lightbulb.implements(lightbulb.SlashCommand)
 async def main(ctx: lightbulb.Context) -> None:
     if ctx.options.type == "native":
         await show_message_stats(ctx, 1)

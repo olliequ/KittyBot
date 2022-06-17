@@ -1,6 +1,26 @@
 # KittyBot - a sentient Discord bot!
-## Key Notes
-- An open-source, community-powered bot for the `CS@unimelb` Discord server.
+
+## Current Functionality
+- Automatically assigns the `#NotALurker` role to members who qualify for it (previously mods had to manually assign it).
+- Answers questions targeted to her with a magic 8 ball response.
+- `/fact` command: Returns a random fact // common misconception.
+- `/fortune` command: Returns a random fortune. Beware!
+- `/userinfo` command: This command returns interesting information about a specified user (specified through the `target` option field). If no member is specified, the command returns info of whoever issued the command. There's also a `type` option field which has 2 choices:
+  1) `general`: Returns an embed containing general information such as account creation date, server join date etc.
+  2) `emoji`: Returns an embed of the top 5 used emojis of the user, their total messages, and what 'rank' they are in terms of total messages sent.
+  - If no option is specified, the `emoji` type is chosen by default. 
+- `/messageboard` command: Returns a bar graph of the top 10 users in terms of all-time total messages sent. There's a `type` option field which has 3 graph representation types to choose from:
+  1) `lightmode`: Returns the graph (matlibplot image) in a lightmode colour scheme.
+  2) `darkmode`: Returns the graph (matlibplot image) in a darkmode colour scheme.
+  3) `native`: Returns of a horizontal block bar chart in native Discord message format.
+  - If no option is specified the `lightmode` graph is returned by default.
+- `/say` command: Writes a custom text message encapsulated in something rather interesting... 
+- `/translate` command: Translates text to and from English. There's 2 option fields. The first is the text, and the second is the language you want to translate into (you write the language code; e.g. `fr` for french). If you don't specify the language code (i.e. leaving this option field blank), then it assumes you want to translate the text you write into English.
+- `+ping` command: Kitti returns to you a heartbeat latency message.
+- `+numberadder` command: Takes 2 numbers as input and returns the sum of them.
+- All commands have a 10-second cooldown period (per user), and can also be called in slash command form.
+## Key Notes & Repository Information
+- Kitti is an open-source, community-powered bot for the `CS@unimelb` Discord server.
 - This bot is made using **Hikari** & **Lightbulb**. These are two nice & simple **Python** libraries.
 - The docs for these two libraries are https://www.hikari-py.dev/hikari/ & https://hikari-lightbulb.readthedocs.io/en/latest/.
 - The following *get-started* guide is very nice if you want to quickly understand how these libraries work: https://neonjonn.readthedocs.io/en/latest/hikari-get-started/lightbulb.html
@@ -15,26 +35,13 @@ BOT_TOKEN = 123456 # Your bot’s token from the Discord Developer Portal.
 DEFAULT_GUILDS = 123456,56789 # The 'default guilds' -- these instantly load slash comamands. Can be empty.
 FORTUNE_DIRECTORY=/usr/share/games/fortunes # Location of where fortunes is installed on your machine.
 ```
-- The `+fortune` command requires the `fortunes` package to be installed and pointed to by the `FORTUNE_DIRECTORY` variable in `.env`. 
+- The `/fortune` command requires the `fortunes` package to be installed and pointed to by the `FORTUNE_DIRECTORY` variable in `.env`. 
   - If you're on Linux you can install `fortunes` with `sudo apt-get install -y fortune` and in `.env` set `FORTUNE_DIRECTORY=/usr/share/games/fortunes`
   - If you're on macOS you can install `fortunes` with `brew install fortune` and in `.env` set `FORTUNE_DIRECTORY=/usr/local/Cellar/fortune/9708/share/games/fortunes`
   - I don't have Windows so if you develop on Windows you'll have to find how to download the `fortunes` package yourself. If you can't find it it's fine, it just means the `+fortune` command won't work during testing (but everything else should).
   - You may optionally white-list and black-list database files by setting `FORTUNE_WHITELIST` and/or `FORTUNE_BLACKLIST` to a space-separated list of database file names.
 - The bot can grant a role to members when they first send a text message. Conventionally, this role is called `#NotALurker`. To enable this feature the `NOTALURKER_ROLE` parameter in `.env` must be set to the role ID to grant. The bot's role must be higher than this role to have permission to grant it.
 - The bot is deployed on a cloud server (droplet on Digital Ocean) which runs Ubuntu 20.04. 
-
-## Current Functionality
-- Automatically assigns the `#NotALurker` role to members who qualify for it (previously mods had to manually assign it).
-- Answers questions with a magic 8 ball response.
-- `+ping` command: Kitti returns to you a heartbeat latency message.
-- `+numberadder` command: Takes 2 numbers as input and returns the sum of them.
-- `+fact` command: Returns a random fact // common misconception.
-- `+fortune` command: Returns a random fortune. Beware!
-- `+userinfo` command: Returns an embed containing useful information of a specified member of the server. If no member is specified, it returns that of the user who issued the command.
-- `/say`: Writes a custom text message encapsulated in something rather interesting... 
-- For `/translate` there's 2 options. The first is the text, and the second is the language you want to translate into (you write the language code, e.g. `fr` for french). If you don't specify the language code, then it assumes you want to translate the text you write into English.
-- `/userstats`: By default, show a bar chart of the top 10 users' message counts. If the optional argument, a user, is given then show the message and emoji counts for that user.
-- All commands have a 10-second cooldown period (per user), and can also be called in slash command form.
 
 ## Further Ideas // Ways to Contribute
 - Resolve outstanding issues noted in `Issues`.
