@@ -17,8 +17,7 @@
 - `/say` command: Writes a custom text message encapsulated in something rather interesting... 
 - `/translate` command: Translates text to and from English. There's 2 option fields. The first is the text, and the second is the language you want to translate into (you write the language code; e.g. `fr` for french). If you don't specify the language code (i.e. leaving this option field blank), then it assumes you want to translate the text you write into English.
 - `+ping` command: Kitti returns to you a heartbeat latency message.
-- `+numberadder` command: Takes 2 numbers as input and returns the sum of them.
-- All commands have a 10-second cooldown period (per user), and can also be called in slash command form.
+- All commands have a 10-second cooldown period (per user), and can be called in slash or prefix command form.
 ## Key Notes & Repository Information
 - Kitti is an open-source, community-powered bot for the `CS@unimelb` Discord server.
 - This bot is made using **Hikari** & **Lightbulb**. These are two nice & simple **Python** libraries.

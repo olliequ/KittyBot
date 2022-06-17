@@ -86,7 +86,7 @@ async def show_message_stats(ctx: lightbulb.Context, plot_type) -> None:
         """
         DuckDivinity write your darkmode code here!
         """
-        message = "Darkmode is pending DuckDivinity -- coming soon:tm: !"
+        message = "The darkmode version of the graph is coming soon:tm: !"
         await ctx.respond(message)
 
 @plugin.command
