@@ -3,21 +3,19 @@ import requests
 
 plugin = lightbulb.Plugin("Advice")
 
-
 @plugin.command
 @lightbulb.command(
-    "advice", "Prints a Good Advice"
+    "advice", "Prints a piece of good advice."
 )
-@lightbulb.implements(lightbulb.PrefixCommand, lightbulb.SlashCommand)
+@lightbulb.implements(lightbulb.SlashCommand)
 async def main(ctx: lightbulb.Context) -> None:
-    await ctx.respond(insult())
+    await ctx.respond(advice())
+
+def advice() -> str:
+    return get_random_advice()
 
 
-def insult() -> str:
-    return get_random_insult()
-
-
-def get_random_insult() -> str:
+def get_random_advice() -> str:
     response = requests.get("https://api.adviceslip.com/advice")
     return response.json()["slip"]["advice"]
 
