@@ -5,13 +5,14 @@
 - Answers questions targeted to her with a magic 8 ball response.
 - `/fact` command: Returns a random fact // common misconception.
 - `/fortune` command: Returns a random fortune. Beware!
+- `/advice` command: Returns a piece of life advice :)
 - `/userinfo` command: This command returns interesting information about a specified user (specified through the `target` option field). If no member is specified, the command returns info of whoever issued the command. There's also a `type` option field which has 2 choices:
   1) `general`: Returns an embed containing general information such as account creation date, server join date etc.
   2) `emoji`: Returns an embed of the top 5 used emojis of the user, their total messages, and what 'rank' they are in terms of total messages sent.
   - If no option is specified, the `emoji` type is chosen by default. 
 - `/messageboard` command: Returns a bar graph of the top 10 users in terms of all-time total messages sent. There's a `type` option field which has 3 graph representation types to choose from:
-  1) `lightmode`: Returns the graph (matlibplot image) in a lightmode colour scheme.
-  2) `darkmode`: Returns the graph (matlibplot image) in a darkmode colour scheme.
+  1) `lightmode`: Returns the graph (matlibplot image) in a light-mode colour scheme.
+  2) `darkmode`: Returns the graph (matlibplot image) in a dark-mode colour scheme.
   3) `native`: Returns of a horizontal block bar chart in native Discord message format.
   - If no option is specified the `lightmode` graph is returned by default.
 - `/say` command: Writes a custom text message encapsulated in something rather interesting... 
