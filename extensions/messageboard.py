@@ -83,6 +83,7 @@ async def show_message_stats(ctx: lightbulb.Context, plot_type) -> None:
     # Dark mode graph.
     elif plot_type == 3:
         print("Darkmode graph requested.")
+
         for (user_id, message_count) in data:
             user = guild.get_member(user_id)
             if not user:
@@ -124,7 +125,6 @@ async def show_message_stats(ctx: lightbulb.Context, plot_type) -> None:
         buffer = BytesIO()
         plt.savefig(buffer, format='png')
         await ctx.respond(hikari.Bytes(buffer.getvalue(), 'leaderboard.png'))
-
 @plugin.command
 @lightbulb.add_cooldown(10, 1, lightbulb.UserBucket)
 @lightbulb.option("type", "Which type of graph to show!", choices=["lightmode", "darkmode", "native"], required=False)

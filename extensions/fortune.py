@@ -7,9 +7,7 @@ from fortune import get_random_fortune
 plugin = lightbulb.Plugin("Fortune")
 
 @plugin.command
-@lightbulb.command(
-    "fortune", "Print a fortune."
-)
+@lightbulb.command("fortune", "Gives a fortune -- beware!")
 @lightbulb.implements(lightbulb.PrefixCommand, lightbulb.SlashCommand)
 async def main(ctx: lightbulb.Context) -> None:
     message = fortune()

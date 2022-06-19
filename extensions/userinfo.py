@@ -168,7 +168,7 @@ async def general_info(ctx: lightbulb.Context, target) -> None:
 @lightbulb.add_cooldown(10, 1, lightbulb.UserBucket)
 @lightbulb.option("target", "The member to get information about.", hikari.User, required=True)
 @lightbulb.option("type", "Which type of stats to show.", choices=["emoji", "general"], required=False)
-@lightbulb.command("userinfo", "Get information/state about someone!")
+@lightbulb.command("userinfo", "Get information about someone specific!")
 @lightbulb.implements(lightbulb.PrefixCommand,lightbulb.SlashCommand)
 async def main(ctx: lightbulb.Context) -> None:
     user = ctx.get_guild().get_member(ctx.options.target)

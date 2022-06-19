@@ -11,7 +11,7 @@ plugin = lightbulb.Plugin("Say")
                   required=True, choices=cowsay.char_names)
 @lightbulb.option("message", "Message to say", 
                   required=True)
-@lightbulb.command("say", "Say a message with an ASCII character")
+@lightbulb.command("say", "Say a custom message with an ASCII character.")
 @lightbulb.implements(lightbulb.SlashCommand)
 async def main(ctx: lightbulb.Context) -> None:
     character = ctx.options.character
