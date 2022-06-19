@@ -7,12 +7,15 @@ from fortune import get_random_fortune
 plugin = lightbulb.Plugin("Fortune")
 
 @plugin.command
-@lightbulb.command(
-    "fortune", "Print a fortune."
-)
+@lightbulb.command("fortune", "Gives a fortune -- beware!")
 @lightbulb.implements(lightbulb.PrefixCommand, lightbulb.SlashCommand)
 async def main(ctx: lightbulb.Context) -> None:
-    await ctx.respond(fortune())
+    message = fortune()
+    print(message)
+    str2 = message.replace("\n", " ")
+    new = re.sub(r"(?:(?!\n)\s)+", " ",str2)
+    print(new)
+    await ctx.respond(new)
 
 def fortune() -> str:
     return get_random_fortune(choose_file())
