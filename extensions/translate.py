@@ -7,7 +7,7 @@ plugin = lightbulb.Plugin("Translate")
 @plugin.command
 @lightbulb.option("text", "Text to translate", required=True)
 @lightbulb.option("language", "Language to translate to (default English)", required=False, default='en')
-@lightbulb.command("translate", "Translate text to and from English")
+@lightbulb.command("translate", "Translate text to and from English.")
 @lightbulb.implements(lightbulb.SlashCommand)
 async def main(ctx: lightbulb.Context) -> None:
     if langcodes.tag_is_valid(ctx.options.language):
