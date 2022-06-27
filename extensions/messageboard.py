@@ -10,13 +10,13 @@ from io import BytesIO
 
 plugin = lightbulb.Plugin("MessageBoard.")
 
-async def show_message_stats(ctx: lightbulb.Context, plot_type) -> None:
+async def show_message_stats(ctx: lightbulb.Context, plot_type, set_num) -> None:
     guild = ctx.get_guild()
     cursor = db.cursor()
     cursor.execute("""
         SELECT user, count FROM message_counts
         ORDER BY count DESC
-        LIMIT 10""")
+        LIMIT {},{}""".format(set_num*10, 10))
     data = cursor.fetchall()
     if len(data) == 0:
         await ctx.respond("No one has said anything. How bizarre.")
@@ -40,7 +40,8 @@ async def show_message_stats(ctx: lightbulb.Context, plot_type) -> None:
         MAX_BAR_LENGTH = 30
         SLICES_PER_CHAR = 8
         BLOCK_CODEPOINT = 0x2588
-        message = ['**Messages Tally** :cat:```']
+
+        message = ['**Messages Tally from {} to {}** :cat:```'.format(set_num*10, 10)]
         for (name, count) in users_counts:
             line = f'{name.rjust(max_name_length)} : {str(count).rjust(max_messages_width)} '
             slices = int((MAX_BAR_LENGTH * SLICES_PER_CHAR) * (count / max_messages))
@@ -71,7 +72,7 @@ async def show_message_stats(ctx: lightbulb.Context, plot_type) -> None:
         ax.bar_label(bars)
         # ax.set_xlabel('Members', labelpad=10, color='#333333', fontsize='12')
         ax.set_ylabel('Total Messages', labelpad=15, color='#333333', fontsize='12')
-        ax.set_title('Messages Tally!', pad=15, color='#333333', weight='bold', fontsize='15')
+        ax.set_title('Messages Tally! from {} to {}'.format(set_num*10, 10), pad=15, color='#333333', weight='bold', fontsize='15')
         ax.set_facecolor('#f5f5f5')
         plt.yticks(fontsize=8)
         plt.xticks(fontsize=(95/max_name_length))
@@ -98,11 +99,11 @@ async def show_message_stats(ctx: lightbulb.Context, plot_type) -> None:
         fig, ax = plt.subplots(figsize=(11, 5))
         bars = ax.bar(users, counts,
                       color=['#FFD700', '#C0C0C0', '#CD7F32', '#00ffff', '#ff2525', '#ffe53b', '#fdecef', '#e55646',
-                             '#7756a7', '#1b3e3b'])
+                             '#7756a7', '#28B463'])
         ax.bar_label(bars, color='#fff')
         # ax.set_xlabel('Members', labelpad=10, color='#333333', fontsize='12')
         ax.set_ylabel(r'Total Messages', labelpad=15, color='#e6e7e7', fontsize='12')
-        ax.set_title('Messages Tally!', pad=15, color='#e6e7e7', weight='bold', fontsize='15')
+        ax.set_title('Messages Tally! from {} to {}'.format(set_num*10, 10), pad=15, color='#e6e7e7', weight='bold', fontsize='15')
 
         # Set Background Colour to default Discord Background
         ax.set_facecolor('#36393f')
@@ -128,15 +129,16 @@ async def show_message_stats(ctx: lightbulb.Context, plot_type) -> None:
 @plugin.command
 @lightbulb.add_cooldown(10, 1, lightbulb.UserBucket)
 @lightbulb.option("type", "Which type of graph to show!", choices=["lightmode", "darkmode", "native"], required=False)
+@lightbulb.option("set", "Which set of Ranks to Show (0 = 1-10, 1 = 11-20, 2 = 21-30...)", type=int, required=False, default=0)
 @lightbulb.command("messageboard", "Displays the top 10 'messagers' of all-time.")
 @lightbulb.implements(lightbulb.SlashCommand)
 async def main(ctx: lightbulb.Context) -> None:
     if ctx.options.type == "native":
-        await show_message_stats(ctx, 1)
+        await show_message_stats(ctx, 1, ctx.options.set)
     elif ctx.options.type == "darkmode":
-        await show_message_stats(ctx, 3)
+        await show_message_stats(ctx, 3, ctx.options.set)
     else:
-        await show_message_stats(ctx, 2)
+        await show_message_stats(ctx, 2, ctx.options.set)
 
 def load(bot: lightbulb.BotApp) -> None:
     bot.add_plugin(plugin)
