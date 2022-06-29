@@ -38,6 +38,8 @@ async def main(event) -> None:
         response = f"{event.author.mention} I do work."
     elif find_whole_word('hey', messageContent) or find_whole_word('hi', messageContent) or find_whole_word('hello', messageContent):
         response = f"Hey {event.author.mention}, I am a cat. With robot intestines. If you're bored, you should ask me a question, or check out my `+userinfo`, `+ping`, `+fortune` and `+fact` commands :cat:"
+    elif event.message.referenced_message and event.message.referenced_message.author.id == plugin.bot.application.id:
+        return
     else:
         response = f"{event.author.mention}, did you forget a question mark? <:mmhmmm:872809423939174440>"
     await event.message.respond(response, user_mentions=True)
