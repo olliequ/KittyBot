@@ -41,7 +41,7 @@ async def show_message_stats(ctx: lightbulb.Context, plot_type, set_num) -> None
         SLICES_PER_CHAR = 8
         BLOCK_CODEPOINT = 0x2588
 
-        message = ['**Messages Tally from {} to {}** :cat:```'.format(set_num*10, 10)]
+        message = ['**Messages Tally from {} to {}** :cat:```'.format(set_num*10 + 1, set_num*10 + 10)]
         for (name, count) in users_counts:
             line = f'{name.rjust(max_name_length)} : {str(count).rjust(max_messages_width)} '
             slices = int((MAX_BAR_LENGTH * SLICES_PER_CHAR) * (count / max_messages))
@@ -72,7 +72,7 @@ async def show_message_stats(ctx: lightbulb.Context, plot_type, set_num) -> None
         ax.bar_label(bars)
         # ax.set_xlabel('Members', labelpad=10, color='#333333', fontsize='12')
         ax.set_ylabel('Total Messages', labelpad=15, color='#333333', fontsize='12')
-        ax.set_title('Messages Tally! from {} to {}'.format(set_num*10, 10), pad=15, color='#333333', weight='bold', fontsize='15')
+        ax.set_title('Messages Tally! from {} to {}'.format(set_num*10 + 1, set_num*10 + 10), pad=15, color='#333333', weight='bold', fontsize='15')
         ax.set_facecolor('#f5f5f5')
         plt.yticks(fontsize=8)
         plt.xticks(fontsize=(95/max_name_length))
@@ -103,7 +103,7 @@ async def show_message_stats(ctx: lightbulb.Context, plot_type, set_num) -> None
         ax.bar_label(bars, color='#fff')
         # ax.set_xlabel('Members', labelpad=10, color='#333333', fontsize='12')
         ax.set_ylabel(r'Total Messages', labelpad=15, color='#e6e7e7', fontsize='12')
-        ax.set_title('Messages Tally! from {} to {}'.format(set_num*10, 10), pad=15, color='#e6e7e7', weight='bold', fontsize='15')
+        ax.set_title('Messages Tally! from {} to {}'.format(set_num*10 + 1, set_num*10 + 10), pad=15, color='#e6e7e7', weight='bold', fontsize='15')
 
         # Set Background Colour to default Discord Background
         ax.set_facecolor('#36393f')
