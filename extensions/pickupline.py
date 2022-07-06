@@ -5,7 +5,7 @@ plugin = lightbulb.Plugin("PickUpLine")
 
 @plugin.command
 @lightbulb.command(
-    "pickupline", "Prints a Pick up Line."
+    "pickupline", "Prints a pick up line."
 )
 @lightbulb.implements(lightbulb.SlashCommand)
 async def main(ctx: lightbulb.Context) -> None:
@@ -13,7 +13,6 @@ async def main(ctx: lightbulb.Context) -> None:
 
 def pickupline() -> str:
     return get_random_pickup_line()
-
 
 def get_random_pickup_line() -> str:
     response = requests.get("http://getpickuplines.herokuapp.com/lines/random")

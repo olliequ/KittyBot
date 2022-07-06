@@ -19,7 +19,7 @@ async def show_message_stats(ctx: lightbulb.Context, plot_type, set_num) -> None
         LIMIT {},{}""".format(set_num*10, 10))
     data = cursor.fetchall()
     if len(data) == 0:
-        await ctx.respond("No one has said anything. How bizarre.")
+        await ctx.respond("The set you have requested is out of bounds <:catthink:985820328603299871>")
         return
     max_messages = data[0][1]
     max_messages_width = len(str(max_messages))
@@ -103,7 +103,7 @@ async def show_message_stats(ctx: lightbulb.Context, plot_type, set_num) -> None
         ax.bar_label(bars, color='#fff')
         # ax.set_xlabel('Members', labelpad=10, color='#333333', fontsize='12')
         ax.set_ylabel(r'Total Messages', labelpad=15, color='#e6e7e7', fontsize='12')
-        ax.set_title('Messages Tally! from {} to {}'.format(set_num*10 + 1, set_num*10 + 10), pad=15, color='#e6e7e7', weight='bold', fontsize='15')
+        ax.set_title('Messages Tally! (from {} to {})'.format(set_num*10 + 1, set_num*10 + 10), pad=15, color='#e6e7e7', weight='bold', fontsize='15')
 
         # Set Background Colour to default Discord Background
         ax.set_facecolor('#36393f')
@@ -135,10 +135,10 @@ async def show_message_stats(ctx: lightbulb.Context, plot_type, set_num) -> None
 async def main(ctx: lightbulb.Context) -> None:
     if ctx.options.type == "native":
         await show_message_stats(ctx, 1, ctx.options.set)
-    elif ctx.options.type == "darkmode":
-        await show_message_stats(ctx, 3, ctx.options.set)
-    else:
+    elif ctx.options.type == "lightmode":
         await show_message_stats(ctx, 2, ctx.options.set)
+    else:
+        await show_message_stats(ctx, 3, ctx.options.set)
 
 def load(bot: lightbulb.BotApp) -> None:
     bot.add_plugin(plugin)
