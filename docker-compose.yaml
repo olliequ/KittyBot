@@ -1,0 +1,17 @@
+version: "3.7"
+
+services:
+  kitty-bot:
+    build: ./
+    image: kitty-bot
+    restart: "unless-stopped"
+    env_file:
+      - ".env"
+    volumes:
+      - kitty-db:/home/kitty-db
+
+networks:
+  network:
+
+volumes:
+  kitty-db:

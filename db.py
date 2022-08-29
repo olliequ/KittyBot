@@ -1,4 +1,5 @@
 import sqlite3
+import os
 
 def cursor():
     return conn.cursor()
@@ -13,6 +14,7 @@ def start():
     c.execute("CREATE TABLE IF NOT EXISTS message_counts (user TEXT, count INTEGER)");
     c.execute("CREATE UNIQUE INDEX IF NOT EXISTS message_counts_idx ON message_counts (user)");
 
-conn = sqlite3.connect('persist.sqlite')
+conn = sqlite3.connect(os.environ.get('KITTY_DB', 'persist.sqlite'))
+
 start()
 

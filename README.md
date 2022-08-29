@@ -43,6 +43,15 @@ FORTUNE_DIRECTORY=/usr/share/games/fortunes # Location of where fortunes is inst
 - The bot can grant a role to members when they first send a text message. Conventionally, this role is called `#NotALurker`. To enable this feature the `NOTALURKER_ROLE` parameter in `.env` must be set to the role ID to grant. The bot's role must be higher than this role to have permission to grant it.
 - The bot is deployed on a cloud server (droplet on Digital Ocean) which runs Ubuntu 20.04. 
 
+## Docker deployment
+
+For the docker deployment just create the .env but do not add the FORTUNE_DIRECTORY and then execute the following commands:
+
+```bash
+docker compose build
+docker compose up -d
+```
+
 ## Further Ideas // Ways to Contribute
 - Resolve outstanding issues noted in `Issues`.
 - Perhaps a unimelb-handbook webscraping related command? The repo already uses a webscraper (`BeautifulSoup`) you could use!
