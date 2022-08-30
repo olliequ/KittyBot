@@ -13,15 +13,12 @@ async def show_emoji_stats(ctx: lightbulb.Context, user, emoji) -> None:
         """, (user_id, emoji))
 
     count = 0
-    # a = cursor.fetchone()
-    # if a == NoneType:
-    #     print("hi")
     row = cursor.fetchone()
-    if row is None:
+    if row is None:     # If the emoji is in the db for this user.
         await ctx.respond(f'{user.display_name} hasn\'t used {emoji} yet.')
         return
     else:
-        count = row[0]  # First Row, First Column
+        count = row[0]  # Count of the emoji?
 
     cursor.execute("""
         SELECT COUNT(*) + 1 FROM emoji_counts
