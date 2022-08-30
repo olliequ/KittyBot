@@ -1,4 +1,4 @@
-# KittyBot - a sentient Discord bot!
+# KittiBot - a sentient Discord bot!
 
 ## Current Functionality
 - Automatically assigns the `#NotALurker` role to members who qualify for it (previously mods had to manually assign it).
@@ -6,6 +6,7 @@
 - `/fact` command: Returns a random fact // common misconception.
 - `/fortune` command: Returns a random fortune. Beware!
 - `/advice` command: Returns a piece of life advice :)
+- `/emojistats` command: Returns information regarding how often a specified user has used a specific emoji.
 - `/userinfo` command: This command returns interesting information about a specified user (specified through the `target` option field). If no member is specified, the command returns info of whoever issued the command. There's also a `type` option field which has 2 choices:
   1) `general`: Returns an embed containing general information such as account creation date, server join date etc.
   2) `emoji`: Returns an embed of the top 5 used emojis of the user, their total messages, and what 'rank' they are in terms of total messages sent.

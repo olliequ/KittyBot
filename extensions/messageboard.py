@@ -58,7 +58,7 @@ async def show_message_stats(ctx: lightbulb.Context, plot_type, set_num) -> None
         for (user_id, message_count) in data:
             user = guild.get_member(user_id)
             if not user:
-                display_name = str(user_id)
+                display_name = "Ghost!"
             else:
                 display_name = user.display_name
             max_name_length = max(max_name_length, len(display_name))
@@ -87,7 +87,7 @@ async def show_message_stats(ctx: lightbulb.Context, plot_type, set_num) -> None
         for (user_id, message_count) in data:
             user = guild.get_member(user_id)
             if not user:
-                display_name = str(user_id)
+                display_name = "Ghost!"
             else:
                 display_name = user.display_name
             max_name_length = max(max_name_length, len(display_name))
