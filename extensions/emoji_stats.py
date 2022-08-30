@@ -2,10 +2,9 @@ from datetime import datetime
 import hikari, lightbulb
 import db
 
-plugin = lightbulb.Plugin("MessageBoard.")
+plugin = lightbulb.Plugin("Emoji stats.")
 
-
-async def show_message_stats(ctx: lightbulb.Context, user, emoji) -> None:
+async def show_emoji_stats(ctx: lightbulb.Context, user, emoji) -> None:
     user_id = user.id
     cursor = db.cursor()
     cursor.execute("""
@@ -13,7 +12,16 @@ async def show_message_stats(ctx: lightbulb.Context, user, emoji) -> None:
         WHERE user = ? AND emoji = ?
         """, (user_id, emoji))
 
-    count = cursor.fetchone()[0]  # First Row, First Column
+    count = 0
+    # a = cursor.fetchone()
+    # if a == NoneType:
+    #     print("hi")
+    row = cursor.fetchone()
+    if row is None:
+        await ctx.respond(f'{user.display_name} hasn\'t used {emoji} yet.')
+        return
+    else:
+        count = row[0]  # First Row, First Column
 
     cursor.execute("""
         SELECT COUNT(*) + 1 FROM emoji_counts
@@ -22,23 +30,23 @@ async def show_message_stats(ctx: lightbulb.Context, user, emoji) -> None:
     rank = cursor.fetchone()[0]
     embed = (
         hikari.Embed(
-            title=f"{user.display_name}'s {emoji} Usage Stats",
+            title=f"{user.display_name}'s usage of {emoji}:",
             colour=0x3B9DFF,
             timestamp=datetime.now().astimezone()
-        )
+            )
             .set_footer(
             text=f"Requested by {ctx.member.display_name}",
             icon=ctx.member.avatar_url or ctx.member.default_avatar_url,
-        )
+            )
             .set_thumbnail(user.avatar_url or user.default_avatar_url)
             .add_field(
-            f"{emoji} used {count} times!!",
-            f"{user.display_name} ranks #{rank} in using {emoji}",
+            f"Stats:",
+            f"""{emoji} has been used `{count}` time(s)!
+            Across the server, {user.display_name} ranks `#{rank}` in using {emoji}.""",
             inline=False
-        )
+            )
     )
     await ctx.respond(embed)
-
 
 @plugin.command
 @lightbulb.add_cooldown(10, 1, lightbulb.UserBucket)
@@ -47,8 +55,7 @@ async def show_message_stats(ctx: lightbulb.Context, user, emoji) -> None:
 @lightbulb.command("emojiusage", "Displays the usage of a specific Emoji for target user.")
 @lightbulb.implements(lightbulb.SlashCommand)
 async def main(ctx: lightbulb.Context) -> None:
-    await show_message_stats(ctx, ctx.options.target, ctx.options.emoji)
-
+    await show_emoji_stats(ctx, ctx.options.target, ctx.options.emoji)
 
 def load(bot: lightbulb.BotApp) -> None:
     bot.add_plugin(plugin)
