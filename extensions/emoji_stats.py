@@ -22,8 +22,8 @@ async def show_emoji_stats(ctx: lightbulb.Context, user, emoji) -> None:
 
     cursor.execute("""
         SELECT COUNT(*) + 1 FROM emoji_counts
-        WHERE count > ?
-    """, (count,))
+        WHERE count > ? AND emoji = ?
+    """, (count, emoji))
     rank = cursor.fetchone()[0]
     embed = (
         hikari.Embed(
