@@ -60,7 +60,6 @@ async def analyse_message(event) -> None:
         return
     cursor = db.cursor()
     add_message_count(cursor, str(event.author_id))
-    # print(event.content)
     custom_emoji = re.findall(r'<.?:.+?:\d+>', event.content)
     unicode_emoji = emoji_list(event.content)
     emoji = custom_emoji + [x['emoji'] for x in unicode_emoji]
