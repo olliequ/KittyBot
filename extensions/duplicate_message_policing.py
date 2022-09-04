@@ -12,10 +12,7 @@ import db
 import sqlite3
 import re
 
-
 plugin = lightbulb.Plugin("duplicate_message_policing")
-
-
 @plugin.listener(hikari.GuildMessageCreateEvent)
 async def delete_duplicate(event: hikari.GuildMessageCreateEvent) -> None:
     """
@@ -38,6 +35,7 @@ async def delete_duplicate(event: hikari.GuildMessageCreateEvent) -> None:
         or len(event.content) <= 2  # allow short messages
     ):
         # force the bot to not interact with this message at all e.g. in case of bug or in some other cases
+        print("returning")
         return
 
     cursor = db.cursor()
@@ -52,9 +50,8 @@ async def delete_duplicate(event: hikari.GuildMessageCreateEvent) -> None:
     except sqlite3.IntegrityError as e:
         await event.message.delete()
         await event.message.respond(
-            f"Your message: ```{event.message.content}``` was deleted as it is not unique. Either change your message a bit or add ! to the start of it."
+            f"Hey {event.author.mention}, your message: ```{event.message.content}``` was deleted as it is **not** unique. Either change your message a bit or add ! to the start of it :)", user_mentions=True
         )
-
 
 @plugin.listener(hikari.GuildMessageDeleteEvent)
 async def delete_hash(event: hikari.GuildMessageDeleteEvent) -> None:
@@ -62,12 +59,8 @@ async def delete_hash(event: hikari.GuildMessageDeleteEvent) -> None:
     Deletes a message record such that another user (or the same user) can send this message again.
     """
     cursor = db.cursor()
-
-    cursor.execute(
-        "delete from message_hashes where message_id = ?", (event.message_id,)
-    )
+    cursor.execute("delete from message_hashes where message_id = ?", (event.message_id,))
     db.commit()
-
 
 def load(bot: lightbulb.BotApp):
     bot.add_plugin(plugin)
