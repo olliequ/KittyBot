@@ -9,7 +9,6 @@ Inspired by: https://blog.xkcd.com/2008/01/14/robot9000-and-xkcd-signal-attackin
 import os, re
 import hikari, lightbulb
 import db
-import hashlib
 import sqlite3
 import re
 
@@ -28,16 +27,15 @@ async def delete_duplicate(event: hikari.GuildMessageCreateEvent) -> None:
     # random rules. Probably worth thinking about this some more, if this bot function doesn't get deleted.
     if (
         (
-            event.channel_id != 813266892818219038 and os.environ.get("DEBUG") is None
+            event.channel_id != os.environ.get("ORIGINALITY_CHANNEL_ID") and os.environ.get("DEBUG") is None
         )  # channel id is for #offtopic
-        or event.content is None
         or event.is_webhook
         or event.content.startswith(nodelete_flag)
         or event.is_bot
         or not event.content
         or "http" in event.content  # allow links
         or "@" in event.content  # allow mentions
-        or len(event.content) <= 4  # allow short messages
+        or len(event.content) <= 2  # allow short messages
     ):
         # force the bot to not interact with this message at all e.g. in case of bug or in some other cases
         return
