@@ -24,7 +24,7 @@ async def delete_duplicate(event: hikari.GuildMessageCreateEvent) -> None:
     # random rules. Probably worth thinking about this some more, if this bot function doesn't get deleted.
     if (
         (
-            event.channel_id != os.environ.get("ORIGINALITY_CHANNEL_ID") and os.environ.get("DEBUG") is None
+            event.channel_id != int(os.environ.get("ORIGINALITY_CHANNEL_ID")) and os.environ.get("DEBUG") is True
         )  # channel id is for #offtopic
         or event.is_webhook
         or event.content.startswith(nodelete_flag)
@@ -35,7 +35,6 @@ async def delete_duplicate(event: hikari.GuildMessageCreateEvent) -> None:
         or len(event.content) <= 2  # allow short messages
     ):
         # force the bot to not interact with this message at all e.g. in case of bug or in some other cases
-        print("returning")
         return
 
     cursor = db.cursor()
@@ -50,7 +49,7 @@ async def delete_duplicate(event: hikari.GuildMessageCreateEvent) -> None:
     except sqlite3.IntegrityError as e:
         await event.message.delete()
         await event.message.respond(
-            f"Hey {event.author.mention}, your message: ```{event.message.content}``` was deleted as it is **not** unique. Either change your message a bit or add ! to the start of it :)", user_mentions=True
+            f"Hey {event.author.mention} :wave: Unfortunately, your message: ```{event.message.content}``` was deleted as it is ***NOT*** unique. Either add some creativity to your message or add `!` to the start of it :-)", user_mentions=True
         )
 
 @plugin.listener(hikari.GuildMessageDeleteEvent)
