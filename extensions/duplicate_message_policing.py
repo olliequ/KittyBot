@@ -24,7 +24,7 @@ async def delete_duplicate(event: hikari.GuildMessageCreateEvent) -> None:
     # random rules. Probably worth thinking about this some more, if this bot function doesn't get deleted.
     if (
         (
-            event.channel_id != int(os.environ.get("ORIGINALITY_CHANNEL_ID")) and os.environ.get("DEBUG") is True
+            event.channel_id != int(os.environ.get("ORIGINALITY_CHANNEL_ID"))
         )  # channel id is for #offtopic
         or event.is_webhook
         or event.content.startswith(nodelete_flag)
