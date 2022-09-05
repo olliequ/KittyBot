@@ -16,12 +16,10 @@ async def delete_increment(event: hikari.GuildMessageDeleteEvent) -> None:
     User has deleted a message -- update the count.
     """
     message_object = event.old_message
-    if message_object is not None:
-        user_id = message_object.author.id
-        content = message_object.content
-    else:
-        user_id = 0
-        content = 0
+    if message_object is None:
+        return
+    user_id = message_object.author.id
+    content = message_object.content
 
     cursor = db.cursor()
     cursor.execute("""
