@@ -20,9 +20,10 @@
 - `/translate` command: Translates text to and from English. There's 2 option fields. The first is the text, and the second is the language you want to translate into (you write the language code; e.g. `fr` for french). If you don't specify the language code (i.e. leaving this option field blank), then it assumes you want to translate the text you write into English.
 - `+ping` command: Kitti returns to you a heartbeat latency message.
 - All commands have a 10-second cooldown period (per user), and can be called in slash or prefix command form.
+  
 ## Key Notes & Repository Information
 - Kitti is an open-source, community-powered bot for the `CS@unimelb` Discord server.
-- This bot is made using **Hikari** & **Lightbulb**. These are two nice & simple **Python** libraries.
+- This bot is made using **Hikari** & **Lightbulb**. These are two nice & simple **Python** libraries. **Note**: Python version 3.10 is required.
 - The docs for these two libraries are https://www.hikari-py.dev/hikari/ & https://hikari-lightbulb.readthedocs.io/en/latest/.
 - The following *get-started* guide is very nice if you want to quickly understand how these libraries work: https://novanai.readthedocs.io/en/latest/lightbulb/index.html
 - **Pull requests are very much accepted (and encouraged!)** if you want to add features to the bot & server :)
@@ -35,6 +36,9 @@
 BOT_TOKEN = 123456 # Your bot’s token from the Discord Developer Portal.
 DEFAULT_GUILDS = 123456,56789 # The 'default guilds' -- these instantly load slash comamands. Can be empty.
 FORTUNE_DIRECTORY=/usr/share/games/fortunes # Location of where fortunes is installed on your machine.
+NOTALURKER_ROLE=11111111111111111 # The role ID for the notAlurker role.
+ORIGINALITY_CHANNEL_ID=11111111111111111 # The channel you want the originality feature to operate in.
+DEBUG=True
 ```
 - The `/fortune` command requires the `fortunes` package to be installed and pointed to by the `FORTUNE_DIRECTORY` variable in `.env`. 
   - If you're on Linux you can install `fortunes` with `sudo apt-get install -y fortune` and in `.env` set `FORTUNE_DIRECTORY=/usr/share/games/fortunes`
@@ -45,8 +49,7 @@ FORTUNE_DIRECTORY=/usr/share/games/fortunes # Location of where fortunes is inst
 - The bot is deployed on a cloud server (droplet on Digital Ocean) which runs Ubuntu 20.04. 
 
 ## Docker deployment
-
-For the docker deployment just create the .env but do not add the FORTUNE_DIRECTORY and then execute the following commands:
+For the docker deployment, just create the `.env` file as above but do not add the FORTUNE_DIRECTORY, and then execute the following commands:
 
 ```bash
 docker compose build
