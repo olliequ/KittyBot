@@ -28,11 +28,10 @@ async def show_message_stats(ctx: lightbulb.Context, plot_type, set_num) -> None
 
     # Luke's native horizontal block graph.
     if plot_type == 1:
-        print("Luke's graph requested.")
         for (user_id, message_count) in data:
             user = guild.get_member(user_id)
             if not user:
-                display_name = str(user_id)
+                display_name = "Ghost!"
             else:
                 display_name = replace_emoji(user.display_name, '')
             max_name_length = max(max_name_length, len(display_name))
@@ -54,18 +53,16 @@ async def show_message_stats(ctx: lightbulb.Context, plot_type, set_num) -> None
 
     # Light mode graph.
     elif plot_type == 2:
-        print("Lightmode graph requested.")
         for (user_id, message_count) in data:
             user = guild.get_member(user_id)
             if not user:
-                display_name = str(user_id)
+                display_name = "Ghost!"
             else:
                 display_name = user.display_name
             max_name_length = max(max_name_length, len(display_name))
             users_counts.append((display_name, message_count))
         users = [pair[0] for pair in users_counts]
         counts = [pair[1] for pair in users_counts]
-        print(f'{users}\n{counts}')
 
         fig, ax = plt.subplots(figsize=(11,5))
         bars = ax.bar(users, counts, color=['#C9B037', '#D7D7D7', '#6A3805', '#9fdbed', '#9fdbed', '#9fdbed', '#9fdbed', '#9fdbed', '#9fdbed', '#9fdbed'], edgecolor='black')
@@ -83,18 +80,16 @@ async def show_message_stats(ctx: lightbulb.Context, plot_type, set_num) -> None
 
     # Dark mode graph.
     elif plot_type == 3:
-        print("Darkmode graph requested.")
         for (user_id, message_count) in data:
             user = guild.get_member(user_id)
             if not user:
-                display_name = str(user_id)
+                display_name = "Ghost!"
             else:
                 display_name = user.display_name
             max_name_length = max(max_name_length, len(display_name))
             users_counts.append((display_name, message_count))
         users = [pair[0] for pair in users_counts]
         counts = [pair[1] for pair in users_counts]
-        print(f'{users}\n{counts}')
 
         fig, ax = plt.subplots(figsize=(11, 5))
         bars = ax.bar(users, counts,

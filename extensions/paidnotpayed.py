@@ -29,7 +29,6 @@ async def main(event):
         response = f"> {corrected_message}\n\n{output_message}"
         await event.message.respond(response, reply=True, user_mentions=True)
     else:
-        # print("Sentence doesn't contain 'payed'.")
         return
 
 def load(bot: lightbulb.BotApp):
