@@ -5,6 +5,7 @@ from emoji import emoji_list, replace_emoji
 import hikari, lightbulb
 import db
 import numpy as np
+import matplotlib.font_manager as fm
 import matplotlib.pyplot as plt
 from io import BytesIO
 
@@ -136,4 +137,6 @@ async def main(ctx: lightbulb.Context) -> None:
         await show_message_stats(ctx, 3, ctx.options.set)
 
 def load(bot: lightbulb.BotApp) -> None:
+    fm.fontManager.addfont('fonts/NotoEmoji-Regular.ttf')
+    plt.rcParams['font.family'].append('Noto Emoji')
     bot.add_plugin(plugin)

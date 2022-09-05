@@ -52,3 +52,6 @@ FORTUNE_DIRECTORY=/usr/share/games/fortunes # Location of where fortunes is inst
 - Add programming/CS related facts to the fact 'database'. The database is currently a list of strings whereby each string is a fact/common-misconception scraped from a Wikipedia page.
 - Implement some sort of natural language processing thing (neural network?) that does something to do with text analysis (e.g. off a message that someone sends). This is some next level stuff, but hey, if there's an interest then why not? 😃
 - Implement a creative command you have of your own!
+
+## Legal
+This software distributes the Noto Emoji font, under the terms of the SIL Open Font License. See `fonts/OFL.txt` for details.
