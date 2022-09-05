@@ -1,4 +1,5 @@
 import sqlite3
+import os
 import hashlib
 
 def cursor():
@@ -21,7 +22,7 @@ def start():
 def md5sum(m):
     return hashlib.md5(m.encode('utf-8')).hexdigest()
 
-conn = sqlite3.connect('persist.sqlite')
+conn = sqlite3.connect(os.environ.get('KITTY_DB', 'persist.sqlite'))
 conn.create_function("md5", 1, md5sum)
 start()
 
