@@ -13,6 +13,8 @@ import sqlite3
 import re
 
 plugin = lightbulb.Plugin("duplicate_message_policing")
+
+
 @plugin.listener(hikari.GuildMessageCreateEvent)
 async def delete_duplicate(event: hikari.GuildMessageCreateEvent) -> None:
     """
@@ -21,10 +23,23 @@ async def delete_duplicate(event: hikari.GuildMessageCreateEvent) -> None:
     """
 
     nodelete_flag = "!"
+    match (
+        event.channel_id == int(os.environ.get("ORIGINALITY_CHANNEL_ID")),
+        os.environ.get("DEBUG", "false") in ("true", "1"),
+    ):
+        case (True, _):
+            # handle all messages in originality channel
+            pass
+        case (_, True):
+            # handle all messages when debug flag is set to True
+            pass
+        case (False, False):
+            # don't handle any messages that are not in the originality channel when debug flag is not set
+            return
+
     # random rules. Probably worth thinking about this some more, if this bot function doesn't get deleted.
     if (
-        event.channel_id != int(os.environ.get("ORIGINALITY_CHANNEL_ID"))  # channel id is for #general
-        or event.is_webhook
+        event.is_webhook
         or event.content.startswith(nodelete_flag)
         or event.is_bot
         or not event.content
@@ -47,8 +62,10 @@ async def delete_duplicate(event: hikari.GuildMessageCreateEvent) -> None:
     except sqlite3.IntegrityError as e:
         await event.message.delete()
         await event.message.respond(
-            f"Hey {event.author.mention} :wave: Unfortunately, your message: ```{event.message.content}``` was deleted as it is ***NOT*** unique. Either add some creativity to your message, or add `!` to the start of it :kannasip:", user_mentions=True
+            f"Hey {event.author.mention} :wave: Unfortunately, your message: _'{event.message.content}'_ was deleted as it is ***NOT*** unique. Add some creativity to your message <:kannasip:1016313662912352356>",
+            user_mentions=True,
         )
+
 
 @plugin.listener(hikari.GuildMessageDeleteEvent)
 async def delete_hash(event: hikari.GuildMessageDeleteEvent) -> None:
@@ -56,8 +73,11 @@ async def delete_hash(event: hikari.GuildMessageDeleteEvent) -> None:
     Deletes a message record such that another user (or the same user) can send this message again.
     """
     cursor = db.cursor()
-    cursor.execute("delete from message_hashes where message_id = ?", (event.message_id,))
+    cursor.execute(
+        "delete from message_hashes where message_id = ?", (event.message_id,)
+    )
     db.commit()
+
 
 def load(bot: lightbulb.BotApp):
     bot.add_plugin(plugin)
