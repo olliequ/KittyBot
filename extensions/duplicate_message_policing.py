@@ -25,7 +25,7 @@ async def delete_duplicate(event: hikari.GuildMessageCreateEvent) -> None:
     nodelete_flag = "!"
     match (
         event.channel_id == int(os.environ.get("ORIGINALITY_CHANNEL_ID")),
-        os.environ.get("DEBUG").lower() in ("true", "1"),
+        os.environ.get("DEBUG", "false") in ("true", "1"),
     ):
         case (True, _):
             # handle all messages in originality channel
