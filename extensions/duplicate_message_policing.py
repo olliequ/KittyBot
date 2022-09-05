@@ -62,7 +62,7 @@ async def delete_duplicate(event: hikari.GuildMessageCreateEvent) -> None:
     except sqlite3.IntegrityError as e:
         await event.message.delete()
         await event.message.respond(
-            f"Hey {event.author.mention} :wave: Unfortunately, your message: ```{event.message.content}``` was deleted as it is ***NOT*** unique. Either add some creativity to your message or add `!` to the start of it :-)",
+            f"Hey {event.author.mention} :wave: Unfortunately, your message: _'{event.message.content}'_ was deleted as it is ***NOT*** unique. Add some creativity to your message :-)",
             user_mentions=True,
         )
 
