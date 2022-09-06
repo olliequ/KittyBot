@@ -8,7 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from io import BytesIO
 
-plugin = lightbulb.Plugin("MessageBoard.")
+plugin = lightbulb.Plugin("deleteinquiry")
 
 @plugin.listener(hikari.GuildMessageDeleteEvent)
 async def delete_increment(event: hikari.GuildMessageDeleteEvent) -> None:
@@ -60,7 +60,7 @@ async def show_deletes(ctx: lightbulb.Context) -> None:
         )
     )
     await ctx.respond(embed)
-        
+     
 @plugin.command
 @lightbulb.add_cooldown(10, 1, lightbulb.UserBucket)
 @lightbulb.command("deletesinquiry", "Details the top deleters ;)")

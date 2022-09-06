@@ -66,9 +66,9 @@ async def delete_duplicate(event: hikari.GuildMessageCreateEvent) -> None:
             (event.message.timestamp, event.content),
         ).fetchone()
         await event.message.respond(
-            f"Hey {event.author.mention} :wave: Unfortunately,"
-            f" your message: _'{event.message.content}'_"
-            f" (first sent {previous[2]} day{'' if previous[2] == 1 else 's'} ago by {event.get_guild().get_member(previous[0])})"
+            f"Hey {event.author.mention}! Unfortunately,"
+            f" your message: `{event.message.content}`"
+            f" (first sent {previous[2]} day{'' if previous[2] == 1 else 's'} ago by {event.get_guild().get_member(previous[0]).display_name})"
             f" was deleted as it is ***NOT*** unique. Add some creativity to your message <:kannasip:1016313662912352356>",
             user_mentions=True,
         )
