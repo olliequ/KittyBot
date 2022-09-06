@@ -39,10 +39,10 @@ async def delete_duplicate(event: hikari.GuildMessageCreateEvent) -> None:
 
     # random rules. Probably worth thinking about this some more, if this bot function doesn't get deleted.
     if (
-        event.is_webhook
-        or event.content.startswith(nodelete_flag)
+        not event.content
+        or event.is_webhook
         or event.is_bot
-        or not event.content
+        or event.content.startswith(nodelete_flag)
         or "http" in event.content  # allow links
         or "@" in event.content  # allow mentions
         or len(event.content) <= 2  # allow short messages
@@ -55,14 +55,21 @@ async def delete_duplicate(event: hikari.GuildMessageCreateEvent) -> None:
     # todo: insert message exceptions such as emoji which are allowed to be duplicated
     try:
         cursor.execute(
-            "insert into message_hashes values(?, ?, md5(?))",
-            (event.author_id, event.message_id, event.content),
+            "insert into message_hashes values(?, ?, md5(?), ?)",
+            (event.author_id, event.message_id, event.content, event.message.timestamp),
         )
         db.commit()
     except sqlite3.IntegrityError as e:
         await event.message.delete()
+        previous = cursor.execute(
+            """select user, message_id, round(julianday(?) - julianday(time_sent), 1) from message_hashes where message_hash = md5(?)""",
+            (event.message.timestamp, event.content),
+        ).fetchone()
         await event.message.respond(
-            f"Hey {event.author.mention} :wave: Unfortunately, your message: _'{event.message.content}'_ was deleted as it is ***NOT*** unique. Add some creativity to your message <:kannasip:1016313662912352356>",
+            f"Hey {event.author.mention} :wave: Unfortunately,"
+            f" your message: _'{event.message.content}'_"
+            f" (first sent {previous[2]} day{'' if previous[2] == 1 else 's'} ago by {event.get_guild().get_member(previous[0])})"
+            f" was deleted as it is ***NOT*** unique. Add some creativity to your message <:kannasip:1016313662912352356>",
             user_mentions=True,
         )
 
