@@ -8,7 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from io import BytesIO
 
-plugin = lightbulb.Plugin("deleteinquiry")
+plugin = lightbulb.Plugin("deletesinquiry")
 
 @plugin.listener(hikari.GuildMessageDeleteEvent)
 async def delete_increment(event: hikari.GuildMessageDeleteEvent) -> None:
@@ -16,10 +16,10 @@ async def delete_increment(event: hikari.GuildMessageDeleteEvent) -> None:
     User has deleted a message -- update the count.
     """
     message_object = event.old_message
-    if message_object is None:
+    if message_object is None: # Then the message is really old and we can't retrieve its contents. Return to avoid exception.
         return
-    user_id = message_object.author.id
-    content = message_object.content
+    user_id = message_object.author.id  # ID of the message author (not neccessarily the deleter).
+    content = message_object.content    # Contents of message.
 
     cursor = db.cursor()
     cursor.execute("""
