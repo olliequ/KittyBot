@@ -22,7 +22,7 @@ def find_whole_word(word, text):
 async def main(event) -> None:
     if event.is_bot or not event.content:
         return
-    mentioned_ids = event.message.mentions.user_ids
+    mentioned_ids = event.message.user_mentions_ids
     if plugin.bot.application.id not in mentioned_ids:
         return
     messageContent = event.content
