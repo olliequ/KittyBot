@@ -11,6 +11,9 @@ import hikari, lightbulb
 import db
 import sqlite3
 import re
+import humanize
+from datetime import datetime, timezone
+
 
 plugin = lightbulb.Plugin("duplicate_message_policing")
 
@@ -62,13 +65,16 @@ async def delete_duplicate(event: hikari.GuildMessageCreateEvent) -> None:
     except sqlite3.IntegrityError as e:
         await event.message.delete()
         previous = cursor.execute(
-            """select user, message_id, round(julianday(?) - julianday(time_sent), 1) from message_hashes where message_hash = md5(?)""",
-            (event.message.timestamp, event.content),
+            "select user, message_id, time_sent from message_hashes where message_hash = md5(?)",
+            (event.content,),
         ).fetchone()
+
+        original_time_sent = datetime.fromisoformat(previous[2])
+
         await event.message.respond(
             f"Hey {event.author.mention}! Unfortunately,"
             f" your message: `{event.message.content}`"
-            f" (first sent {previous[2]} day{'' if previous[2] == 1 else 's'} ago by {event.get_guild().get_member(previous[0]).display_name})"
+            f" (first sent {humanize.naturaltime(datetime.now(timezone.utc) - original_time_sent)} by {event.get_guild().get_member(previous[0]).display_name})"
             f" was deleted as it is ***NOT*** unique. Add some creativity to your message :robot:",
             user_mentions=True,
         )

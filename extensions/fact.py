@@ -12,7 +12,7 @@ def init():
     soup = BeautifulSoup(page.content, "html.parser") 
     results = soup.find(class_="mw-parser-output")
     lists = results.find_all("ul") # Returns an iterable of all lists on the page.
-    for i in range(13, 79):
+    for i in range(13, 79 if len(lists) >= 79 else len(lists)):
         for line in lists[i]:
             if line != '\n':
                 line = re.sub(r"\[.*?\]", "", line.text)
