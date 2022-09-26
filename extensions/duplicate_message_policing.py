@@ -13,7 +13,7 @@ import sqlite3
 import re
 import humanize
 from datetime import datetime, timezone
-
+import asyncio
 
 plugin = lightbulb.Plugin("duplicate_message_policing")
 
@@ -46,9 +46,12 @@ async def delete_duplicate(event: hikari.GuildMessageCreateEvent) -> None:
         or event.is_webhook
         or event.is_bot
         or event.content.startswith(nodelete_flag)
-        or "http" in event.content  # allow links
-        or "@" in event.content  # allow mentions
         or len(event.content) <= 2  # allow short messages
+        or "http" in event.content  # allow links
+        or re.match("<@\\d+>", event.content)
+        or re.fullmatch(
+            "<a?:[a-z]+:\\d+>", event.content
+        )  # allow custom Discord 'emoji' in the format <:catswag:989147563854823444>
     ):
         # force the bot to not interact with this message at all e.g. in case of bug or in some other cases
         return
@@ -71,13 +74,16 @@ async def delete_duplicate(event: hikari.GuildMessageCreateEvent) -> None:
 
         original_time_sent = datetime.fromisoformat(previous[2])
 
-        await event.message.respond(
+        response = await event.message.respond(
             f"Hey {event.author.mention}! Unfortunately,"
             f" your message: `{event.message.content}`"
             f" (first sent {humanize.naturaltime(datetime.now(timezone.utc) - original_time_sent)} by {event.get_guild().get_member(previous[0]).display_name})"
             f" was deleted as it is ***NOT*** unique. Add some creativity to your message :robot:",
             user_mentions=True,
         )
+        # delete deletion message after sixty seconds (second best, due to inability to send ephemeral message directly)
+        await asyncio.sleep(60)
+        await response.delete()
 
 
 @plugin.listener(hikari.GuildMessageDeleteEvent)
