@@ -25,4 +25,3 @@ def md5sum(m):
 conn = sqlite3.connect(os.environ.get('KITTY_DB', 'persist.sqlite'))
 conn.create_function("md5", 1, md5sum)
 start()
-

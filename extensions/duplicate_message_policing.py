@@ -82,7 +82,7 @@ async def delete_duplicate(event: hikari.GuildMessageCreateEvent) -> None:
             user_mentions=True,
         )
         # delete deletion message after sixty seconds (second best, due to inability to send ephemeral message directly)
-        await asyncio.sleep(60)
+        await asyncio.sleep(15)
         await response.delete()
 
 
