@@ -10,6 +10,14 @@ from io import BytesIO
 
 plugin = lightbulb.Plugin("deletesinquiry")
 
+def decrement_emoji_count(cursor, usages):
+    cursor.execute(f"""
+        INSERT INTO emoji_counts (user, emoji, count)
+        VALUES {','.join(['(?, ?, 1)'] * len(usages))} 
+        ON CONFLICT (user, emoji) DO UPDATE
+        SET count = emoji_counts.count - 1""",
+        tuple(chain.from_iterable(usages)))
+
 @plugin.listener(hikari.GuildMessageDeleteEvent)
 async def delete_increment(event: hikari.GuildMessageDeleteEvent) -> None:
     """
@@ -18,8 +26,20 @@ async def delete_increment(event: hikari.GuildMessageDeleteEvent) -> None:
     message_object = event.old_message
     if message_object is None: # Then the message is really old and we can't retrieve its contents. Return to avoid exception.
         return
+
     user_id = message_object.author.id  # ID of the message author (not neccessarily the deleter).
     content = message_object.content    # Contents of message.
+    if message_object.author.is_bot:
+        return
+
+    cursor = db.cursor()
+    custom_emoji = re.findall(r'<.?:.+?:\d+>', content)
+    unicode_emoji = emoji_list(content)
+    emoji = custom_emoji + [x['emoji'] for x in unicode_emoji]
+
+    if len(emoji):
+        decrement_emoji_count(cursor, [(str(user_id), e) for e in emoji])
+    db.commit()
 
     cursor = db.cursor()
     cursor.execute("""
