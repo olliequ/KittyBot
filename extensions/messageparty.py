@@ -19,7 +19,7 @@ async def main(event):
     data = cursor.fetchall()
     message_count = data[0][1]
     message_count_formatted = "{:,}".format(message_count)
-    if message_count % 4 == 0:
+    if message_count % 5000 == 0:
         response = f"""<a:partyblob:815938533470240799> <a:partyblob:815938533470240799> <a:partyblob:815938533470240799> {event.author.mention}, congratulations on sending **{message_count_formatted}** messages! <a:partyblob:815938533470240799> <a:partyblob:815938533470240799> <a:partyblob:815938533470240799>.
         \nWhat an epic milestone! <:catking:993871956103405639>"""
         await event.message.respond(response, user_mentions=True)
