@@ -48,7 +48,7 @@ async def show_emoji_stats(ctx: lightbulb.Context, user, emoji) -> None:
 @plugin.command
 @lightbulb.add_cooldown(10, 1, lightbulb.UserBucket)
 @lightbulb.option("target", "The member to get information about.", hikari.User, required=True)
-@lightbulb.option("emoji", "The Emoji to show Stats about", type=str, required=True)
+@lightbulb.option("emoji", "The emoji to show stats about", type=str, required=True)
 @lightbulb.command("emojiusage", "Displays the usage of a specific Emoji for target user.")
 @lightbulb.implements(lightbulb.SlashCommand)
 async def main(ctx: lightbulb.Context) -> None:

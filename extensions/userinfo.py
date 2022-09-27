@@ -105,7 +105,7 @@ async def emoji_stats(ctx: lightbulb.Context, user) -> None:
         .set_thumbnail(user.avatar_url or user.default_avatar_url)
         .add_field(
             "Total messages sent:",
-            f'{message_count[0]} (#{rank})' if message_count else 'None',
+            f'{"{:,}".format(message_count[0])} (#{rank})' if message_count else 'None',
             inline=False
         )
         .add_field(
