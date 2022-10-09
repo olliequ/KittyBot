@@ -25,7 +25,8 @@ async def delete_duplicate(event: hikari.GuildMessageCreateEvent) -> None:
     that has been seen before in the server (and not deleted).
     """
 
-    nodelete_flag = "!"
+    NODELETE_FLAG = "!"
+    DELETION_NOTIFICATION_LONGEVITY = 15
     match (
         event.channel_id == int(os.environ.get("ORIGINALITY_CHANNEL_ID")),
         os.environ.get("DEBUG", "false") in ("true", "1"),
@@ -45,10 +46,10 @@ async def delete_duplicate(event: hikari.GuildMessageCreateEvent) -> None:
         not event.content
         or event.is_webhook
         or event.is_bot
-        or event.content.startswith(nodelete_flag)
+        or event.content.startswith(NODELETE_FLAG)
         or len(event.content) <= 2  # allow short messages
         or "http" in event.content  # allow links
-        or re.match(r"<@\d+>", event.content) # allow mentions
+        or re.match(r"<@\d+>", event.content)  # allow mentions
         or re.fullmatch(
             r"<a?:[a-z]+:\d+>", event.content
         )  # allow custom Discord 'emoji' in the format <:catswag:989147563854823444>
@@ -81,8 +82,8 @@ async def delete_duplicate(event: hikari.GuildMessageCreateEvent) -> None:
             f" was deleted as it is ***NOT*** unique. Add some creativity to your message :robot:",
             user_mentions=True,
         )
-        # delete deletion message after sixty seconds (second best, due to inability to send ephemeral message directly)
-        await asyncio.sleep(15)
+        # delete deletion message after defined number of seconds (second best, due to inability to send ephemeral message directly)
+        await asyncio.sleep(DELETION_NOTIFICATION_LONGEVITY)
         await response.delete()
 
 
