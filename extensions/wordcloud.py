@@ -20,9 +20,9 @@ plugin = lightbulb.Plugin("WordCloud")
 @plugin.command
 @lightbulb.add_cooldown(10, 1, lightbulb.UserBucket)
 @lightbulb.option(
-    "target", "The member to get information about.", hikari.User, required=True
+    "target", "The member to get an emojicloud for.", hikari.User, required=True
 )
-@lightbulb.command("wordcloud", "Get information about someone specific!")
+@lightbulb.command("wordcloud", "Get an emojicloud for a user!")
 @lightbulb.implements(lightbulb.PrefixCommand, lightbulb.SlashCommand)
 async def main(ctx: lightbulb.Context) -> None:
 
@@ -34,7 +34,7 @@ async def main(ctx: lightbulb.Context) -> None:
     ).fetchall()
 
     # code credit: https://amueller.github.io/word_cloud/auto_examples/emoji.html
-    
+
     # get data directory (using getcwd() is needed to support running example in generated IPython notebook)
     d = os.path.dirname(__file__) if "__file__" in locals() else os.getcwd()
     imp_mask = np.array(Image.open(os.path.join(d, "assets", "imp_map_smaller.png")))
@@ -62,7 +62,11 @@ async def main(ctx: lightbulb.Context) -> None:
     # The Symbola font includes most emoji
     font_path = os.path.join(d, "fonts", "NotoEmoji-Regular.ttf")
     wc = WordCloud(
-        font_path=font_path, regexp=regexp, background_color="#37393E", mask=imp_mask
+        font_path=font_path,
+        regexp=regexp,
+        background_color="#37393E",  # the colour of discord's dark theme background
+        mask=imp_mask,
+        collocations=False,
     ).generate(text)
 
     # Display the generated image:
@@ -76,6 +80,4 @@ async def main(ctx: lightbulb.Context) -> None:
 
 
 def load(bot: lightbulb.BotApp) -> None:
-    fm.fontManager.addfont("fonts/NotoEmoji-Regular.ttf")
-    plt.rcParams["font.family"].append("Noto Emoji")
     bot.add_plugin(plugin)
