@@ -12,7 +12,7 @@ import db
 import io
 from io import BytesIO
 import string
-
+from PIL import Image
 
 plugin = lightbulb.Plugin("WordCloud")
 
@@ -33,8 +33,11 @@ async def main(ctx: lightbulb.Context) -> None:
         "select emoji, count from emoji_counts where user = ?", (user_id,)
     ).fetchall()
 
+    # code credit: https://amueller.github.io/word_cloud/auto_examples/emoji.html
+    
     # get data directory (using getcwd() is needed to support running example in generated IPython notebook)
     d = os.path.dirname(__file__) if "__file__" in locals() else os.getcwd()
+    imp_mask = np.array(Image.open(os.path.join(d, "assets", "imp_map_smaller.png")))
 
     text = ""
     for emoji, count in counts:
@@ -58,7 +61,9 @@ async def main(ctx: lightbulb.Context) -> None:
     # Generate a word cloud image
     # The Symbola font includes most emoji
     font_path = os.path.join(d, "fonts", "NotoEmoji-Regular.ttf")
-    wc = WordCloud(font_path=font_path, regexp=regexp).generate(text)
+    wc = WordCloud(
+        font_path=font_path, regexp=regexp, background_color="#37393E", mask=imp_mask
+    ).generate(text)
 
     # Display the generated image:
     # the matplotlib way:
@@ -66,7 +71,7 @@ async def main(ctx: lightbulb.Context) -> None:
     plt.axis("off")
 
     buffer = BytesIO()
-    plt.savefig(buffer, format="png")
+    plt.savefig(buffer, format="png", bbox_inches="tight", pad_inches=0)
     await ctx.respond(hikari.Bytes(buffer.getvalue(), "emojicloud.png"))
 
 
