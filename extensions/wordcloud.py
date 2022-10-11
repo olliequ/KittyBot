@@ -30,7 +30,7 @@ async def main(ctx: lightbulb.Context) -> None:
 
     user_id = ctx.options.target.id
     counts = cursor.execute(
-        "select emoji, count from emoji_counts where user = ? order by count desc",
+        "select emoji, count from emoji_counts where user = ? and emoji not like '<:%' order by count desc",
         (user_id,),
     ).fetchall()
 
@@ -46,49 +46,51 @@ async def main(ctx: lightbulb.Context) -> None:
 
     # code credit https://gist.github.com/pbojinov/7f680445d50a9bd5a421
 
-    W, H = (512, 400)  # image size
-    txt = top_emoji[0]  # text to render
-    background = (255, 255, 255)  # white
-    fontsize = 350
-    font = ImageFont.truetype(
-        os.path.join(d, "fonts", "NotoEmoji-Regular.ttf"), fontsize
-    )
+    # calculate mask if it doesn't exist
+    if not os.path.isfile(os.path.join(d, "assets", f"{db.md5sum(top_emoji[0])}.png")):
+        W, H = (512, 400)  # image size
+        txt = top_emoji[0]  # text to render
+        background = (255, 255, 255)  # white
+        fontsize = 350
+        font = ImageFont.truetype(
+            os.path.join(d, "fonts", "NotoEmoji-Regular.ttf"), fontsize
+        )
 
-    image = Image.new("RGB", (W, H), background)
+        image = Image.new("RGB", (W, H), background)
 
-    draw = ImageDraw.Draw(image)
-    # w, h = draw.textsize(txt) # not that accurate in getting font size
-    w, h = font.getsize(txt)
-    draw.text(((W - w) / 2, (H - h) / 2), txt, fill="black", font=font)
+        draw = ImageDraw.Draw(image)
+        # w, h = draw.textsize(txt) # not that accurate in getting font size
+        w, h = font.getsize(txt)
+        draw.text(((W - w) / 2, (H - h) / 2), txt, fill="black", font=font)
 
-    # flood fill to the edges of an emoji so we can count the black and white pixels
-    ImageDraw.floodfill(image, xy=(0, 0), value=(255, 0, 0), thresh=300)
+        # flood fill to the edges of an emoji so we can count the black and white pixels
+        ImageDraw.floodfill(image, xy=(0, 0), value=(255, 0, 0), thresh=300)
 
-    # count our friendly black and white pixel ratio
-    black, white = 0, 0
-    for pixel in image.getdata():
-        match (pixel):
-            case ((255, 255, 255)):
-                white += 1
-            case ((0, 0, 0)):
-                black += 1
+        # count our friendly black and white pixel ratio
+        black, white = 0, 0
+        for pixel in image.getdata():
+            match (pixel):
+                case ((255, 255, 255)):
+                    white += 1
+                case ((0, 0, 0)):
+                    black += 1
 
-    if black < white:
-        # then the 'white' area is probably the majority of the emoji
-        # so invert the mask so the white area becomes black and thus the draw area for
-        # the word cloud
-        # remove dithering by conversion to pure b&w
-        fn = lambda x: 255 if x > 200 else 0
-        image = image.convert("L").point(fn, mode="1")
-        image = ImageOps.invert(image)
-        image = image.convert("RGB")
+        if black < white:
+            # then the 'white' area is probably the majority of the emoji
+            # so invert the mask so the white area becomes black and thus the draw area for
+            # the word cloud
+            # remove dithering by conversion to pure b&w
+            fn = lambda x: 255 if x > 200 else 0
+            image = image.convert("L").point(fn, mode="1")
+            image = ImageOps.invert(image)
+            image = image.convert("RGB")
 
-    # refill the red away from the edges so it doesn't become a word cloud drawing area
+        # refill the red away from the edges so it doesn't become a word cloud drawing area
 
-    ImageDraw.floodfill(image, xy=(0, 0), value=(255, 255, 255), thresh=0)
+        ImageDraw.floodfill(image, xy=(0, 0), value=(255, 255, 255), thresh=0)
 
-    save_location = os.getcwd()
-    image.save(save_location + f"/assets/{db.md5sum(top_emoji[0])}.png")
+        save_location = os.getcwd()
+        image.save(save_location + f"/assets/{db.md5sum(top_emoji[0])}.png")
 
     # code credit: https://amueller.github.io/word_cloud/auto_examples/emoji.html
 
