@@ -45,30 +45,13 @@ async def main(ctx: lightbulb.Context) -> None:
         )
         return
 
-    # the regex used to detect words is a combination of normal words, ascii art, and emojis
-    # 2+ consecutive letters (also include apostrophes), e.x It's
-    normal_word = r"(?:\w[\w']+)"
-    # 2+ consecutive punctuations, e.x. :)
-    ascii_art = r"(?:[{punctuation}][{punctuation}]+)".format(
-        punctuation=string.punctuation
-    )
-    # a single character that is not alpha_numeric or other ascii printable
-    emoji = r"(?:[^\s])(?<![\w{ascii_printable}])".format(
-        ascii_printable=string.printable
-    )
-    regexp = r"{normal_word}|{ascii_art}|{emoji}".format(
-        normal_word=normal_word, ascii_art=ascii_art, emoji=emoji
-    )
-
     # Generate a word cloud image
     # The Symbola font includes most emoji
     font_path = os.path.join(d, "fonts", "NotoEmoji-Regular.ttf")
     wc = WordCloud(
         font_path=font_path,
-        regexp=regexp,
         background_color="#37393E",  # the colour of discord's dark theme background
         mask=imp_mask,
-        collocations=False,
     ).generate_from_frequencies(dict(counts))
 
     # Display the generated image:
