@@ -60,9 +60,26 @@ async def main(ctx: lightbulb.Context) -> None:
     # w, h = draw.textsize(txt) # not that accurate in getting font size
     w, h = font.getsize(txt)
     draw.text(((W - w) / 2, (H - h) / 2), txt, fill="black", font=font)
+    # flood fill to the edges of an emoji so we can count the black and white pixels
+    ImageDraw.floodfill(image, xy=(0, 0), value=(255, 0, 0), thresh=300)
 
-    image = ImageOps.invert(image)
-    ImageDraw.floodfill(image, xy=(0, 0), value=(255, 255, 255), thresh=300)
+    # count our friendly black and white pixel ratio
+    black, white = 0, 0
+    for pixel in image.getdata():
+        match (pixel):
+            case ((255, 255, 255)):
+                white += 1
+            case ((0, 0, 0)):
+                black += 1
+
+    if black < white:
+        # then the 'white' area is probably the majority of the emoji
+        # so invert the mask so the white area becomes black and thus the draw area for
+        # the word cloud
+        image = ImageOps.invert(image)
+    # refill the red away from the edges so it doesn't become a word cloud drawing area
+    ImageDraw.floodfill(image, xy=(0, 0), value=(255, 255, 255), thresh=0)
+
     save_location = os.getcwd()
     image.save(save_location + f"/assets/{db.md5sum(top_emoji[0])}.png")
 
