@@ -12,7 +12,7 @@ import db
 import io
 from io import BytesIO
 import string
-from PIL import Image
+from PIL import Image, ImageFont, ImageDraw, ImageChops, ImageOps
 
 plugin = lightbulb.Plugin("WordCloud")
 
@@ -30,14 +30,9 @@ async def main(ctx: lightbulb.Context) -> None:
 
     user_id = ctx.options.target.id
     counts = cursor.execute(
-        "select emoji, count from emoji_counts where user = ?", (user_id,)
+        "select emoji, count from emoji_counts where user = ? order by count desc",
+        (user_id,),
     ).fetchall()
-
-    # code credit: https://amueller.github.io/word_cloud/auto_examples/emoji.html
-
-    # get data directory (using getcwd() is needed to support running example in generated IPython notebook)
-    d = os.path.dirname(__file__) if "__file__" in locals() else os.getcwd()
-    imp_mask = np.array(Image.open(os.path.join(d, "assets", "imp_map_smaller.png")))
 
     if len(counts) == 0:
         await ctx.respond(
@@ -45,13 +40,45 @@ async def main(ctx: lightbulb.Context) -> None:
         )
         return
 
+    top_emoji = counts[0]
+
+    d = os.path.dirname(__file__) if "__file__" in locals() else os.getcwd()
+
+    # code credit https://gist.github.com/pbojinov/7f680445d50a9bd5a421
+
+    W, H = (512, 400)  # image size
+    txt = top_emoji[0]  # text to render
+    background = (255, 255, 255)  # white
+    fontsize = 350
+    font = ImageFont.truetype(
+        os.path.join(d, "fonts", "NotoEmoji-Regular.ttf"), fontsize
+    )
+
+    image = Image.new("RGB", (W, H), background)
+
+    draw = ImageDraw.Draw(image)
+    # w, h = draw.textsize(txt) # not that accurate in getting font size
+    w, h = font.getsize(txt)
+    draw.text(((W - w) / 2, (H - h) / 2), txt, fill="black", font=font)
+
+    image = ImageOps.invert(image)
+    ImageDraw.floodfill(image, xy=(0, 0), value=(255, 255, 255), thresh=300)
+    save_location = os.getcwd()
+    image.save(save_location + f"/assets/{db.md5sum(top_emoji[0])}.png")
+
+    # code credit: https://amueller.github.io/word_cloud/auto_examples/emoji.html
+
+    img_mask = np.array(
+        Image.open(os.path.join(d, "assets", f"{db.md5sum(top_emoji[0])}.png"))
+    )
+
     # Generate a word cloud image
     # The Symbola font includes most emoji
     font_path = os.path.join(d, "fonts", "NotoEmoji-Regular.ttf")
     wc = WordCloud(
         font_path=font_path,
-        background_color="#37393E",  # the colour of discord's dark theme background
-        mask=imp_mask,
+        background_color="white",  # the colour of discord's dark theme background
+        mask=img_mask,
     ).generate_from_frequencies(dict(counts))
 
     # Display the generated image:

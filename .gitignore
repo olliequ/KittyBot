@@ -10,3 +10,4 @@ persist_copy.sqlite
 output.log
 ids_to_replace.log
 data.db
+/assets/*.png
