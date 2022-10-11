@@ -60,6 +60,7 @@ async def main(ctx: lightbulb.Context) -> None:
     # w, h = draw.textsize(txt) # not that accurate in getting font size
     w, h = font.getsize(txt)
     draw.text(((W - w) / 2, (H - h) / 2), txt, fill="black", font=font)
+
     # flood fill to the edges of an emoji so we can count the black and white pixels
     ImageDraw.floodfill(image, xy=(0, 0), value=(255, 0, 0), thresh=300)
 
@@ -76,8 +77,14 @@ async def main(ctx: lightbulb.Context) -> None:
         # then the 'white' area is probably the majority of the emoji
         # so invert the mask so the white area becomes black and thus the draw area for
         # the word cloud
+        # remove dithering by conversion to pure b&w
+        fn = lambda x: 255 if x > 200 else 0
+        image = image.convert("L").point(fn, mode="1")
         image = ImageOps.invert(image)
+        image = image.convert("RGB")
+
     # refill the red away from the edges so it doesn't become a word cloud drawing area
+
     ImageDraw.floodfill(image, xy=(0, 0), value=(255, 255, 255), thresh=0)
 
     save_location = os.getcwd()
