@@ -39,16 +39,11 @@ async def main(ctx: lightbulb.Context) -> None:
     d = os.path.dirname(__file__) if "__file__" in locals() else os.getcwd()
     imp_mask = np.array(Image.open(os.path.join(d, "assets", "imp_map_smaller.png")))
 
-    text = ""
-
     if len(counts) == 0:
         await ctx.respond(
             f"{ctx.options.target.display_name} has not used any unicode emoji."
         )
         return
-
-    for emoji, count in counts:
-        text += emoji * count
 
     # the regex used to detect words is a combination of normal words, ascii art, and emojis
     # 2+ consecutive letters (also include apostrophes), e.x It's
@@ -74,7 +69,7 @@ async def main(ctx: lightbulb.Context) -> None:
         background_color="#37393E",  # the colour of discord's dark theme background
         mask=imp_mask,
         collocations=False,
-    ).generate(text)
+    ).generate_from_frequencies(dict(counts))
 
     # Display the generated image:
     # the matplotlib way:
