@@ -13,7 +13,7 @@ plugin = lightbulb.Plugin("deletesinquiry")
 def decrement_emoji_count(cursor, usages):
     cursor.execute(f"""
         INSERT INTO emoji_counts (user, emoji, count)
-        VALUES {','.join(['(?, ?, 1)'] * len(usages))} 
+        VALUES {','.join(['(?, ?, 0)'] * len(usages))} 
         ON CONFLICT (user, emoji) DO UPDATE
         SET count = emoji_counts.count - 1""",
         tuple(chain.from_iterable(usages)))
@@ -39,9 +39,7 @@ async def delete_increment(event: hikari.GuildMessageDeleteEvent) -> None:
 
     if len(emoji):
         decrement_emoji_count(cursor, [(str(user_id), e) for e in emoji])
-    db.commit()
 
-    cursor = db.cursor()
     cursor.execute("""
         INSERT INTO message_deletes (user, count)
         VALUES (?, 1)
