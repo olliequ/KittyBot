@@ -105,6 +105,8 @@ async def main(ctx: lightbulb.Context) -> None:
         font_path=font_path,
         background_color="white",  # the colour of discord's dark theme background
         mask=img_mask,
+        contour_width=3,
+        contour_color="steelblue",
     ).generate_from_frequencies(dict(counts))
 
     # Display the generated image:
