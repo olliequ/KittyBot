@@ -103,7 +103,7 @@ async def main(ctx: lightbulb.Context) -> None:
     font_path = os.path.join(d, "fonts", "NotoEmoji-Regular.ttf")
     wc = WordCloud(
         font_path=font_path,
-        background_color="white",  # the colour of discord's dark theme background
+        background_color="#37393E",  # the colour of discord's dark theme background
         mask=img_mask,
         contour_width=3,
         contour_color="steelblue",
@@ -111,7 +111,7 @@ async def main(ctx: lightbulb.Context) -> None:
 
     # Display the generated image:
     # the matplotlib way:
-    plt.imshow(wc)
+    plt.imshow(wc, interpolation="none")
     plt.axis("off")
 
     buffer = BytesIO()
