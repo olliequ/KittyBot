@@ -90,28 +90,29 @@ async def main(ctx: lightbulb.Context) -> None:
         image.save(mask_path)
 
     # code credit: https://amueller.github.io/word_cloud/auto_examples/emoji.html
+    with Image.open(mask_path) as mask_file:
 
-    img_mask = np.array(Image.open(mask_path))
+        img_mask = np.array(mask_file)
 
-    # Generate a word cloud image
-    # The Symbola font includes most emoji
-    font_path = os.path.join(d, "fonts", "NotoEmoji-Regular.ttf")
-    wc = WordCloud(
-        font_path=font_path,
-        background_color="#37393E",  # the colour of discord's dark theme background
-        mask=img_mask,
-        contour_width=3,
-        contour_color="steelblue",
-    ).generate_from_frequencies(dict(counts))
+        # Generate a word cloud image
+        # The Symbola font includes most emoji
+        font_path = os.path.join(d, "fonts", "NotoEmoji-Regular.ttf")
+        wc = WordCloud(
+            font_path=font_path,
+            background_color="#37393E",  # the colour of discord's dark theme background
+            mask=img_mask,
+            contour_width=3,
+            contour_color="steelblue",
+        ).generate_from_frequencies(dict(counts))
 
-    # Display the generated image:
-    # the matplotlib way:
-    plt.imshow(wc, interpolation="none")
-    plt.axis("off")
+        # Display the generated image:
+        # the matplotlib way:
+        plt.imshow(wc, interpolation="none")
+        plt.axis("off")
 
-    buffer = BytesIO()
-    plt.savefig(buffer, format="png", bbox_inches="tight", pad_inches=0)
-    await ctx.respond(hikari.Bytes(buffer.getvalue(), "emojicloud.png"))
+        buffer = BytesIO()
+        plt.savefig(buffer, format="png", bbox_inches="tight", pad_inches=0)
+        await ctx.respond(hikari.Bytes(buffer.getvalue(), "emojicloud.png"))
 
 
 def load(bot: lightbulb.BotApp) -> None:
