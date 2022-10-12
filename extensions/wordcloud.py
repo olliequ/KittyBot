@@ -30,7 +30,7 @@ async def main(ctx: lightbulb.Context) -> None:
 
     user_id = ctx.options.target.id
     counts = cursor.execute(
-        "select emoji, count from emoji_counts where user = ? and emoji not like '<:%' order by count desc",
+        "select emoji, count from emoji_counts where user = ? and emoji not like '<%' order by count desc",
         (user_id,),
     ).fetchall()
 
