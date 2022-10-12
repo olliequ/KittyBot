@@ -4,6 +4,12 @@ import db
 
 plugin = lightbulb.Plugin("Emoji lovers.")
 
+def plural_or_not(number):
+    if number == 1:
+        return 'time'
+    else:
+        return 'times'
+
 async def show_emoji_lovers(ctx: lightbulb.Context, emoji) -> None:
     # user_id = ctx.author
     cursor = db.cursor()
@@ -18,9 +24,9 @@ async def show_emoji_lovers(ctx: lightbulb.Context, emoji) -> None:
     for rank in range(len(users)):
         user = ctx.get_guild().get_member(users[rank][0]) # Check user is still in server.
         if user is not None:
-            user_list.append(f'`#{rank + 1}` {user.display_name} has used {emoji} `{users[rank][1]}` time(s)!')
-        else:
-            user_list.append(f'`#{rank + 1}` {users[rank][0]} has used {emoji} `{users[rank][1]}` time(s)!')
+            user_list.append(f'`#{rank + 1}` {user.display_name} has used {emoji} `{users[rank][1]}` {plural_or_not(users[rank][1])}!')
+        else: # Handle if user is no longer in the server (and thus doesn't have a display name).
+            user_list.append(f'`#{rank + 1}` {users[rank][0]} has used {emoji} `{users[rank][1]}` {plural_or_not(users[rank][1])}!')
 
     embed = (
         hikari.Embed(

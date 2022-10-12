@@ -14,7 +14,7 @@ async def show_emoji_stats(ctx: lightbulb.Context, user, emoji) -> None:
 
     count = 0
     row = cursor.fetchone()
-    if row is None:     # If the emoji isn't in the db for this user.
+    if (row is None) or (row[0] == 0):     # If the emoji isn't in the db for this user.
         await ctx.respond(f'{user.display_name} hasn\'t used {emoji} yet.')
         return
     else:
