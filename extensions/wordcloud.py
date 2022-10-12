@@ -40,16 +40,16 @@ async def main(ctx: lightbulb.Context) -> None:
         )
         return
 
-    top_emoji = counts[0]
+    top_emoji, top_emoji_count = counts[0][0], counts[0][1]
 
     d = os.path.dirname(__file__) if "__file__" in locals() else os.getcwd()
 
     # code credit https://gist.github.com/pbojinov/7f680445d50a9bd5a421
 
     # calculate mask if it doesn't exist
-    if not os.path.isfile(os.path.join(d, "assets", f"{db.md5sum(top_emoji[0])}.png")):
+    mask_path = os.path.join(d, "assets", f"{db.md5sum(top_emoji)}.png")
+    if not os.path.isfile(mask_path):
         W, H = (512, 400)  # image size
-        txt = top_emoji[0]  # text to render
         background = (255, 255, 255)  # white
         fontsize = 350
         font = ImageFont.truetype(
@@ -60,8 +60,8 @@ async def main(ctx: lightbulb.Context) -> None:
 
         draw = ImageDraw.Draw(image)
         # w, h = draw.textsize(txt) # not that accurate in getting font size
-        w, h = font.getsize(txt)
-        draw.text(((W - w) / 2, (H - h) / 2), txt, fill="black", font=font)
+        w, h = font.getsize(top_emoji)
+        draw.text(((W - w) / 2, (H - h) / 2), top_emoji, fill="black", font=font)
 
         # flood fill to the edges of an emoji so we can count the black and white pixels
         ImageDraw.floodfill(image, xy=(0, 0), value=(255, 0, 0), thresh=300)
@@ -86,17 +86,12 @@ async def main(ctx: lightbulb.Context) -> None:
             image = image.convert("RGB")
 
         # refill the red away from the edges so it doesn't become a word cloud drawing area
-
         ImageDraw.floodfill(image, xy=(0, 0), value=(255, 255, 255), thresh=0)
-
-        save_location = os.getcwd()
-        image.save(save_location + f"/assets/{db.md5sum(top_emoji[0])}.png")
+        image.save(mask_path)
 
     # code credit: https://amueller.github.io/word_cloud/auto_examples/emoji.html
 
-    img_mask = np.array(
-        Image.open(os.path.join(d, "assets", f"{db.md5sum(top_emoji[0])}.png"))
-    )
+    img_mask = np.array(Image.open(mask_path))
 
     # Generate a word cloud image
     # The Symbola font includes most emoji
