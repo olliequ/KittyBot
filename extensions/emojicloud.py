@@ -51,7 +51,7 @@ async def main(ctx: lightbulb.Context) -> None:
     listofimages = generate_from_frequencies(counts, 150)
     for p in listofimages:
         if p[3][0] == "<":  # Custom Emoji have "<" in the beginning
-            thumbnail = Image.open(os.path.join(script_dir, "../assets/" + emoji_cache.get_file_name(p[3])))
+            thumbnail = Image.open(os.path.join(script_dir, "..", "assets/" + emoji_cache.get_file_name(p[3])))
             max_num_frames = max(max_num_frames, thumbnail.n_frames)
             all_thumbnails.append((thumbnail, "custom"))
         else:  # Regular Unicode Emoji
@@ -75,9 +75,9 @@ async def main(ctx: lightbulb.Context) -> None:
             new_im.paste(resized_img, (p[0], p[1]), resized_img.convert('RGBA'))
             frames.append(new_im)
 
-    frames[0].save('output.gif', save_all=True, append_images=frames)
+    frames[0].save('assets/output.gif', save_all=True, append_images=frames)
 
-    await ctx.respond(hikari.File('output.gif'))
+    await ctx.respond(hikari.File('assets/output.gif'))
     # await ctx.respond(hikari.Bytes(BytesIO(open("output.gif", "rb").read()).getvalue(), "emojicloud.png"))
 
 
