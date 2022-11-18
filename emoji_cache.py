@@ -12,7 +12,7 @@ import db
 
 
 def get_f_name(emoji):
-    return f"cache/{emoji.filename}"
+    return f"assets/{emoji.filename}"
 
 
 async def cache_all_custom(bot: lightbulb.BotApp):
