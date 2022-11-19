@@ -33,9 +33,8 @@ async def main(ctx: lightbulb.Context) -> None:
         (user_id,),
     ).fetchall()
 
-    # Cache all used emojis to use later
-    for i in counts:
-        await emoji_cache.download_emoji(i[0], ctx.bot)
+    # Cache all used emojis to use later. Remove Deleted Emojis from the data
+    counts = [i for i in counts if await emoji_cache.download_emoji(i[0], ctx.bot) != "Not Found"]
 
     if len(counts) == 0:
         await ctx.respond(
@@ -55,12 +54,14 @@ async def main(ctx: lightbulb.Context) -> None:
             max_num_frames = max(max_num_frames, thumbnail.n_frames)
             all_thumbnails.append((thumbnail, "custom"))
         else:  # Regular Unicode Emoji
-            thumbnail = Image.new('RGB', (100, 100), '#37393E')
+            e_code = p[3].strip()
+            # Using NotoEmoji to generate as estimated size for the emoji
+            font = ImageFont.truetype('fonts/NotoEmoji-Regular.ttf', p[2])
 
-            font = ImageFont.truetype('fonts/arial.ttf', p[2])
+            thumbnail = Image.new('RGB', get_text_dimensions(e_code, font), '#37393E')
 
             with Pilmoji(thumbnail) as pilmoji:
-                pilmoji.text((10, 10), p[3].strip(), (0, 0, 0), font)
+                pilmoji.text((10, 10), e_code, (0, 0, 0), font)
             all_thumbnails.append((thumbnail, "unicode"))
 
     frames = []
@@ -81,22 +82,15 @@ async def main(ctx: lightbulb.Context) -> None:
     # await ctx.respond(hikari.Bytes(BytesIO(open("output.gif", "rb").read()).getvalue(), "emojicloud.png"))
 
 
-def find_multiples(number: int):
-    multiples = set()
-    for i in range(number - 1, 1, -1):
-        mod = number % i
-        if mod == 0:
-            tup = (i, int(number / i))
-            if tup not in multiples and (tup[1], tup[0]) not in multiples:
-                multiples.add(tup)
+def get_text_dimensions(text_string, font):
+    """
 
-    if len(multiples) == 0:
-        mod = number % 2
-        div = number // 2
-        multiples.add((2, div + mod))
+    """
+    ascent, descent = font.getmetrics()
 
-    return list(multiples)
-
+    text_width = font.getmask(text_string).getbbox()[2]
+    text_height = font.getmask(text_string).getbbox()[3] + descent
+    return text_width, text_height
 
 width, height = (512, 512)
 relative_scaling = 0.5

@@ -11,3 +11,4 @@ output.log
 ids_to_replace.log
 data.db
 /assets/*.png
+/assets/*.gif
