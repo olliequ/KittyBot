@@ -7,6 +7,7 @@ import os
 
 import lightbulb
 from PIL import Image
+from hikari import NotFoundError
 
 import db
 
@@ -24,12 +25,15 @@ async def cache_all_custom(bot: lightbulb.BotApp):
 
 async def download_emoji(e, bot: lightbulb.BotApp):
     if e[0] != "<":
-        return  # Not a Custom Emoji
+        return "Not Custom"  # Not a Custom Emoji
     # Get '1015917908897054770' from '<:agentjohnson:1015917908897054770>'
     emoji_id = e.replace("<", "").replace(">", "").split(":")[-1]
 
     # Get Emoji list from the first guild
-    emoji = await bot.rest.fetch_emoji(int(os.environ["DEFAULT_GUILDS"].split(',')[0]), emoji_id)
+    try:
+        emoji = await bot.rest.fetch_emoji(int(os.environ["DEFAULT_GUILDS"].split(',')[0]), emoji_id)
+    except NotFoundError:  # Emoji no longer available. Ignore
+        return "Not Found"
     await cache_emoji_if_not_present(emoji)
 
 

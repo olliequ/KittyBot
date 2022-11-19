@@ -20,7 +20,7 @@ bot = lightbulb.BotApp(
 @bot.listen(hikari.StartedEvent)
 async def botStartup(event):
     print("Bot has started up!")
-    await emoji_cache.download_emoji("<:agentjohnson:1015917908897054770>", bot)
+    await emoji_cache.cache_all_custom(bot)
 
 
 @bot.listen(lightbulb.CommandErrorEvent)
