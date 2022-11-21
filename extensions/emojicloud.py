@@ -1,15 +1,16 @@
-import lightbulb
-import db
-import hikari
-from PIL import Image, ImageDraw, ImageFont
-from operator import itemgetter
-from matplotlib import cm
 import os
+from operator import itemgetter
 from random import Random
-import emoji_cache
-import random
+
+import hikari
+import lightbulb
 import numpy as np
+from PIL import Image, ImageDraw, ImageFont
+from matplotlib import cm
 from pilmoji import Pilmoji  # Used to generate decent Unicode emoji
+
+import db
+import emoji_cache
 
 plugin = lightbulb.Plugin("EmojiCloud")
 
@@ -18,6 +19,9 @@ plugin = lightbulb.Plugin("EmojiCloud")
 @lightbulb.add_cooldown(10, 1, lightbulb.UserBucket)
 @lightbulb.option(
     "target", "The member to get an emojicloud for.", hikari.User, required=True
+)
+@lightbulb.option(
+    "max_emojis", "The number of emojis to include in EmojiCloud", type=int, required=False, default=20
 )
 @lightbulb.command("emojicloud", "Get an emojicloud for a user!",
                    auto_defer=True)  # auto_defer to allowed delay in uploading
@@ -28,9 +32,11 @@ async def main(ctx: lightbulb.Context) -> None:
     cursor = db.cursor()
 
     user_id = ctx.options.target.id
+    max_emojis = ctx.options.max_emojis
+
     counts = cursor.execute(
-        "select emoji, count from emoji_counts where user = ? order by count desc",
-        (user_id,),
+        "select emoji, count from emoji_counts where user = ? order by count desc limit ?",
+        (user_id, max_emojis),
     ).fetchall()
 
     # Cache all used emojis to use later. Remove Deleted Emojis from the data
@@ -47,7 +53,7 @@ async def main(ctx: lightbulb.Context) -> None:
     script_dir = os.path.dirname(os.path.abspath(__file__))
 
     # 150 max size from trial-error. Can change
-    listofimages = generate_from_frequencies(counts, 150)
+    listofimages = generate_from_frequencies(counts, max_words=max_emojis, max_font_size=150)
     for p in listofimages:
         if p[3][0] == "<":  # Custom Emoji have "<" in the beginning
             thumbnail = Image.open(os.path.join(script_dir, "..", "assets/" + emoji_cache.get_file_name(p[3])))
@@ -92,16 +98,16 @@ def get_text_dimensions(text_string, font):
     text_height = font.getmask(text_string).getbbox()[3] + descent
     return text_width, text_height
 
+
 width, height = (512, 512)
 relative_scaling = 0.5
 prefer_horizontal = 0.2
-max_words = 20
 margin = 2
 min_image_size = 10
 random_state = Random()
 
 
-def generate_from_frequencies(layout, max_font_size=None):  # noqa: C901
+def generate_from_frequencies(layout, max_words, max_font_size=None):  # noqa: C901
     """Create a layout plan from words and frequencies.
     Throughout this function, font_size = image_size :P
     Parameters
@@ -173,11 +179,6 @@ def generate_from_frequencies(layout, max_font_size=None):  # noqa: C901
         if rs != 0:
             font_size = int(round((rs * (freq / float(last_freq))
                                    + (1 - rs)) * font_size))
-        if random.random() < prefer_horizontal:
-            orientation = None
-        else:
-            orientation = Image.ROTATE_90
-        tried_other_orientation = False
         while True:
             # try to find a position
 
@@ -191,14 +192,7 @@ def generate_from_frequencies(layout, max_font_size=None):  # noqa: C901
                 # either we found a place or font-size went too small
                 break
             # if we didn't find a place, make font smaller
-            # but first try to rotate!
-            if not tried_other_orientation and prefer_horizontal < 1:
-                orientation = (Image.ROTATE_90 if orientation is None else
-                               Image.ROTATE_90)
-                tried_other_orientation = True
-            else:
-                font_size -= 1
-                orientation = None
+            font_size -= 1
 
         if font_size < min_image_size:
             # we were unable to draw anymore

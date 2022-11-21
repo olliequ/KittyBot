@@ -18,7 +18,6 @@ def get_f_name(emoji):
 
 async def cache_all_custom(bot: lightbulb.BotApp):
     emojis = await bot.rest.fetch_guild_emojis(int(os.environ["DEFAULT_GUILDS"].split(',')[0]))
-    print(emojis)
     for emoji in emojis:
         await cache_emoji_if_not_present(emoji)
 
@@ -40,14 +39,13 @@ async def download_emoji(e, bot: lightbulb.BotApp):
 async def cache_emoji_if_not_present(emoji):
     f_name = get_f_name(emoji)
     cursor = db.cursor()
-    print(emoji)
     cursor.execute("""SELECT emoji FROM emoji_cache WHERE emoji=?""", (str(emoji),))
-    if cursor.fetchone() is None:
+    if len(cursor.fetchall()) == 0:
         data = await emoji.read()
         image = Image.open(io.BytesIO(data))
-        image.save(f_name)
+        image.save(f_name, save_all=True)  # Required save_all to save in animated format
         cursor.execute("INSERT INTO emoji_cache (emoji,filename) VALUES (?,?)", (str(emoji), emoji.filename))
-        print(emoji, emoji.filename)
+        db.commit()  # Forgot Commit so potential speed up
 
 
 def get_file_name(emoji):
