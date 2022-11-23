@@ -56,7 +56,7 @@ async def main(ctx: lightbulb.Context) -> None:
     listofimages = generate_from_frequencies(counts, max_words=max_emojis, max_font_size=150)
     for p in listofimages:
         if p[3][0] == "<":  # Custom Emoji have "<" in the beginning
-            thumbnail = Image.open(os.path.join(script_dir, "..", "assets/" + emoji_cache.get_file_name(p[3])))
+            thumbnail = Image.open(os.path.join(script_dir, "..", emoji_cache.get_file_name_if_cached(p[3])))
             max_num_frames = max(max_num_frames, thumbnail.n_frames)
             all_thumbnails.append((thumbnail, "custom"))
         else:  # Regular Unicode Emoji
@@ -150,7 +150,7 @@ def generate_from_frequencies(layout, max_words, max_font_size=None):  # noqa: C
             font_size = height
         else:
             generate_from_frequencies(dict(frequencies[:2]),
-                                      max_font_size=height)
+                                      max_font_size=height, max_words=max_words)
             # find font sizes
             sizes = [x[1] for x in layout]
             try:
