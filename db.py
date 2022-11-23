@@ -18,7 +18,7 @@ def start():
     c.execute("CREATE UNIQUE INDEX IF NOT EXISTS message_hashes_idx ON message_hashes (message_hash)");
     c.execute("CREATE TABLE IF NOT EXISTS message_deletes (user TEXT, count INTEGER)");
     c.execute("CREATE UNIQUE INDEX IF NOT EXISTS message_deletes_idx ON message_deletes (user)");
-    c.execute("CREATE TABLE IF NOT EXISTS emoji_cache (emoji TEXT, filename TEXT, UNIQUE (emoji) ON CONFLICT IGNORE)");
+    # EmojiCache Table Removed
 
 def md5sum(m):
     return hashlib.md5(m.encode('utf-8')).hexdigest()
