@@ -78,11 +78,12 @@ async def main(ctx: lightbulb.Context) -> None:
             ti = all_thumbnails[j]
             if ti[1] == "custom":
                 ti[0].seek(fi % ti[0].n_frames)
-            resized_img = ti[0].resize((p[2], p[2]))
+            resized_img = ti[0].resize((p[2], p[2])).convert('RGBA')
             new_im.paste(resized_img, (p[0], p[1]), resized_img.convert('RGBA'))
             frames.append(new_im)
 
-    frames[0].save('assets/output.gif', save_all=True, append_images=frames)
+    # loop=0 means infinite looping | duration=0.02 means 50fps, the default for discord (Source: Trust me bro)
+    frames[0].save('assets/output.gif', save_all=True, append_images=frames, loop=0, duration=0.02)
 
     await ctx.respond(hikari.File('assets/output.gif'))
     # await ctx.respond(hikari.Bytes(BytesIO(open("output.gif", "rb").read()).getvalue(), "emojicloud.png"))
@@ -211,7 +212,7 @@ def generate_from_frequencies(layout, max_words, max_font_size=None):  # noqa: C
         occupancy.update(img_array, x, y)
         last_freq = freq
 
-    print(output)
+    # print(output)
     return output
 
 
