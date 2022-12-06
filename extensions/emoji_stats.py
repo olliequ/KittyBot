@@ -14,7 +14,7 @@ async def show_emoji_stats(ctx: lightbulb.Context, user, emoji) -> None:
 
     count = 0
     row = cursor.fetchone()
-    if row is None:     # If the emoji isn't in the db for this user.
+    if (row is None) or (row[0] == 0):     # If the emoji isn't in the db for this user.
         await ctx.respond(f'{user.display_name} hasn\'t used {emoji} yet.')
         return
     else:
@@ -48,7 +48,7 @@ async def show_emoji_stats(ctx: lightbulb.Context, user, emoji) -> None:
 @plugin.command
 @lightbulb.add_cooldown(10, 1, lightbulb.UserBucket)
 @lightbulb.option("target", "The member to get information about.", hikari.User, required=True)
-@lightbulb.option("emoji", "The Emoji to show Stats about", type=str, required=True)
+@lightbulb.option("emoji", "The emoji to show stats about", type=str, required=True)
 @lightbulb.command("emojiusage", "Displays the usage of a specific Emoji for target user.")
 @lightbulb.implements(lightbulb.SlashCommand)
 async def main(ctx: lightbulb.Context) -> None:

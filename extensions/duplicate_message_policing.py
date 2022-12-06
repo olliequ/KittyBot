@@ -10,6 +10,9 @@ import os, re
 import hikari, lightbulb
 import db
 import sqlite3
+import humanize
+from datetime import datetime, timezone
+import asyncio
 
 plugin = lightbulb.Plugin("duplicate_message_policing")
 
@@ -21,7 +24,8 @@ async def delete_duplicate(event: hikari.GuildMessageCreateEvent) -> None:
     that has been seen before in the server (and not deleted).
     """
 
-    nodelete_flag = "!"
+    NODELETE_FLAG = "!"
+    DELETION_NOTIFICATION_LONGEVITY = 15
     match (
         event.channel_id == int(os.environ.get("ORIGINALITY_CHANNEL_ID")),
         os.environ.get("DEBUG", "false") in ("true", "1"),
@@ -41,12 +45,15 @@ async def delete_duplicate(event: hikari.GuildMessageCreateEvent) -> None:
         not event.content
         or event.is_webhook
         or event.is_bot
-        or event.content.startswith(nodelete_flag)
-        or "http" in event.content  # allow links
-        or "@" in event.content  # allow mentions
+        or event.content.startswith(NODELETE_FLAG)
         or len(event.content) <= 2  # allow short messages
+        or "http" in event.content  # allow links
+        or re.match(r"<@\d+>", event.content)  # allow mentions
+        or re.fullmatch(
+            r"<a?:[A-Za-z]+:\d+>", event.content
+        )  # allow custom Discord 'emoji' in the format <:catswag:989147563854823444>
     ):
-        # force the bot to not interact with this message at all e.g. in case of bug or in some other cases
+        # force the bot to not interact with this message at all
         return
 
     cursor = db.cursor()
@@ -61,16 +68,22 @@ async def delete_duplicate(event: hikari.GuildMessageCreateEvent) -> None:
     except sqlite3.IntegrityError as e:
         await event.message.delete()
         previous = cursor.execute(
-            """select user, message_id, round(julianday(?) - julianday(time_sent), 1) from message_hashes where message_hash = md5(?)""",
-            (event.message.timestamp, event.content),
+            "select user, message_id, time_sent from message_hashes where message_hash = md5(?)",
+            (event.content,),
         ).fetchone()
-        await event.message.respond(
+
+        original_time_sent = datetime.fromisoformat(previous[2])
+
+        response = await event.message.respond(
             f"Hey {event.author.mention}! Unfortunately,"
             f" your message: `{event.message.content}`"
-            f" (first sent {previous[2]} day{'' if previous[2] == 1 else 's'} ago by {event.get_guild().get_member(previous[0]).display_name})"
+            f" (first sent {humanize.naturaltime(datetime.now(timezone.utc) - original_time_sent)} by {event.get_guild().get_member(previous[0]).display_name})"
             f" was deleted as it is ***NOT*** unique. Add some creativity to your message :robot:",
             user_mentions=True,
         )
+        # delete deletion message after defined number of seconds (second best, due to inability to send ephemeral message directly)
+        await asyncio.sleep(DELETION_NOTIFICATION_LONGEVITY)
+        await response.delete()
 
 
 @plugin.listener(hikari.GuildMessageDeleteEvent)

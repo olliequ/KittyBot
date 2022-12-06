@@ -9,6 +9,12 @@ import matplotlib.pyplot as plt
 
 plugin = lightbulb.Plugin("userstats")
 
+def plural_or_not(number):
+    if number == 1:
+        return 'time'
+    else:
+        return 'times'
+
 def add_emoji_count(cursor, usages):
     cursor.execute(f"""
         INSERT INTO emoji_counts (user, emoji, count)
@@ -79,7 +85,7 @@ async def emoji_stats(ctx: lightbulb.Context, user) -> None:
     emoji = cursor.fetchall()
     emoji_list = []
     for rank in range(len(emoji)):
-        emoji_list.append(f'`#{rank + 1}` {emoji[rank][0]} used `{emoji[rank][1]}` time(s)!')
+        emoji_list.append(f'`#{rank + 1}` {emoji[rank][0]} used `{emoji[rank][1]}` {plural_or_not(emoji[rank][1])}!')
     cursor.execute("""
         SELECT count FROM message_counts
         WHERE user = ?""",
@@ -105,7 +111,7 @@ async def emoji_stats(ctx: lightbulb.Context, user) -> None:
         .set_thumbnail(user.avatar_url or user.default_avatar_url)
         .add_field(
             "Total messages sent:",
-            f'{message_count[0]} (#{rank})' if message_count else 'None',
+            f'{"{:,}".format(message_count[0])} (#{rank})' if message_count else 'None',
             inline=False
         )
         .add_field(

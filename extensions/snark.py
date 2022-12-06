@@ -33,7 +33,7 @@ async def main(event) -> None:
     elif find_whole_word('broken', messageContent):
         response = f"No {event.author.mention}, you're broken :disguised_face:"
     elif find_whole_word('thanks', messageContent) or find_whole_word('thank', messageContent):
-        response = f"You're welcome :heart:"
+        response = f"You're welcome {event.author.mention} :heart:"
     elif find_whole_word('work', messageContent):
         response = f"{event.author.mention} I do work."
     elif find_whole_word('hey', messageContent) or find_whole_word('hi', messageContent) or find_whole_word('hello', messageContent):

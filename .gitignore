@@ -6,3 +6,9 @@ wiki.py
 /venv
 persist.sqlite
 persist_copy.sqlite
+.DS_Store
+output.log
+ids_to_replace.log
+data.db
+/assets/*.png
+/assets/*.gif

@@ -1,3 +1,7 @@
+.git
 .env
 Dockerfile
-venv/*
+docker-compose.yaml
+venv
+__pycache__
+persist.sqlite
