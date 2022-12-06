@@ -18,6 +18,16 @@ async def main(event):
                       WHERE user = ?""", (user_id,))
     data = cursor.fetchall()
     message_count = data[0][1]
+
+    cursor.execute("""select sum(count) from message_counts""")
+    data = cursor.fetchall()
+    total_message_count = data[0][0]
+
+    target_number = 333333
+    if total_message_count == target_number:
+        target_hit_response = f"""<a:partyblob:815938533470240799> <a:partyblob:815938533470240799> <a:partyblob:815938533470240799> {event.author.mention}, congratulations on sending message number **{target_number:,}**! I give special role for u UwU <a:partyblob:815938533470240799> <a:partyblob:815938533470240799> <a:partyblob:815938533470240799>."""
+        await event.message.respond(target_hit_response, user_mentions=True)
+
     message_count_formatted = "{:,}".format(message_count)
     if message_count % 5000 == 0:
         response = f"""<a:partyblob:815938533470240799> <a:partyblob:815938533470240799> <a:partyblob:815938533470240799> {event.author.mention}, congratulations on sending **{message_count_formatted}** messages! <a:partyblob:815938533470240799> <a:partyblob:815938533470240799> <a:partyblob:815938533470240799>.

@@ -74,11 +74,13 @@ async def main(ctx: lightbulb.Context) -> None:
     for fi in range(max_num_frames):
         new_im = Image.new('RGB', (512, 512), '#37393E')
         for j in range(len(listofimages)):
-            p = listofimages[j]
-            ti = all_thumbnails[j]
+            p = listofimages[j] # Image with it's dimensions // rgb?
+            ti = all_thumbnails[j] # the actual image and whether it's custom or unicode.
+            width, height = ti[0].size
+            width_factor = height/width # Over 1 if longer than taller
             if ti[1] == "custom":
                 ti[0].seek(fi % ti[0].n_frames)
-            resized_img = ti[0].resize((p[2], p[2])).convert('RGBA')
+            resized_img = ti[0].resize((p[2], int(p[2]*width_factor))).convert('RGBA')
             new_im.paste(resized_img, (p[0], p[1]), resized_img.convert('RGBA'))
             frames.append(new_im)
 
