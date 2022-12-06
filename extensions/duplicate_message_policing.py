@@ -10,7 +10,6 @@ import os, re
 import hikari, lightbulb
 import db
 import sqlite3
-import re
 
 plugin = lightbulb.Plugin("duplicate_message_policing")
 
