@@ -110,10 +110,12 @@ async def main(ctx: lightbulb.Context) -> None:
         # the matplotlib way:
         plt.imshow(wc, interpolation="none")
         plt.axis("off")
+        plt.title(f'Unicode Emoji Cloud for {ctx.options.target.display_name}')
 
         buffer = BytesIO()
         plt.savefig(buffer, format="png", bbox_inches="tight", pad_inches=0)
         await ctx.respond(hikari.Bytes(buffer.getvalue(), "emojicloud.png"))
+        plt.close()
 
 
 def load(bot: lightbulb.BotApp) -> None:

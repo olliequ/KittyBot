@@ -28,7 +28,7 @@ plugin = lightbulb.Plugin("EmojiCloud")
 @lightbulb.implements(lightbulb.PrefixCommand, lightbulb.SlashCommand)
 async def main(ctx: lightbulb.Context) -> None:
     # Need some Initial response to safely defer so why not show whose emojicloud it is
-    await ctx.respond(f"Generating EmojiCloud for {ctx.options.target.display_name}")
+    await ctx.respond(f"*Generating EmojiCloud for **{ctx.options.target.display_name}**, gimme a couple seconds:*")
     cursor = db.cursor()
 
     user_id = ctx.options.target.id
