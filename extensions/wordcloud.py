@@ -10,12 +10,13 @@ import os
 from wordcloud import WordCloud
 import db
 import io
+import warnings
 from io import BytesIO
 import string
 from PIL import Image, ImageFont, ImageDraw, ImageChops, ImageOps
 
 plugin = lightbulb.Plugin("WordCloud")
-
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 @plugin.command
 @lightbulb.add_cooldown(10, 1, lightbulb.UserBucket)

@@ -78,6 +78,7 @@ async def show_message_stats(ctx: lightbulb.Context, plot_type, set_num) -> None
         buffer = BytesIO()
         plt.savefig(buffer, format='png')
         await ctx.respond(hikari.Bytes(buffer.getvalue(), 'leaderboard.png'))
+        plt.close()
 
     # Dark mode graph.
     elif plot_type == 3:
@@ -121,6 +122,7 @@ async def show_message_stats(ctx: lightbulb.Context, plot_type, set_num) -> None
         buffer = BytesIO()
         plt.savefig(buffer, format='png')
         await ctx.respond(hikari.Bytes(buffer.getvalue(), 'leaderboard.png'))
+        plt.close()
         
 @plugin.command
 @lightbulb.add_cooldown(10, 1, lightbulb.UserBucket)
