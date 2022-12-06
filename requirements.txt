@@ -39,3 +39,4 @@ yarl==1.7.2
 humanize==4.3.0
 wordcloud==1.8.2.2
 pilmoji==2.0.2
+imagehash==4.3.1
