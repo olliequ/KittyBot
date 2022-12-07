@@ -7,7 +7,6 @@ import requests
 import io
 
 plugin = lightbulb.Plugin("ImageHashDetector")
-print("test!")
 
 @plugin.listener(hikari.GuildMessageCreateEvent)
 async def main(event: hikari.GuildMessageCreateEvent) -> None:
@@ -44,7 +43,7 @@ async def main(event: hikari.GuildMessageCreateEvent) -> None:
                 guild_id = result[3]
 
                 # Construct the message that you want to send
-                response_message = f"Hey {event.author.mention}! Your image has apparently already been posted. Time for more original memes! It was first posted here: https://discord.com/channels/{guild_id}/{channel_id}/{message_id}"
+                response_message = f"Hey {event.author.mention}! Your image has seemingly already been posted before. Time to strive for more originality? :kermitsippy: \n\nIt was first posted here: https://discord.com/channels/{guild_id}/{channel_id}/{message_id}"
 
                 # Send the message
                 await event.message.respond(response_message)
