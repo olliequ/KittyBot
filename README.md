@@ -17,6 +17,7 @@
   2) `darkmode`: Returns the graph (matlibplot image) in a dark-mode colour scheme.
   3) `native`: Returns of a horizontal block bar chart in native Discord message format.
   - If no option is specified the `lightmode` graph is returned by default.
+- `/messagecount` command: Returns the total server message count alongside the requester's total message count.
 - `/pickupline` command: Returns a pickup line. Use at your own risk.
 - `+ping` command: Kitti returns to you a heartbeat latency message.
 - `/say` command: Writes a custom text message encapsulated in something rather interesting... 
