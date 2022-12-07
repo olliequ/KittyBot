@@ -22,8 +22,9 @@ async def main(event: hikari.GuildMessageCreateEvent) -> None:
     for attachment in event.message.attachments:
         # Check if the attachment is an image
         file_name = attachment.filename
-        file_extension = re.search(r'\.(\w+)$', file_name).group(1)
-        if file_extension == "png" or file_extension == "jpg":
+        file_extension = re.search(r"\.(\w+)$", file_name).group(1)
+        image_file_extensions = ["bmp", "gif", "jpg", "jpeg", "png", "tiff", "webp"]
+        if file_extension in image_file_extensions:
             # Calculate the approximate hash of the image
             # Download the file from the specified URL
             response = requests.get(attachment.url)
@@ -37,13 +38,29 @@ async def main(event: hikari.GuildMessageCreateEvent) -> None:
             result = c.fetchone()
             if result:
                 # If a match is found, delete the message and inform the user
-                await event.message.delete()
-                await event.message.respond(
-                    f"Hey {event.author.mention}! Your image has been detected as a duplicate and has been deleted."
-                )
+                # Get the ID of the message that you want to link to
+                message_id = result[1]
+                channel_id = result[2]
+                guild_id = result[3]
+
+                # Construct the message that you want to send
+                response_message = f"Hey {event.author.mention}! Your image has apparently already been posted. Time for more original memes! It was first posted here: https://discord.com/channels/{guild_id}/{channel_id}/{message_id}"
+
+                # Send the message
+                await event.message.respond(response_message)
             # Otherwise, add the approximate hash to the database
             else:
-                c.execute("INSERT INTO image_hashes (hash) VALUES (?)", (str(image_hash),))
+                c.execute(
+                    "INSERT INTO image_hashes (hash, message_id, channel_id, guild_id) VALUES (?, ?, ?, ?)",
+                    (
+                        str(image_hash),
+                        event.message_id,
+                        event.channel_id,
+                        event.guild_id,
+                    ),
+                )
+                db.commit()
+
 
 def load(bot: lightbulb.BotApp) -> None:
     bot.add_plugin(plugin)
