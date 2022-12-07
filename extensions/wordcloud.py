@@ -23,7 +23,7 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 @lightbulb.option(
     "target", "The member to get an emojicloud for.", hikari.User, required=True
 )
-@lightbulb.command("wordcloud", "Get an emojicloud for a user!")
+@lightbulb.command("wordcloud", "Get an emojicloud for a user (unicode only)!")
 @lightbulb.implements(lightbulb.PrefixCommand, lightbulb.SlashCommand)
 async def main(ctx: lightbulb.Context) -> None:
 

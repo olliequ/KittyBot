@@ -23,7 +23,7 @@ plugin = lightbulb.Plugin("EmojiCloud")
 @lightbulb.option(
     "max_emojis", "The number of emojis to include in EmojiCloud", type=int, required=False, default=20
 )
-@lightbulb.command("emojicloud", "Get an emojicloud for a user!",
+@lightbulb.command("emojicloud", "Get an emojicloud (custom, unicode & animated) for a user!",
                    auto_defer=True)  # auto_defer to allowed delay in uploading
 @lightbulb.implements(lightbulb.PrefixCommand, lightbulb.SlashCommand)
 async def main(ctx: lightbulb.Context) -> None:
