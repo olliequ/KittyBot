@@ -14,11 +14,9 @@ async def main(ctx: lightbulb.Context) -> None:
 def advice() -> str:
     return get_random_advice()
 
-
 def get_random_advice() -> str:
     response = requests.get("https://api.adviceslip.com/advice")
     return response.json()["slip"]["advice"]
-
 
 def load(bot: lightbulb.BotApp) -> None:
     bot.add_plugin(plugin)
