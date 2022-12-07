@@ -7,7 +7,7 @@ import requests
 import io
 
 plugin = lightbulb.Plugin("ImageHashDetector")
-
+print("test")
 
 @plugin.listener(hikari.GuildMessageCreateEvent)
 async def main(event: hikari.GuildMessageCreateEvent) -> None:
