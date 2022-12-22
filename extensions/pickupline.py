@@ -10,7 +10,7 @@ from bs4 import BeautifulSoup
 
 PICKUPLINE_CONFIG_DIR = "assets"
 CONFIG_FILEPATH = os.path.join(PICKUPLINE_CONFIG_DIR, "pickuplinesgalore.json")
-print(CONFIG_FILEPATH)
+# print(CONFIG_FILEPATH)
 CATEGORY_CACHE_KEY = "{}-results"
 LIST_OF_CATEGORIES_CACHE_KEY = "categories-list"
 
@@ -110,6 +110,7 @@ class PickupLinesGalore:
         cat_cache_key = CATEGORY_CACHE_KEY.format(category)
         if self.cache.get(cat_cache_key) and self.cache.last_modified_days_ago < 100:
             return self.cache.get(cat_cache_key)
+        # print("Cat URL",category_url)
         resp = requests.get(category_url)
         if resp.status_code != 200:
             raise Exception("Error in fetching from {}".format(self.source_url))
@@ -144,9 +145,10 @@ class PickupLinesGalore:
 
     def search(self, keyword):
         data = self.parse_index_page()
+        # print("data",data)
         if keyword == "na":
-            keyword = random.choice(list(data.keys()))
-        print(keyword)
+            keyword = random.choice(list(data['categories-list']))
+        # print(keyword)
         for category in data.keys():
             if keyword in category:
                 return self.parse_category(category, data[category])
