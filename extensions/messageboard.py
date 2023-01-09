@@ -6,7 +6,9 @@ import hikari, lightbulb
 import db
 import numpy as np
 import matplotlib.font_manager as fm
+import matplotlib.image as image
 import matplotlib.pyplot as plt
+from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 from io import BytesIO
 import toolbox
 
@@ -33,18 +35,20 @@ async def show_message_stats(ctx: lightbulb.Context, plot_type, set_num) -> None
                       '#7756a7', '#28B463']
 
     # Extracted redundant code outside the condition
+    ghost_count = 0
     for i, (user_id, message_count) in enumerate(data):
-        user = await guild.get_member(user_id).fetch_self()
+        user = guild.get_member(user_id)
         if not user:
-            display_name = "Ghost!"
+            display_name = f"Ghost{'!' * (ghost_count + 1)}"
+            color = default_colors[i]
+            ghost_count += 1
         else:
             display_name = replace_emoji(user.display_name, '')
+            # Toolbox contains the utility function to get color
+            color = toolbox.members.get_member_color(user).hex_code
+            if not color:
+                color = default_colors[i]
         max_name_length = max(max_name_length, len(display_name))
-        # Toolbox contains the utility function to get color
-        color = toolbox.members.get_member_color(user).hex_code
-        if not color:
-            color = default_colors[i]
-        # print(color)
         users_counts.append((display_name, message_count, color))
 
     # Luke's native horizontal block graph.
@@ -117,6 +121,27 @@ async def show_message_stats(ctx: lightbulb.Context, plot_type, set_num) -> None
 
         plt.yticks(fontsize=8)
         plt.xticks(fontsize=(95 / max_name_length))
+
+        # Crown Images from Flaticon.com :bulbylove:
+        crowns = ["images/gold_crown.png", "images/silver_crown.png", "images/bronze_crown.png"]
+        crown_images = list(map(image.imread, crowns))
+
+        def offset_image(coord, ax):
+            if coord >= 3:
+                # No Crown for More than rank 3
+                return
+            img = crown_images[coord]
+            im = OffsetImage(img, zoom=0.05)  # Zoom Controls the Size of the Crown
+            im.image.axes = ax
+
+            # xybox controls the position of crown. Greater the value, lower the crown
+            ab = AnnotationBbox(im, (coord, 0), xybox=(0., -27.), frameon=False,
+                                xycoords='data', boxcoords="offset points", pad=0)
+
+            ax.add_artist(ab)
+
+        for i, c in enumerate(users):
+            offset_image(i, ax)
 
         buffer = BytesIO()
         plt.savefig(buffer, format='png')
