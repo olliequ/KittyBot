@@ -8,6 +8,8 @@ import os
 import lightbulb
 from PIL import Image
 from hikari import NotFoundError
+import urllib.request
+import requests
 
 
 async def cache_all_custom(bot: lightbulb.BotApp):
@@ -43,10 +45,11 @@ async def cache_emoji(emoji):
     if get_file_name_if_cached(emoji.id) is not None:
         return
 
-    print("Downloading New Emoji", emoji)
-    data = await emoji.read()
-    image = Image.open(io.BytesIO(data))
-    image.save(f"assets/{emoji.filename}", save_all=True)  # Required save_all to save in animated format
+    print("Downloading New Emoji", emoji, emoji.url)
+    # urllib.request.urlretrieve(emoji.url, f"assets/{emoji.filename}")
+    r = requests.get(emoji.url)
+    with open(f"assets/{emoji.filename}", 'wb') as outfile:
+        outfile.write(r.content)
 
 
 def get_file_name_if_cached(emoji):
