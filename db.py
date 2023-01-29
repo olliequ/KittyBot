@@ -1,6 +1,7 @@
 import sqlite3
 import os
 import hashlib
+import imagehash
 
 def cursor():
     return conn.cursor()
@@ -24,6 +25,10 @@ def start():
 def md5sum(m):
     return hashlib.md5(m.encode('utf-8')).hexdigest()
 
+def hammingDistance(a, b):
+    return imagehash.hex_to_hash(a) - imagehash.hex_to_hash(b)
+
 conn = sqlite3.connect(os.environ.get('KITTY_DB', 'persist.sqlite'))
 conn.create_function("md5", 1, md5sum)
+conn.create_function("hammingDistance", 2, hammingDistance)
 start()
