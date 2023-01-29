@@ -31,9 +31,9 @@ async def main(event: hikari.GuildMessageCreateEvent) -> None:
             # Create a memory buffer
             file_buffer = io.BytesIO(response.content)
             image = Image.open(file_buffer)
-            image_hash = imagehash.average_hash(image)
+            image_hash = imagehash.dhash(image,16)
             # Check if the approximate hash exists in the database
-            c.execute("SELECT * FROM image_hashes WHERE hash=?", (str(image_hash),))
+            c.execute("SELECT * FROM image_hashes WHERE ABS(hash-?)<2", (str(image_hash),))
             result = c.fetchone()
             if result:
                 # If a match is found, delete the message and inform the user
