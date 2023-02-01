@@ -123,7 +123,7 @@ async def show_message_stats(ctx: lightbulb.Context, plot_type, set_num) -> None
         plt.xticks(fontsize=(95 / max_name_length))
 
         # Crown Images from Flaticon.com :bulbylove:
-        crowns = ["images/gold_crown.png", "images/silver_crown.png", "images/bronze_crown.png"]
+        crowns = ["images/gold_crown.png", "images/silver_crown.png", "images/bronze_crown.png", "images/potato.png"]
         crown_images = list(map(image.imread, crowns))
 
         def offset_image(coord, ax):
@@ -140,8 +140,9 @@ async def show_message_stats(ctx: lightbulb.Context, plot_type, set_num) -> None
 
             ax.add_artist(ab)
 
-        for i, c in enumerate(users):
-            offset_image(i, ax)
+        if set_num == 0:
+            for i, c in enumerate(users):
+                offset_image(i, ax)
 
         buffer = BytesIO()
         plt.savefig(buffer, format='png')
