@@ -20,8 +20,9 @@ async def main(ctx):
     cursor.execute("""select sum(count) from message_counts""")
     data = cursor.fetchall()
     total_message_count = data[0][0]
+    percentage = round(user_message_count*100/total_message_count, 2)
 
-    response = f"""Total Server Messages: **{total_message_count:,}**\nMessages From {ctx.member.mention}: **{user_message_count:,}**"""
+    response = f"""Total Server Messages: **{total_message_count:,}**\nMessages From {ctx.member.mention}: **{user_message_count:,}** ({percentage}%)"""
     await ctx.respond(response, user_mentions=True)
 
 def load(bot: lightbulb.BotApp):

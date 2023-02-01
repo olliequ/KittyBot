@@ -153,7 +153,7 @@ async def show_message_stats(ctx: lightbulb.Context, plot_type, set_num) -> None
 @plugin.command
 @lightbulb.add_cooldown(10, 1, lightbulb.UserBucket)
 @lightbulb.option("type", "Which type of graph to show!", choices=["lightmode", "darkmode", "native"], required=False)
-@lightbulb.option("set", "Which set of Ranks to Show (0 = 1-10, 1 = 11-20, 2 = 21-30...)", type=int, required=False,
+@lightbulb.option("set", "Which set of ranks to show (0 is 1-10, 1 is 11-20, 2 is 21-30...)!", type=int, required=False,
                   default=0)
 @lightbulb.command("messageboard", "Displays the top 10 'messagers' of all-time.")
 @lightbulb.implements(lightbulb.SlashCommand)
