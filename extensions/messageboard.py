@@ -127,8 +127,8 @@ async def show_message_stats(ctx: lightbulb.Context, plot_type, set_num) -> None
         crown_images = list(map(image.imread, crowns))
 
         def offset_image(coord, ax):
-            if coord >= 3:
-                # No Crown for More than rank 3
+            if coord >= 4:
+                # No Crown for More than rank 4
                 return
             img = crown_images[coord]
             im = OffsetImage(img, zoom=0.05)  # Zoom Controls the Size of the Crown
