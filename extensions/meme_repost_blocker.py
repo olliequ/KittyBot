@@ -1,4 +1,6 @@
-import hikari, lightbulb, sqlite3
+import os
+
+import hikari, lightbulb
 from PIL import Image
 import imagehash
 import db
@@ -7,6 +9,9 @@ import requests
 import io
 
 plugin = lightbulb.Plugin("ImageHashDetector")
+phash_th = "PHASH_TH"
+chash_th = "CHASH_TH"
+
 
 @plugin.listener(hikari.GuildMessageCreateEvent)
 async def main(event: hikari.GuildMessageCreateEvent) -> None:
@@ -31,9 +36,14 @@ async def main(event: hikari.GuildMessageCreateEvent) -> None:
             # Create a memory buffer
             file_buffer = io.BytesIO(response.content)
             image = Image.open(file_buffer)
-            image_hash = imagehash.dhash(image,16)
+            image_hash = imagehash.phash(image, 16)
+            image = Image.open(file_buffer)
+            hash_color = imagehash.colorhash(image, 16)
             # Check if the approximate hash exists in the database
-            c.execute("SELECT * FROM image_hashes WHERE hammingDistance(hash, ?)<60", (str(image_hash),))
+            c.execute("SELECT * FROM image_hashes WHERE hammingDistance(hash, ?)<? AND hammingDistance(hash_color, ?)<?"
+                      ,
+                      (str(image_hash), int(os.getenv(phash_th, "50")), str(hash_color), int(os.getenv(chash_th, "50")))
+                      )
             result = c.fetchone()
             if result:
                 # If a match is found, delete the message and inform the user
@@ -41,7 +51,6 @@ async def main(event: hikari.GuildMessageCreateEvent) -> None:
                 message_id = result[1]
                 channel_id = result[2]
                 guild_id = result[3]
-
                 # Construct the message that you want to send
                 response_message = f"Hey {event.author.mention}! Your image has seemingly already been posted before. Time to strive for more originality? <:kermitsippy:1019863020295442533>\n\nIt was first posted here: https://discord.com/channels/{guild_id}/{channel_id}/{message_id}"
 
@@ -50,9 +59,10 @@ async def main(event: hikari.GuildMessageCreateEvent) -> None:
             # Otherwise, add the approximate hash to the database
             else:
                 c.execute(
-                    "INSERT INTO image_hashes (hash, message_id, channel_id, guild_id) VALUES (?, ?, ?, ?)",
+                    "INSERT INTO image_hashes (hash, hash_color, message_id, channel_id, guild_id) VALUES (?, ?, ?, ?, ?)",
                     (
                         str(image_hash),
+                        str(hash_color),
                         event.message_id,
                         event.channel_id,
                         event.guild_id,
