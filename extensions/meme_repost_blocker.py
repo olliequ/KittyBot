@@ -40,36 +40,58 @@ async def main(event: hikari.GuildMessageCreateEvent) -> None:
             image = Image.open(file_buffer)
             hash_color = imagehash.colorhash(image, 16)
             # Check if the approximate hash exists in the database
-            c.execute("SELECT * FROM image_hashes WHERE hammingDistance(hash, ?)<? AND hammingDistance(hash_color, ?)<?"
-                      ,
-                      (str(image_hash), int(os.getenv(phash_th, "50")), str(hash_color), int(os.getenv(chash_th, "50")))
-                      )
-            result = c.fetchone()
-            if result:
-                # If a match is found, delete the message and inform the user
-                # Get the ID of the message that you want to link to
+            c.execute("""
+                SELECT rowid, message_id, channel_id, guild_id
+                FROM image_hashes
+                WHERE hammingDistance(hash, ?) < ?
+                    AND hammingDistance(hash_color, ?) < ?
+                ORDER BY rowid ASC""",
+                (str(image_hash), int(os.getenv(phash_th, "50")), str(hash_color), int(os.getenv(chash_th, "50")))
+            )
+
+            results = c.fetchall()
+            valid_results = []
+            for result in results:
+                # We have a match in the database, but we need to verify that message has not been since deleted
+                row_id = result[0]
                 message_id = result[1]
                 channel_id = result[2]
-                guild_id = result[3]
-                # Construct the message that you want to send
+                try:
+                    print(await event.app.rest.fetch_message(channel_id, message_id))
+
+                except hikari.errors.NotFoundError:
+                    c.execute("""
+                        DELETE FROM image_hashes
+                        WHERE rowid = ?""",
+                        (row_id,)
+                    )
+                else:
+                    valid_results.append(result)
+
+            # Always store the current hash, because:
+            # a) similarity is not necessarily transitive
+            # b) the first could be deleted, so this message becomes the only record of it
+            # Do this before sending the response so network errors do not prevent us getting to a db commit.
+            c.execute("""
+                INSERT INTO image_hashes
+                (hash, hash_color, message_id, channel_id, guild_id)
+                VALUES (?, ?, ?, ?, ?)""",
+                (str(image_hash),
+                    str(hash_color),
+                    event.message_id,
+                    event.channel_id,
+                    event.guild_id,
+                ),
+            )
+            db.commit()
+
+            if len(valid_results) > 0:
+                # OK, message is actually a duplicate of an existing one
+                message_id = valid_results[0][1]
+                channel_id = valid_results[0][2]
+                guild_id = valid_results[0][3]
                 response_message = f"Hey {event.author.mention}! Your image has seemingly already been posted before. Time to strive for more originality? <:kermitsippy:1019863020295442533>\n\nIt was first posted here: https://discord.com/channels/{guild_id}/{channel_id}/{message_id}"
-
-                # Send the message
                 await event.message.respond(response_message)
-            # Otherwise, add the approximate hash to the database
-            else:
-                c.execute(
-                    "INSERT INTO image_hashes (hash, hash_color, message_id, channel_id, guild_id) VALUES (?, ?, ?, ?, ?)",
-                    (
-                        str(image_hash),
-                        str(hash_color),
-                        event.message_id,
-                        event.channel_id,
-                        event.guild_id,
-                    ),
-                )
-                db.commit()
-
 
 def load(bot: lightbulb.BotApp) -> None:
     bot.add_plugin(plugin)
