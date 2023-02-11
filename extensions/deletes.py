@@ -33,12 +33,13 @@ async def delete_increment(event: hikari.GuildMessageDeleteEvent) -> None:
         return
 
     cursor = db.cursor()
-    custom_emoji = re.findall(r'<.?:.+?:\d+>', content)
-    unicode_emoji = emoji_list(content)
-    emoji = custom_emoji + [x['emoji'] for x in unicode_emoji]
+    if content:
+        custom_emoji = re.findall(r'<.?:.+?:\d+>', content)
+        unicode_emoji = emoji_list(content)
+        emoji = custom_emoji + [x['emoji'] for x in unicode_emoji]
 
-    if len(emoji):
-        decrement_emoji_count(cursor, [(str(user_id), e) for e in emoji])
+        if len(emoji):
+            decrement_emoji_count(cursor, [(str(user_id), e) for e in emoji])
 
     cursor.execute("""
         INSERT INTO message_deletes (user, count)
