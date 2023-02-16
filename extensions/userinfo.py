@@ -1,3 +1,4 @@
+import os
 import re
 from datetime import datetime
 from itertools import chain
@@ -38,6 +39,38 @@ def add_message_count(cursor, user_id):
         SET count = message_counts.count + 1""",
         (user_id,))
 
+def has_rank_changed(cursor, user_id):
+    cursor.execute("""
+        WITH leads AS (
+            SELECT user,
+                   count - (LEAD(count) OVER (ORDER BY count DESC)) AS lead
+            FROM message_counts
+            ORDER BY count DESC
+            LIMIT ?
+        )
+        SELECT lead FROM leads WHERE user = ?""",
+        (int(os.getenv("RANK_CHANGE_FLOOR", "30")), user_id));
+    lead = cursor.fetchone()[0]
+    return lead == 1
+
+def get_count_and_rank(cursor, user_id):
+    cursor.execute("""
+        WITH ranks AS (
+            SELECT user,
+                   count,
+                   rank() OVER (ORDER BY count DESC) AS rank
+            FROM message_counts
+        )
+        SELECT count, rank
+        FROM ranks
+        WHERE user = ?""",
+        (user_id,))
+    row = cursor.fetchone()
+    if row:
+        return (row[0], row[1])
+    return (None, None)
+
+
 @plugin.listener(hikari.GuildReactionAddEvent)
 async def analyse_reaction(event) -> None:
     cursor = db.cursor()
@@ -64,13 +97,19 @@ async def remove_reaction(event) -> None:
 async def analyse_message(event) -> None:
     if event.is_bot or not event.content:
         return
+    user_id = str(event.author_id)
     cursor = db.cursor()
-    add_message_count(cursor, str(event.author_id))
+    add_message_count(cursor, user_id)
+
     custom_emoji = re.findall(r'<.?:.+?:\d+>', event.content)
     unicode_emoji = emoji_list(event.content)
     emoji = custom_emoji + [x['emoji'] for x in unicode_emoji]
     if len(emoji):
-        add_emoji_count(cursor, [(str(event.author_id), e) for e in emoji])
+        add_emoji_count(cursor, [(user_id, e) for e in emoji])
+
+    if has_rank_changed(cursor, user_id):
+        await announce_rank_change(cursor, event, user_id)
+
     db.commit()
 
 async def emoji_stats(ctx: lightbulb.Context, user) -> None:
@@ -86,18 +125,8 @@ async def emoji_stats(ctx: lightbulb.Context, user) -> None:
     emoji_list = []
     for rank in range(len(emoji)):
         emoji_list.append(f'`#{rank + 1}` {emoji[rank][0]} used `{emoji[rank][1]}` {plural_or_not(emoji[rank][1])}!')
-    cursor.execute("""
-        SELECT count FROM message_counts
-        WHERE user = ?""",
-        (user_id,))
-    message_count = cursor.fetchone()
-    if message_count:
-        cursor.execute("""
-            SELECT COUNT(*) + 1 FROM message_counts
-            WHERE count > ?""",
-            (message_count[0],))
-        rank = cursor.fetchone()[0]
 
+    (message_count, rank) = get_count_and_rank(cursor, user_id)
     embed = (
         hikari.Embed(
             title=f"{user.display_name}'s Message Stats",
@@ -111,7 +140,7 @@ async def emoji_stats(ctx: lightbulb.Context, user) -> None:
         .set_thumbnail(user.avatar_url or user.default_avatar_url)
         .add_field(
             "Total messages sent:",
-            f'{"{:,}".format(message_count[0])} (#{rank})' if message_count else 'None',
+            f'{"{:,}".format(message_count)} (#{rank})' if message_count else 'None',
             inline=False
         )
         .add_field(
@@ -168,6 +197,12 @@ async def general_info(ctx: lightbulb.Context, target) -> None:
         )
     )
     await ctx.respond(embed) # Respond to the interaction with the embed.
+
+async def announce_rank_change(cursor, event, user_id):
+    (count, rank) = get_count_and_rank(cursor, user_id)
+    if count is None or rank is None:
+        return
+    await event.message.respond(f"Congratulations {event.author.mention}, you are now ranked #{rank} with {count} messages", user_mentions=True)
 
 @plugin.command
 @lightbulb.add_cooldown(10, 1, lightbulb.UserBucket)
