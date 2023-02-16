@@ -50,8 +50,10 @@ def has_rank_changed(cursor, user_id):
         )
         SELECT lead FROM leads WHERE user = ?""",
         (int(os.getenv("RANK_CHANGE_FLOOR", "30")), user_id));
-    lead = cursor.fetchone()[0]
-    return lead == 1
+    row = cursor.fetchone()
+    if row is None:
+        return False
+    return row[0] == 1
 
 def get_count_and_rank(cursor, user_id):
     cursor.execute("""
