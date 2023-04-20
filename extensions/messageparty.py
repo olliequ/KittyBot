@@ -23,7 +23,7 @@ async def main(event):
     data = cursor.fetchall()
     total_message_count = data[0][0]
 
-    target_number = 350000
+    target_number = 380000
     if total_message_count == target_number:
         target_hit_response = f"""<a:partyblob:815938533470240799> <a:partyblob:815938533470240799> <a:partyblob:815938533470240799> {event.author.mention}, congratulations on sending message number **{target_number:,}**! I give special role for u UwU <a:partyblob:815938533470240799> <a:partyblob:815938533470240799> <a:partyblob:815938533470240799>."""
         await event.message.respond(target_hit_response, user_mentions=True)
