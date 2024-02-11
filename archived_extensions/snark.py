@@ -42,6 +42,7 @@ async def main(event) -> None:
         return
     else:
         response = f"{event.author.mention}, did you forget a question mark? <:mmhmmm:872809423939174440>"
+
     await event.message.respond(response, user_mentions=True)
 
 def load(bot: lightbulb.BotApp) -> None:
