@@ -114,7 +114,7 @@ async def main(event) -> None:
     mentioned_ids = event.message.user_mentions_ids
     if plugin.bot.application.id not in mentioned_ids:
         return
-    if event.channel_id == int(os.environ.get("ORIGINALITY_CHANNEL_ID")): 
+    if event.channel_id == int(os.environ.get("ORIGINALITY_CHANNEL_ID")):
         response = llm_response(event)
     else:
         response = classical_response(event)
