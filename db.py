@@ -25,14 +25,27 @@ def start():
         c.execute("ALTER TABLE image_hashes ADD hash_color TEXT NOT NULL")
     except Exception as ex:
         logging.info(ex)
-
     # EmojiCache Table Removed
+    c.execute("CREATE TABLE IF NOT EXISTS options (name TEXT, value TEXT)")
+    c.execute("CREATE UNIQUE INDEX IF NOT EXISTS options_idx ON options (name)")
+
 
 def md5sum(m):
     return hashlib.md5(m.encode('utf-8')).hexdigest()
 
 def hammingDistance(a, b):
     return imagehash.hex_to_hash(a) - imagehash.hex_to_hash(b)
+
+def get_option(name: str, default=None):
+    res = cursor().execute("select value from options where name = ?", (name,)).fetchone()
+    if res is None:
+        return default
+    return res[0]
+
+def set_option(name: str, value: str):
+    cursor().execute("insert into options values(?, ?) on conflict(name) do update set value=excluded.value",
+                     (name, value))
+    commit()
 
 conn = sqlite3.connect(os.environ.get('KITTY_DB', 'persist.sqlite'))
 conn.create_function("md5", 1, md5sum)
