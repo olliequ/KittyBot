@@ -59,7 +59,8 @@ async def show_deletes(ctx: lightbulb.Context) -> None:
     top_deleter = ctx.get_guild().get_member(deletes[0][0])
     delete_list = []
     for rank in range(len(deletes)):
-        delete_list.append(f'`#{rank + 1}` {ctx.get_guild().get_member(deletes[rank][0]).display_name} has `{deletes[rank][1]}` message(s) deleted!')
+        rank_str = f'`#{rank + 1}` {ctx.get_guild().get_member(deletes[rank][0]).display_name} has `{deletes[rank][1]}` message(s) deleted!'
+        delete_list.append(rank_str)
 
     embed = (
         hikari.Embed(
