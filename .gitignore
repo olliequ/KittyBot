@@ -13,3 +13,4 @@ data.db
 /assets/*.png
 /assets/*.gif
 /assets/*.json
+/.venv
