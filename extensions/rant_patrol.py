@@ -1,24 +1,16 @@
 import os, re
 import hikari, lightbulb
 
-plugin = lightbulb.Plugin("paid")
+plugin = lightbulb.Plugin("rantpatrol")
 
 """
-Bot makes a slight correction.
+Bot deletes improperly formatted rants or vents
 """
-
-
-def find_whole_word(word, text):
-    return re.compile(r"\b({0})\b".format(word), flags=re.IGNORECASE).search(text)
-
-
-def contains_word(s, w):
-    return f" {w} " in f" {s} "
 
 
 @plugin.listener(hikari.GuildMessageCreateEvent)
 async def main(event):
-    if event.is_bot or not event.content:
+    if event.is_bot or not event.content or "NOTALURKER_ROLE" not in os.environ:
         return
 
     messageContent = event.content
