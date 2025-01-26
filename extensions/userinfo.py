@@ -99,7 +99,7 @@ async def remove_reaction(event) -> None:
 async def analyse_message(event) -> None:
     if not event.is_human:
         return
-    if not (event.content or len(event.message.attachments) or len(event.message.stickers)):
+    if not (event.content or len(event.message.attachments)):
         return
 
     user_id = str(event.author_id)
