@@ -48,12 +48,36 @@ def has_rank_changed(cursor, user_id):
             ORDER BY count DESC
             LIMIT ?
         )
-        SELECT lead FROM leads WHERE user = ?""",
-        (int(os.getenv("RANK_CHANGE_FLOOR", "30")), user_id));
+        SELECT lead FROM leads WHERE user = ?;""",
+        (int(os.getenv("RANK_CHANGE_FLOOR", "30")), user_id))
     row = cursor.fetchone()
     if row is None:
         return False
     return row[0] == 1
+
+def get_user_overtaken(cursor, user_id):
+    cursor.execute("""
+        WITH ranked_users AS (
+            SELECT user,
+                   ROW_NUMBER() OVER (ORDER BY count DESC) AS rank
+            FROM message_counts
+        ),
+        user_current_rank AS (
+            SELECT rank
+            FROM ranked_users
+            WHERE user = ?
+        )
+        SELECT ru.user
+        FROM ranked_users ru
+        JOIN user_current_rank ucr ON ru.rank = ucr.rank + 1
+        WHERE ru.user != ?;
+        """, 
+        (user_id, user_id)
+    )
+    row = cursor.fetchone()
+    if row is None:
+        return None  # No user has fallen a place
+    return row[0]  # Returns the ID of the user who fell a place
 
 def get_count_and_rank(cursor, user_id):
     cursor.execute("""
@@ -113,8 +137,10 @@ async def analyse_message(event) -> None:
         if len(emoji):
             add_emoji_count(cursor, [(user_id, e) for e in emoji])
 
-    if has_rank_changed(cursor, user_id):
-        await announce_rank_change(cursor, event, user_id)
+    did_rank_change = has_rank_changed(cursor, user_id)
+    if did_rank_change:
+        fallen_user = get_user_overtaken(cursor, user_id)
+        await announce_rank_change(cursor, event, user_id, fallen_user)
 
     db.commit()
 
@@ -204,11 +230,11 @@ async def general_info(ctx: lightbulb.Context, target) -> None:
     )
     await ctx.respond(embed) # Respond to the interaction with the embed.
 
-async def announce_rank_change(cursor, event, user_id):
+async def announce_rank_change(cursor, event, user_id, fallen_user):
     (count, rank) = get_count_and_rank(cursor, user_id)
     if count is None or rank is None:
         return
-    await event.message.respond(f"Congratulations {event.author.mention}, you are now ranked #{rank} with {count} messages", user_mentions=True)
+    await event.message.respond(f"Congratulations {event.author.mention} -  you've overtaken <@{fallen_user}> and are now ranked `#{rank}` with `{count:,}` messages! <@{fallen_user}>, do better <:kermitsippy:1019863020295442533>", user_mentions=True)
 
 @plugin.command
 @lightbulb.add_cooldown(10, 1, lightbulb.UserBucket)
