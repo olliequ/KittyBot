@@ -2,42 +2,29 @@ import re
 import hikari, lightbulb
 import os
 
-plugin = lightbulb.Plugin("rantpatrol")
+plugin = lightbulb.Plugin("Rantpatrol")
 
-"""
-Bot deletes improperly formatted rants or vents
-Message must start with 'rant: ' or 'vent: ' followed by literally any alphanumeric text. Lowercase only.
-"""
-
-# helpers
-
+RANT_REGEX = re.compile("^[^ ]*(rant|vent) *:", flags=re.IGNORECASE)
+FORMAT_REGEX = re.compile("^(anti-|co-)?(rant|vent): ")
 
 @plugin.listener(hikari.GuildMessageCreateEvent)
 async def main(event: hikari.GuildMessageCreateEvent):
-    if event.channel_id != os.environ["RANT_AND_VENT_CHANNEL_ID"]:
+    if not event.is_human or not event.content:
         return
 
-    if event.is_bot or not event.content:
-        return
+    rant_channel_id = os.environ["RANT_AND_VENT_CHANNEL_ID"]
+    in_channel = event.channel_id == int(rant_channel_id)
+    is_a_rant = RANT_REGEX.match(event.content)
+    is_valid = FORMAT_REGEX.match(event.content)
 
-    messageContent = event.content
+    response = None
+    if is_a_rant and not in_channel:
+        response = f"You appear to be ranting or venting, please move to <#{rant_channel_id}>"
+    elif is_a_rant and not is_valid:
+        response = "Your message must start with 'rant: ' or 'vent: ', with an optional pre-approved prefix. Try again or keep your complaints to yourself."
 
-    """
-    "Rant: too many memes" ==> picked up by kitti
-    "rant: my website's domain got sniped" ==> all good (properly formatted)
-    "shut the fuck up jimmy"" ==> all good (standard comment)    
-    """
-
-    if re.match("^((anti)?(rant|vent):).", messageContent.lower().strip("-")):
-        if not re.match("^((anti-)?(rant|vent):).", messageContent):
-            response: str = (
-                f"> Your message must start with 'rant: ' OR 'vent: ' with the optional 'anti-' prefix. Try again or keep your complaints to yourself."
-            )
-            await event.message.respond(response, reply=True, user_mentions=True)
-        else:
-            return
-    return
-
+    if response:
+        await event.message.respond(response, reply=True, user_mentions=True)
 
 def load(bot: lightbulb.BotApp):
     bot.add_plugin(plugin)
