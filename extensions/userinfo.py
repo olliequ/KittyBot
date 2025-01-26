@@ -49,7 +49,7 @@ def has_rank_changed(cursor, user_id):
             LIMIT ?
         )
         SELECT lead FROM leads WHERE user = ?;""",
-        (int(os.getenv("RANK_CHANGE_FLOOR", "30")), user_id))
+        (int(os.getenv("RANK_CHANGE_FLOOR", "40")), user_id))
     row = cursor.fetchone()
     if row is None:
         return False
