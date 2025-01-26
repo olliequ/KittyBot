@@ -58,7 +58,7 @@ async def show_message_stats(ctx: lightbulb.Context, plot_type, set_num) -> None
         BLOCK_CODEPOINT = 0x2588
 
         message = ['**Messages Tally from {} to {}** :cat:```'.format(set_num * 10 + 1, set_num * 10 + 10)]
-        for (name, count) in users_counts:
+        for (name, count, _) in users_counts:
             line = f'{name.rjust(max_name_length)} : {str(count).rjust(max_messages_width)} '
             slices = int((MAX_BAR_LENGTH * SLICES_PER_CHAR) * (count / max_messages))
             bar = chr(BLOCK_CODEPOINT) * (slices // SLICES_PER_CHAR)
