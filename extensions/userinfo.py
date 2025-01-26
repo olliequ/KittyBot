@@ -97,17 +97,21 @@ async def remove_reaction(event) -> None:
 
 @plugin.listener(hikari.GuildMessageCreateEvent)
 async def analyse_message(event) -> None:
-    if event.is_bot or not event.content:
+    if not event.is_human:
         return
+    if not (event.content or len(event.message.attachments) or len(event.message.stickers)):
+        return
+
     user_id = str(event.author_id)
     cursor = db.cursor()
     add_message_count(cursor, user_id)
 
-    custom_emoji = re.findall(r'<.?:.+?:\d+>', event.content)
-    unicode_emoji = emoji_list(event.content)
-    emoji = custom_emoji + [x['emoji'] for x in unicode_emoji]
-    if len(emoji):
-        add_emoji_count(cursor, [(user_id, e) for e in emoji])
+    if event.content:
+        custom_emoji = re.findall(r'<.?:.+?:\d+>', event.content)
+        unicode_emoji = emoji_list(event.content)
+        emoji = custom_emoji + [x['emoji'] for x in unicode_emoji]
+        if len(emoji):
+            add_emoji_count(cursor, [(user_id, e) for e in emoji])
 
     if has_rank_changed(cursor, user_id):
         await announce_rank_change(cursor, event, user_id)
