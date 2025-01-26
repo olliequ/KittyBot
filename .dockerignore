@@ -1,7 +1,0 @@
-.git
-.env
-Dockerfile
-docker-compose.yaml
-venv
-__pycache__
-persist.sqlite
