@@ -1,11 +1,12 @@
 import re
 import hikari, lightbulb
 import os
+import random
 
 plugin = lightbulb.Plugin("Rantpatrol")
 
 RANT_REGEX = re.compile("^[^ ]*(rant|vent) *:", flags=re.IGNORECASE)
-FORMAT_REGEX = re.compile("^(anti-|co-)?(rant|vent): ", flags=re.IGNORECASE)
+FORMAT_REGEX = re.compile("^(anti-|co-)?(rant|vent): ")
 
 @plugin.listener(hikari.GuildMessageCreateEvent)
 async def main(event: hikari.GuildMessageCreateEvent):
@@ -14,8 +15,10 @@ async def main(event: hikari.GuildMessageCreateEvent):
 
     rant_channel_id = os.environ["RANT_AND_VENT_CHANNEL_ID"]
     in_channel = event.channel_id == int(rant_channel_id)
-    is_a_rant = RANT_REGEX.match(event.content)
-    is_valid = FORMAT_REGEX.match(event.content)
+    content = event.content
+    is_a_rant = RANT_REGEX.match(content)
+    content = random.choice([content, content.lower()])
+    is_valid = FORMAT_REGEX.match(content)
 
     response = None
     if is_a_rant and not in_channel:
