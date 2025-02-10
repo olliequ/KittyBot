@@ -5,7 +5,7 @@ import os
 plugin = lightbulb.Plugin("Rantpatrol")
 
 RANT_REGEX = re.compile("^[^ ]*(rant|vent) *:", flags=re.IGNORECASE)
-FORMAT_REGEX = re.compile("^(anti-|co-)?(rant|vent): ")
+FORMAT_REGEX = re.compile("^(anti-|co-)?(rant|vent): ", flags=re.IGNORECASE)
 
 @plugin.listener(hikari.GuildMessageCreateEvent)
 async def main(event: hikari.GuildMessageCreateEvent):
