@@ -11,7 +11,7 @@ DELETION_NOTIFICATION_LONGEVITY = 10
 @plugin.listener(hikari.GuildMessageCreateEvent)
 async def delete_duplicate(event: hikari.GuildMessageCreateEvent) -> None:
     ref = event.message.message_reference
-    if ref and ref.guild_id == FIREBASE_GUILD_ID:  # 1015095797689360444
+    if ref and ref.guild_id == FIRESHIP_GUILD_ID:  # 1015095797689360444
         await event.message.delete()
         response = await event.message.respond(
             f"Hey {event.author.mention}! No firebase forwards!!! Seethe and cope.",
