@@ -14,7 +14,7 @@ async def delete_duplicate(event: hikari.GuildMessageCreateEvent) -> None:
     if ref and ref.guild_id == FIRESHIP_GUILD_ID:  # 1015095797689360444
         await event.message.delete()
         response = await event.message.respond(
-            f"Hey {event.author.mention}! No firebase forwards!!! Seethe and cope.",
+            f"Hey {event.author.mention}! No fireship forwards!!! Seethe and cope.",
             user_mentions=True,
         )
         await asyncio.sleep(DELETION_NOTIFICATION_LONGEVITY)
