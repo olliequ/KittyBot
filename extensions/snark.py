@@ -55,7 +55,7 @@ def choose_eightball_response(message):
 def find_whole_word(word, text):
     return re.compile(r'\b({0})\b'.format(word), flags=re.IGNORECASE).search(text)
 
-def classical_response(event) -> str:
+def classical_response(event) -> str | None:
     message_content = event.content
     regexp = re.compile(r'(\S|\s)\?(\s|$)')
     response = None
@@ -70,12 +70,12 @@ def classical_response(event) -> str:
     elif find_whole_word('hey', message_content) or find_whole_word('hi', message_content) or find_whole_word('hello', message_content):
         response = f"Hey {event.author.mention}, I am a cat. With robot intestines. If you're bored, you should ask me a question, or check out my `+userinfo`, `+ping`, `+fortune` and `+fact` commands :cat:"
     elif event.message.referenced_message and event.message.referenced_message.author.id == plugin.bot.application.id:
-        return
+        return None
     else:
         response = f"{event.author.mention}, did you forget a question mark? <:mmhmmm:872809423939174440>"
     return response
 
-def llm_response(event) -> str:
+def llm_response(event) -> str | None:
     message_content = event.content
     response = model.generate_content([db.get_option('LLM_PROMPT', DEFAULT_PROMPT).replace('{}', message_content)])
     if len(response.candidates) == 0:
@@ -118,7 +118,8 @@ async def main(event) -> None:
         response = llm_response(event)
     else:
         response = classical_response(event)
-    await event.message.respond(response, user_mentions=True, reply=True)
+    if response:
+        await event.message.respond(response, user_mentions=True, reply=True)
 
 def load(bot: lightbulb.BotApp) -> None:
     bot.add_plugin(plugin)
