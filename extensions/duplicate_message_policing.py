@@ -24,7 +24,6 @@ async def delete_duplicate(event: hikari.GuildMessageCreateEvent) -> None:
     that has been seen before in the server (and not deleted).
     """
 
-    NODELETE_FLAG = "!"
     DELETION_NOTIFICATION_LONGEVITY = 15
     match (
         event.channel_id == int(os.environ.get("ORIGINALITY_CHANNEL_ID")),
@@ -45,7 +44,6 @@ async def delete_duplicate(event: hikari.GuildMessageCreateEvent) -> None:
         not event.content
         or event.is_webhook
         or event.is_bot
-        or event.content.startswith(NODELETE_FLAG)
         or len(event.content) <= 2  # allow short messages
         or "http" in event.content  # allow links
         or re.match(r"<@\d+>", event.content)  # allow mentions
