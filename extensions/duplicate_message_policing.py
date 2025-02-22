@@ -58,28 +58,38 @@ async def delete_duplicate(event: hikari.GuildMessageCreateEvent) -> None:
 
     # todo: insert message exceptions such as emoji which are allowed to be duplicated
     try:
+        # Insert using lower-case content for new hashes.
+        cursor.execute(
+            "insert into message_hashes values(?, ?, md5(?), ?)",
+            (event.author_id, event.message_id, event.content.lower(), event.message.timestamp),
+        )
+        # Also insert using the original content for backwards compatibility.
         cursor.execute(
             "insert into message_hashes values(?, ?, md5(?), ?)",
             (event.author_id, event.message_id, event.content, event.message.timestamp),
         )
         db.commit()
     except sqlite3.IntegrityError as e:
+        db.rollback()
         await event.message.delete()
+        # Check for duplicate using lower-case hash first, then original.
         previous = cursor.execute(
             "select user, message_id, time_sent from message_hashes where message_hash = md5(?)",
-            (event.content,),
+            (event.content.lower(),),
         ).fetchone()
-
+        if not previous:
+            previous = cursor.execute(
+                "select user, message_id, time_sent from message_hashes where message_hash = md5(?)",
+                (event.content,),
+            ).fetchone()
         original_time_sent = datetime.fromisoformat(previous[2])
-
         response = await event.message.respond(
-            f"Hey {event.author.mention}! Unfortunately,"
-            f" your message: `{event.message.content}`"
-            f" (first sent {humanize.naturaltime(datetime.now(timezone.utc) - original_time_sent)} by {event.get_guild().get_member(previous[0]).display_name})"
-            f" was deleted as it is ***NOT*** unique. Add some creativity to your message :robot:",
+            f"Hey {event.author.mention}! Unfortunately, your message: `{event.message.content}`"
+            f" (first sent {humanize.naturaltime(datetime.now(timezone.utc) - original_time_sent)} by"
+            f" {event.get_guild().get_member(previous[0]).display_name}) was deleted as it is ***NOT*** unique."
+            f" Add some creativity to your message :robot:",
             user_mentions=True,
         )
-        # delete deletion message after defined number of seconds (second best, due to inability to send ephemeral message directly)
         await asyncio.sleep(DELETION_NOTIFICATION_LONGEVITY)
         await response.delete()
 
