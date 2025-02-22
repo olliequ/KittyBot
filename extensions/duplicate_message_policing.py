@@ -58,40 +58,63 @@ async def delete_duplicate(event: hikari.GuildMessageCreateEvent) -> None:
 
     # todo: insert message exceptions such as emoji which are allowed to be duplicated
     try:
-        # Insert using lower-case content for new hashes.
+        # Check for duplicate with lower-case hash.
+        lower_duplicate = cursor.execute(
+            "select user, message_id, time_sent from message_hashes where message_hash = md5(?)",
+            (event.content.lower(),)
+        ).fetchone()
+        if lower_duplicate:
+            raise sqlite3.IntegrityError("Duplicate found with lower-case hash.")
+    
+        # Check for duplicate with original content (i.e. uppercase exists)
+        upper_duplicate = cursor.execute(
+            "select user, message_id, time_sent from message_hashes where message_hash = md5(?)",
+            (event.content,)
+        ).fetchone()
+        if upper_duplicate:
+            try:
+                # Fetch the original message from Discord.
+                orig_msg = await event.app.rest.fetch_message(event.channel_id, upper_duplicate[1])
+                new_content = orig_msg.content.lower()
+            except Exception:
+                new_content = event.content.lower()
+            # Update the record to use the lower-case hash.
+            cursor.execute(
+                "update message_hashes set message_hash = md5(?) where message_id = ?",
+                (new_content, upper_duplicate[1])
+            )
+            db.commit()
+            # Re-check for a duplicate using the lower-case hash.
+            lower_duplicate = cursor.execute(
+                "select user, message_id, time_sent from message_hashes where message_hash = md5(?)",
+                (event.content.lower(),)
+            ).fetchone()
+            if lower_duplicate:
+                raise sqlite3.IntegrityError("Duplicate found after rehashing.")
+    
+        # No duplicate exists; insert new record with lower-case hash.
         cursor.execute(
             "insert into message_hashes values(?, ?, md5(?), ?)",
-            (event.author_id, event.message_id, event.content.lower(), event.message.timestamp),
-        )
-        # Also insert using the original content for backwards compatibility.
-        cursor.execute(
-            "insert into message_hashes values(?, ?, md5(?), ?)",
-            (event.author_id, event.message_id, event.content, event.message.timestamp),
+            (event.author_id, event.message_id, event.content.lower(), event.message.timestamp)
         )
         db.commit()
-    except sqlite3.IntegrityError as e:
-        db.rollback()
+    
+    except sqlite3.IntegrityError:
+        # A duplicate was detected (either initially or after rehashing).
+        duplicate = lower_duplicate or upper_duplicate
         await event.message.delete()
-        # Check for duplicate using lower-case hash first, then original.
-        previous = cursor.execute(
-            "select user, message_id, time_sent from message_hashes where message_hash = md5(?)",
-            (event.content.lower(),),
-        ).fetchone()
-        if not previous:
-            previous = cursor.execute(
-                "select user, message_id, time_sent from message_hashes where message_hash = md5(?)",
-                (event.content,),
-            ).fetchone()
-        original_time_sent = datetime.fromisoformat(previous[2])
+        original_time_sent = datetime.fromisoformat(duplicate[2])
+        member = event.get_guild().get_member(duplicate[0])
         response = await event.message.respond(
             f"Hey {event.author.mention}! Unfortunately, your message: `{event.message.content}`"
-            f" (first sent {humanize.naturaltime(datetime.now(timezone.utc) - original_time_sent)} by"
-            f" {event.get_guild().get_member(previous[0]).display_name}) was deleted as it is ***NOT*** unique."
-            f" Add some creativity to your message :robot:",
+            f" (first sent {humanize.naturaltime(datetime.now(timezone.utc) - original_time_sent)} by "
+            f"{member.display_name if member else 'someone'}) was deleted as it is ***NOT*** unique."
+            " Add some creativity to your message :robot:",
             user_mentions=True,
         )
         await asyncio.sleep(DELETION_NOTIFICATION_LONGEVITY)
         await response.delete()
+
 
 
 @plugin.listener(hikari.GuildMessageDeleteEvent)
