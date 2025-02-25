@@ -61,7 +61,7 @@ async def main(ctx: lightbulb.Context) -> None:
     counts = [
         i
         for i in counts
-        if await emoji_cache.download_emoji(i[0], ctx.bot) != "Not Found"
+        if not i[0].startswith('<') or await emoji_cache.get_file_name(i[0], ctx.bot)
     ]
 
     if len(counts) == 0:
@@ -79,14 +79,17 @@ async def main(ctx: lightbulb.Context) -> None:
         counts, max_words=max_emojis, max_font_size=150
     )
     for p in listofimages:
+        # p[3] is emoji identifier
         if p[3][0] == "<":  # Custom Emoji have "<" in the beginning
-            thumbnail = Image.open(
-                os.path.join(
-                    script_dir, "..", emoji_cache.get_file_name_if_cached(p[3])
+            file_name = await emoji_cache.get_file_name(p[3], ctx.bot)
+            if file_name:
+                thumbnail = Image.open(
+                    os.path.join(
+                        script_dir, "..", file_name
+                    )
                 )
-            )
-            max_num_frames = max(max_num_frames, thumbnail.n_frames)
-            all_thumbnails.append((thumbnail, "custom"))
+                max_num_frames = max(max_num_frames, thumbnail.n_frames)
+                all_thumbnails.append((thumbnail, "custom"))
         else:  # Regular Unicode Emoji
             e_code = p[3].strip()
             # Using NotoEmoji to generate as estimated size for the emoji
