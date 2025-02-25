@@ -2,61 +2,49 @@
 Cache Custom Emojis Locally for Better Performance
 """
 
-import io
+from typing import Optional
 import os
-
+import re
 import lightbulb
-from PIL import Image
 from hikari import NotFoundError
-import urllib.request
 import requests
 
 
-async def cache_all_custom(bot: lightbulb.BotApp):
-    emojis = await bot.rest.fetch_guild_emojis(int(os.environ["DEFAULT_GUILDS"].split(',')[0]))
-    for emoji in emojis:
-        await cache_emoji(emoji)
-
-
-async def download_emoji(e, bot: lightbulb.BotApp):
+async def get_file_name(emoji: str, bot: lightbulb.BotApp) -> Optional[str]:
     """
-    Downloads Emoji if not present in Cache
-    e: String emoji of form <:agentjohnson:1015917908897054770> or unicode
+    Return a path to the image file for the specified custom emoji. Returns None
+    if emoji does not exist or is not a custom emoji.
     """
-    if e[0] != "<":
-        return "Not Custom"  # Not a Custom Emoji
+    if not emoji.startswith('<'):
+        return None
 
-    # Get '1015917908897054770' from '<:agentjohnson:1015917908897054770>'
-    emoji_id = e.replace("<", "").replace(">", "").split(":")[-1]
-    if get_file_name_if_cached(emoji_id) is not None:
-        return "Found"
+    match = re.match(r'<.*?:.*?:(.*?)>', emoji)
+    if match is None:
+        return None
+    emoji_id = match.group(1)
 
-    try:
-        emoji = await bot.rest.fetch_emoji(int(os.environ["DEFAULT_GUILDS"].split(',')[0]), emoji_id)
-    except NotFoundError:  # Emoji no longer available. Ignore
-        return "Not Found"
-    await cache_emoji(emoji)
+    cache_result = _get_cached_file_name(emoji_id)
+    if cache_result:
+        return cache_result
 
+    await _download_emoji(emoji_id, bot)
+    cache_result = _get_cached_file_name(emoji_id)
+    if cache_result:
+        return cache_result
 
-async def cache_emoji(emoji):
-    """
-    emoji: hikari.emojis.CustomEmoji
-    """
-    if get_file_name_if_cached(emoji.id) is not None:
-        return
-
-    print("Downloading New Emoji", emoji, emoji.url)
-    # urllib.request.urlretrieve(emoji.url, f"assets/{emoji.filename}")
-    r = requests.get(emoji.url)
-    with open(f"assets/{emoji.filename}", 'wb') as outfile:
-        outfile.write(r.content)
-
-
-def get_file_name_if_cached(emoji):
-    # Filters out the ID if in <> form. Doesn't affect if in int form
-    emoji_id = str(emoji).replace("<", "").replace(">", "").split(":")[-1]
-
+def _get_cached_file_name(emoji_id: str) -> Optional[str]:
     for ext in ("gif", "png", "jpg"):  # Emoji can be cached in any format. So need to check all possible
         tp = f"assets/{emoji_id}.{ext}"
         if os.path.exists(tp):
             return tp
+
+async def _download_emoji(emoji_id: str, bot: lightbulb.BotApp):
+    try:
+        info = await bot.rest.fetch_emoji(int(os.environ["DEFAULT_GUILDS"].split(',')[0]), emoji_id)
+    except NotFoundError:  # Emoji no longer available. Ignore
+        return
+
+    print("Downloading New Emoji", info, info.url)
+    r = requests.get(info.url)
+    with open(f"assets/{info.filename}", 'wb') as outfile:
+        outfile.write(r.content)

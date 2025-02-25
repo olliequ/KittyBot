@@ -4,8 +4,6 @@ import os
 import dotenv, aiohttp
 import hikari, lightbulb
 
-import emoji_cache
-
 dotenv.load_dotenv()
 
 bot = lightbulb.BotApp(
@@ -20,7 +18,6 @@ bot = lightbulb.BotApp(
 @bot.listen(hikari.StartedEvent)
 async def botStartup(event):
     print("Bot has started up!")
-    await emoji_cache.cache_all_custom(bot)
 
 
 @bot.listen(lightbulb.CommandErrorEvent)
