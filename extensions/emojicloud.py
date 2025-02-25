@@ -79,6 +79,7 @@ async def main(ctx: lightbulb.Context) -> None:
         counts, max_words=max_emojis, max_font_size=150
     )
     for p in listofimages:
+        # p[3] is emoji identifier
         if p[3][0] == "<":  # Custom Emoji have "<" in the beginning
             file_name = await emoji_cache.get_file_name(p[3], ctx.bot)
             if file_name:
