@@ -4,9 +4,8 @@ Cache Custom Emojis Locally for Better Performance
 
 from typing import Optional
 import os
-import re
 import lightbulb
-from hikari import NotFoundError
+from hikari import CustomEmoji, NotFoundError
 import requests
 
 
@@ -15,13 +14,10 @@ async def get_file_name(emoji: str, bot: lightbulb.BotApp) -> Optional[str]:
     Return a path to the image file for the specified custom emoji. Returns None
     if emoji does not exist or is not a custom emoji.
     """
-    if not emoji.startswith('<'):
+    try:
+        emoji_id = CustomEmoji.parse(emoji).id
+    except ValueError:
         return None
-
-    match = re.match(r'<.*?:.*?:(.*?)>', emoji)
-    if match is None:
-        return None
-    emoji_id = match.group(1)
 
     cache_result = _get_cached_file_name(emoji_id)
     if cache_result:
