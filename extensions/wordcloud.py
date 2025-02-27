@@ -2,6 +2,7 @@ import re
 from datetime import datetime
 from itertools import chain
 from emoji import emoji_list, replace_emoji
+import hashlib
 import hikari, lightbulb
 import numpy as np
 import matplotlib.font_manager as fm
@@ -17,6 +18,13 @@ from PIL import Image, ImageFont, ImageDraw, ImageChops, ImageOps
 
 plugin = lightbulb.Plugin("WordCloud")
 warnings.filterwarnings("ignore", category=DeprecationWarning)
+
+def emoji_size(font: ImageFont.FreeTypeFont, emoji: str) -> tuple[float, float]:
+    """
+    Return (width, height)
+    """
+    (left, top, right, bottom) = font.getbbox(emoji)
+    return (right, bottom)
 
 @plugin.command
 @lightbulb.add_cooldown(10, 1, lightbulb.UserBucket)
@@ -48,7 +56,7 @@ async def main(ctx: lightbulb.Context) -> None:
     # code credit https://gist.github.com/pbojinov/7f680445d50a9bd5a421
 
     # calculate mask if it doesn't exist
-    mask_path = os.path.join(d, "assets", f"{db.md5sum(top_emoji)}.png")
+    mask_path = os.path.join(d, "assets", f"{hashlib.md5(top_emoji.encode()).hexdigest()}.png")
     if not os.path.isfile(mask_path):
         W, H = (512, 400)  # image size
         background = (255, 255, 255)  # white
@@ -60,8 +68,7 @@ async def main(ctx: lightbulb.Context) -> None:
         image = Image.new("RGB", (W, H), background)
 
         draw = ImageDraw.Draw(image)
-        # w, h = draw.textsize(txt) # not that accurate in getting font size
-        w, h = font.getsize(top_emoji)
+        w, h = emoji_size(font, top_emoji)
         draw.text(((W - w) / 2, (H - h) / 2), top_emoji, fill="black", font=font)
 
         # flood fill to the edges of an emoji so we can count the black and white pixels

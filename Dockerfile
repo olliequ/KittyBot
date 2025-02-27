@@ -1,8 +1,8 @@
-FROM python:3.10
+FROM python:3.11
 ARG UID=1001
 ARG GID=1001
 RUN apt update -y && apt upgrade -y \
-    && apt install libfreetype6-dev libxft-dev fortune -y
+    && apt install libfreetype6-dev libxft-dev fortunes -y
 COPY requirements.txt /home
 RUN pip install -r /home/requirements.txt
 COPY --chown=$UID:$GID . /home/

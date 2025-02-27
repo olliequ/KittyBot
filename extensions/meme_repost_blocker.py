@@ -11,7 +11,7 @@ import io
 plugin = lightbulb.Plugin("ImageHashDetector")
 phash_th = "PHASH_TH"
 chash_th = "CHASH_TH"
-
+HASH_SIZE = 16
 
 @plugin.listener(hikari.GuildMessageCreateEvent)
 async def main(event: hikari.GuildMessageCreateEvent) -> None:
@@ -36,15 +36,15 @@ async def main(event: hikari.GuildMessageCreateEvent) -> None:
             # Create a memory buffer
             file_buffer = io.BytesIO(response.content)
             image = Image.open(file_buffer)
-            image_hash = imagehash.phash(image, 16)
+            image_hash = imagehash.phash(image, HASH_SIZE)
             image = Image.open(file_buffer)
-            hash_color = imagehash.colorhash(image, 16)
+            hash_color = imagehash.colorhash(image, HASH_SIZE)
             # Check if the approximate hash exists in the database
             c.execute("""
                 SELECT rowid, message_id, channel_id, guild_id
                 FROM image_hashes
                 WHERE hammingDistance(hash, ?) < ?
-                    AND hammingDistance(hash_color, ?) < ?
+                    AND hammingDistanceColor(hash_color, ?) < ?
                 ORDER BY rowid ASC""",
                 (str(image_hash), int(os.getenv(phash_th, "50")), str(hash_color), int(os.getenv(chash_th, "50")))
             )
@@ -94,4 +94,6 @@ async def main(event: hikari.GuildMessageCreateEvent) -> None:
                 await event.message.respond(response_message)
 
 def load(bot: lightbulb.BotApp) -> None:
+    db.create_function("hammingDistance", 2, lambda a, b : imagehash.hex_to_hash(a) - imagehash.hex_to_hash(b))
+    db.create_function("hammingDistanceColor", 2, lambda a, b : imagehash.hex_to_flathash(a, HASH_SIZE) - imagehash.hex_to_flathash(b, HASH_SIZE))
     bot.add_plugin(plugin)
