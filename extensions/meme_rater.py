@@ -20,28 +20,29 @@ async def get_meme_rating(image_url:str, model:GenerativeModel = model):
 
 @plugin.listener(hikari.GuildMessageCreateEvent)
 async def main(event: hikari.GuildMessageCreateEvent) -> None:
-    # Don't handle messages from bots or without content
-    if event.is_bot:
-        return
-    for attachment in event.message.attachments:
-        # removed uncommon formats for testing - don't tell Jimmy plx
-        image_file_extensions = ["jpg", "jpeg", "png", "webp"] # "tiff",  "bmp", "gif <-- idk if these are supported
-        att_ext = attachment.extension
-        if att_ext in image_file_extensions:
-            image_url = attachment.url
-            res = await get_meme_rating(image_url, model)
-            if res:
-                try:
-                    int_res = int(res)
-                    if int_res >= MINIMUM_MEME_RATING_TO_NOT_DELETE:
-                        await event.message.add_reaction(emoji="👍")
-                    else:
-                        await event.message.respond("This meme is garbage. I rate it {res}/10. Send something better.", user_mentions=True, reply=True)
-                        #meme is shit - delete?
-                        #await event.message.delete() 
-                        return #just doing first attachment rating response
-                except ValueError:
-                    return
+    if event.channel_id == MEMES_CHANNEL_ID:
+        # Don't handle messages from bots or without content
+        if event.is_bot:
+            return
+        for attachment in event.message.attachments:
+            # removed uncommon formats for testing - don't tell Jimmy plx
+            image_file_extensions = ["jpg", "jpeg", "png", "webp"] # "tiff",  "bmp", "gif <-- idk if these are supported
+            att_ext = attachment.extension
+            if att_ext in image_file_extensions:
+                image_url = attachment.url
+                res = await get_meme_rating(image_url, model)
+                if res:
+                    try:
+                        int_res = int(res)
+                        if int_res >= MINIMUM_MEME_RATING_TO_NOT_DELETE:
+                            await event.message.add_reaction(emoji="👍")
+                        else:
+                            await event.message.respond("This meme is garbage. I rate it {res}/10. Send something better.", user_mentions=True, reply=True)
+                            #meme is shit - delete?
+                            #await event.message.delete() 
+                            return #just doing first attachment rating response
+                    except ValueError:
+                        return
                     
                 
 
