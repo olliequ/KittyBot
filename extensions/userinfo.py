@@ -2,7 +2,7 @@ import os
 import re
 from datetime import datetime
 from itertools import chain
-from emoji import emoji_list, replace_emoji
+from emoji import emoji_list
 import hikari, lightbulb
 import db
 import numpy as np

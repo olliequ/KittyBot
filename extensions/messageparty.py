@@ -8,7 +8,7 @@ Kitti congratulates you for your efforts.
 """
 @plugin.listener(hikari.GuildMessageCreateEvent)
 async def main(event):
-    if event.is_bot or not event.content or "NOTALURKER_ROLE" not in os.environ:
+    if event.is_bot or not event.content:
         return
     
     messageContent = event.content

@@ -1,5 +1,4 @@
 import lightbulb
-import hikari
 import cowsay
 
 import extensions.fortune
@@ -29,7 +28,7 @@ async def main(ctx: lightbulb.Context) -> None:
         await ctx.respond(message)
         
 def say(msg: str, character: str = "cow") -> str:
-    return code_block(cowsay.get_output_string(text=msg, char_name=character))
+    return code_block(cowsay.get_output_string(text=msg, char=character))
 
 def code_block(s: str) -> str:
     return f"```{s}```"
