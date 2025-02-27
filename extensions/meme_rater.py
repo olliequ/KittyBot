@@ -37,7 +37,7 @@ async def main(event: hikari.GuildMessageCreateEvent) -> None:
                         if int_res >= MINIMUM_MEME_RATING_TO_NOT_DELETE:
                             await event.message.add_reaction(emoji="👍")
                         else:
-                            await event.message.respond("This meme is garbage. I rate it {res}/10. Send something better.", user_mentions=True, reply=True)
+                            await event.message.respond(f"This meme is garbage. I rate it {res}/10. Send something better.", user_mentions=True, reply=True)
                             #meme is shit - delete?
                             #await event.message.delete() 
                             return #just doing first attachment rating response
