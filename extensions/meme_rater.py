@@ -1,5 +1,7 @@
 import os
 import logging
+import db
+import sqlite3
 import hikari
 import lightbulb
 from PIL import Image
@@ -8,7 +10,9 @@ from extensions.snark import model
 from google.generativeai.generative_models import GenerativeModel
 from typing import Final
 
+
 plugin = lightbulb.Plugin("MemeRater")
+
 
 MEME_CHANNEL_ID = int(os.environ.get("MEME_CHANNEL_ID", 0))
 MEME_RATE_PROMPT: Final[str] = os.environ.get("MEME_RATING_PROMPT",
@@ -40,8 +44,10 @@ def number_emoji(number: int):
 async def main(event: hikari.GuildMessageCreateEvent) -> None:
     if event.channel_id != MEME_CHANNEL_ID:
         return
-
+    
+    cursor = db.cursor()
     ratings = []
+    
     for attachment in event.message.attachments:
         att_ext = attachment.extension
         if att_ext not in IMG_FILE_EXTENSIONS:
@@ -69,6 +75,17 @@ async def main(event: hikari.GuildMessageCreateEvent) -> None:
         )
     else:
         await event.message.add_reaction(emoji="💩")
+    # add some basic meme stats to the db so we can track who is improving, rotting, or standing still
+    try:
+        # avg rating row inserted is just for this set of memes. Another query elsewhere aggregates.
+        cursor.execute(
+            "insert into meme_stats values(?, ?, ?, ?)",
+            (event.author_id, event.message_id, avg_rating, event.message.timestamp),
+        )
+        db.commit()
+    except sqlite3.IntegrityError:
+        logging.error(f"couldn't write meme stat to db :(: {event.author.id} {event.message_id}")
+        pass
 
 
 def load(bot: lightbulb.BotApp) -> None:
