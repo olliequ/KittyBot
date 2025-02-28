@@ -14,8 +14,10 @@ MEMES_CHANNEL_ID = os.environ.get("MEME_CHANNEL_ID")
 MEME_RATE_PROMPT: Final[str] = (
     "Rate this meme out of 10, with 10 being the funniest. Rate is solely on how funny a bunch of computer science nerds would find it. ONLY Return an integer."
 )
-MINIMUM_MEME_RATING_TO_NOT_DELETE: Final[int] = 6
-IMG_FILE_EXTENSIONS: Final = ["jpg", "jpeg", "png", "webp"]
+MINIMUM_MEME_RATING_TO_NOT_DELETE: Final[int] = 6  # can be in .env if you prefer
+IMG_FILE_EXTENSIONS: Final = {"jpg", "jpeg", "png", "webp"}
+# removed uncommon formats for testing - don't tell Jimmy plx
+# "tiff",  "bmp", "gif <-- idk if these are supported
 
 
 async def get_meme_rating(image_url: str, model: GenerativeModel):
@@ -27,35 +29,35 @@ async def get_meme_rating(image_url: str, model: GenerativeModel):
 
 @plugin.listener(hikari.GuildMessageCreateEvent)
 async def main(event: hikari.GuildMessageCreateEvent) -> None:
-    if event.channel_id == MEMES_CHANNEL_ID:
-        # Don't handle messages from bots or without content
-        if event.is_bot:
-            return
-        for attachment in event.message.attachments:
-            # removed uncommon formats for testing - don't tell Jimmy plx
-            # "tiff",  "bmp", "gif <-- idk if these are supported
-            att_ext = attachment.extension
-            if att_ext in IMG_FILE_EXTENSIONS:
-                image_url = attachment.url
-                res = await get_meme_rating(image_url, model)
-                if res:
-                    try:
-                        int_res = int(res)
-                        if int_res >= MINIMUM_MEME_RATING_TO_NOT_DELETE:
-                            await event.message.add_reaction(emoji="👍")
-                            await event.message.add_reaction(emoji="🐱")
-                            await event.message.add_reaction(emoji=f":number_{res}:")
-                        else:
-                            await event.message.respond(
-                                f"This meme is garbage 💩💩💩. I rate it {res}/10. Send something better.",
-                                user_mentions=True,
-                                reply=True,
-                            )
-                            # meme is shit - delete?
-                            # await event.message.delete()
-                            return  # just doing first attachment rating response
-                    except ValueError:
-                        return
+    if event.channel_id != MEMES_CHANNEL_ID:
+        return
+    for attachment in event.message.attachments:
+        att_ext = attachment.extension
+        if att_ext in IMG_FILE_EXTENSIONS:
+            image_url = attachment.url
+            res = await get_meme_rating(image_url, model)
+            if res:
+                try:
+                    int_res = int(res)
+                    if int_res >= MINIMUM_MEME_RATING_TO_NOT_DELETE:
+                        await event.message.add_reaction(emoji="👍")
+                        await event.message.add_reaction(emoji="🐱")
+                        await event.message.add_reaction(emoji=f":number_{res}:")
+                    else:
+                        await event.message.respond(
+                            f"This meme is garbage 💩💩💩. I rate it {res}/10. Send something better.",
+                            user_mentions=True,
+                            reply=True,
+                        )
+                        await event.message.add_reaction(emoji="💩")
+                        await event.message.add_reaction(emoji="🐱")
+                        await event.message.add_reaction(emoji=f":number_{res}:")
+
+                        # meme is shit - delete???
+                        # await event.message.delete()
+                        return  # just doing first attachment rating response
+                except ValueError:
+                    return
 
 
 def load(bot: lightbulb.BotApp) -> None:
