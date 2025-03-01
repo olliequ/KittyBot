@@ -75,17 +75,15 @@ async def main(event: hikari.GuildMessageCreateEvent) -> None:
         )
     else:
         await event.message.add_reaction(emoji="💩")
+
     # add some basic meme stats to the db so we can track who is improving, rotting, or standing still
-    try:
-        # avg rating row inserted is just for this set of memes. Another query elsewhere aggregates.
-        cursor.execute(
-            "insert into meme_stats values(?, ?, ?, ?)",
-            (event.author_id, event.message_id, avg_rating, event.message.timestamp),
-        )
-        db.commit()
-    except sqlite3.IntegrityError:
-        logging.error(f"couldn't write meme stat to db :(: {event.author.id} {event.message_id}")
-        pass
+    # avg rating row inserted is just for this set of memes. Another query elsewhere aggregates.
+    cursor.execute(
+        "insert into meme_stats values(?, ?, ?, ?)",
+        (event.author_id, event.message_id, avg_rating, event.message.timestamp),
+    )
+    db.commit()
+
 
 
 def load(bot: lightbulb.BotApp) -> None:
