@@ -29,11 +29,12 @@ async def main(ctx: lightbulb.Context) -> None:
 
     # todo: add a limit or aggregation of greater time periods or whatever
     # todo: get someone else to do this
+    time_period_sql_param = "month" if time_period == "month" else "year"
     data = cursor.execute(f"""
         select strftime('%Y-%m-%d', datetime(time_sent, '+10 hours')) as time_period,
             AVG(meme_score) as avg_meme_score
         from meme_stats
-        where user = ? and time_sent >= date('now', '-1 {time_period}')
+        where user = ? and time_sent >= date('now', '-1 {time_period_sql_param}')
         group BY user, time_period
     """, (user_id,)).fetchall()
 
