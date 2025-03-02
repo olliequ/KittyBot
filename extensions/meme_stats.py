@@ -30,7 +30,7 @@ async def main(ctx: lightbulb.Context) -> None:
     # todo: add a limit or aggregation of greater time periods or whatever
     # todo: get someone else to do this
     data = cursor.execute(f"""
-        select strftime('%Y-%m-%d', time_sent) as time_period,
+        select strftime('%Y-%m-%d', datetime(time_sent, '+10 hours')) as time_period,
             AVG(meme_score) as avg_meme_score
         from meme_stats
         where user = ? and time_sent >= date('now', '-1 {time_period}')
@@ -49,14 +49,15 @@ async def main(ctx: lightbulb.Context) -> None:
 
     # graphic plot thingy
     buffer = BytesIO()
-    plt.style.use('ggplot')
+    plt.style.use('fivethirtyeight')
     plt.figure(figsize=(10, 6))
-    plt.plot(df.index, df["avg_meme_score"], marker='o', color='#1f77b4', linewidth=2, markersize=8)
-    plt.xlabel('Days', fontsize=14)
-    plt.ylabel('Average Meme Score', fontsize=14)
+    plt.plot(df.index, df["avg_meme_score"], marker='o', color='#FF6F61', linewidth=1, markersize=8)
+    plt.xlabel('Days', fontsize=12)
+    plt.ylabel('Average Meme Score', fontsize=12)
     plt.title(f'Meme Scores Over Time ({time_period}) for {user.display_name}', fontsize=16)
     plt.xticks(fontsize=8)
     plt.yticks(fontsize=12)
+    plt.ylim(bottom=0)  # Start y-axis at 0
     plt.grid(False)
     plt.tight_layout()
     plt.savefig(buffer, format='png', dpi=300)
