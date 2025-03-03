@@ -40,14 +40,17 @@ async def main(ctx: lightbulb.Context) -> None:
 
     if not data:
         return await ctx.respond(f"Looks like {user.display_name} hasn't had any of their memes rated yet. 10/10 for them!")
+    
     # Convert SQLite query result into a DataFrame.
     # random commands found by a combination of chatgpt and google that seem to work
     df = pd.DataFrame(data, columns=["time_period", "avg_meme_score"])
     df["time_period"] = pd.to_datetime(df["time_period"])
     df.set_index("time_period", inplace=True)
+    
     # Create a complete date range and reindex.
     df = df.asfreq("d", fill_value=None)
-
+    df["avg_meme_score"] = df.rolling(min_periods=1, center=True, window=3).mean()
+    
     # graphic plot thingy
     buffer = BytesIO()
     plt.style.use('fivethirtyeight')
@@ -58,7 +61,7 @@ async def main(ctx: lightbulb.Context) -> None:
     plt.title(f'Meme Scores Over Time ({time_period}) for {user.display_name}', fontsize=16)
     plt.xticks(fontsize=8)
     plt.yticks(fontsize=12)
-    plt.ylim(bottom=0)  # Start y-axis at 0
+    plt.ylim(bottom=0, top=10)  # Start y-axis at 0
     plt.grid(False)
     plt.tight_layout()
     plt.savefig(buffer, format='png', dpi=300)
