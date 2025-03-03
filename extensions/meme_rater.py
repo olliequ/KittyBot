@@ -6,9 +6,10 @@ import hikari
 import lightbulb
 from PIL import Image
 import requests
-from extensions.snark import model
-from google.generativeai.generative_models import GenerativeModel
+from commons.agents import kitty_meme_agent
 from typing import Final
+from pydantic_ai import BinaryContent
+
 
 
 plugin = lightbulb.Plugin("MemeRater")
@@ -23,15 +24,15 @@ DELETE_SHIT: Final[bool] = False
 IMG_FILE_EXTENSIONS: Final = {"jpg", "jpeg", "png", "webp"}
 
 
-def get_meme_rating(image_url: str, model: GenerativeModel):
-    image = requests.get(image_url, stream=True).raw
-    if not image:
+
+async def get_meme_rating(image_url: str, user: str, att_ext: str):
+    image = requests.get(image_url, stream=True)
+    if not image.raw:
+        logging.info("Not image")
         return ''
-    response = model.generate_content(
-        contents=[MEME_RATE_PROMPT, Image.open(image)]
-    )
-    logging.info(f'Meme rating response: {response.text}')
-    return response.text
+    response = await kitty_meme_agent.run(image=image, user=user)
+    logging.info(f'Meme rating response: {response}')
+    return response
 
 def number_emoji(number: int):
     if number == 10:
@@ -44,19 +45,19 @@ def number_emoji(number: int):
 async def main(event: hikari.GuildMessageCreateEvent) -> None:
     if event.channel_id != MEME_CHANNEL_ID:
         return
-    
     cursor = db.cursor()
     ratings = []
     
     for attachment in event.message.attachments:
         att_ext = attachment.extension
+        logging.info(f"Attachment extension: {att_ext}")
         if att_ext not in IMG_FILE_EXTENSIONS:
             continue
         image_url = attachment.url
-        rating = get_meme_rating(image_url, model)
         try:
+            rating = await get_meme_rating(image_url, event.author.username, att_ext)
             ratings.append(int(rating))
-        except ValueError:
+        except Exception as e:
             continue
     if not ratings:
         return

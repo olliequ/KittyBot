@@ -1,7 +1,8 @@
 import os, re, datetime, hashlib
 import hikari, lightbulb
-import google.generativeai as genai
 import db
+from commons.agents import kitty_gemini_agent
+import logging as log
 
 plugin = lightbulb.Plugin("Snark")
 
@@ -11,40 +12,6 @@ eight_ball_responses = [ "It is certain.", "It is decidedly so.", "Without a dou
                "Better not tell you now.", "Cannot predict now.", "Concentrate and ask again.",
                "Don't count on it.", "My reply is no.", "My sources say no.", "Outlook not so good.", "Very Doubtful."]
 
-genai.configure(api_key=os.environ["GEMINI_API_KEY"])
-
-# Set up the model
-generation_config = {
-    "temperature": 1,
-    "top_p": 1,
-    "top_k": 1,
-    "max_output_tokens": 2000,
-}
-
-safety_settings = [
-    {
-        "category": "HARM_CATEGORY_HARASSMENT",
-        "threshold": "BLOCK_ONLY_HIGH"
-    },
-    {
-        "category": "HARM_CATEGORY_HATE_SPEECH",
-        "threshold": "BLOCK_ONLY_HIGH"
-    },
-    {
-        "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
-        "threshold": "BLOCK_ONLY_HIGH"
-    },
-    {
-        "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
-        "threshold": "BLOCK_ONLY_HIGH"
-    },
-]
-
-model = genai.GenerativeModel(model_name="gemini-2.0-flash-lite",
-                              generation_config=generation_config,
-                              safety_settings=safety_settings)
-
-DEFAULT_PROMPT = "You are the Savage Kitti Bot on Computer Science @ UniMelb Discord. Respond Appropriately. Kitti has a God Complex and doesn't hold back. You are gen z and reply succinct.\nQ: {}"
 
 def choose_eightball_response(message):
     # Add current date down to hour precision to vary the response periodically
@@ -75,14 +42,17 @@ def classical_response(event) -> str | None:
         response = f"{event.author.mention}, did you forget a question mark? <:mmhmmm:872809423939174440>"
     return response
 
-def llm_response(event) -> str | None:
+async def llm_response(event) -> str | None:
     message_content = event.content
-    response = model.generate_content([db.get_option('LLM_PROMPT', DEFAULT_PROMPT).replace('{}', message_content)])
-    if len(response.candidates) == 0:
-        return 'No.'
-    if response.candidates[0].finish_reason != 1:
+    try:
+        prompt = db.get_option('LLM_PROMPT')
+        response = await kitty_gemini_agent.run(message_content, event.author.mention, prompt)
+        if not response:
+            return 'No.'
+    except Exception as e:
+        log.info(e)
         return classical_response(event)
-    return response.text.replace('@everyone', 'everyone').replace('@here', 'here')
+    return response.replace('@everyone', 'everyone').replace('@here', 'here')
 
 @plugin.command
 @lightbulb.option(
@@ -115,7 +85,7 @@ async def main(event) -> None:
     if plugin.bot.application.id not in mentioned_ids:
         return
     if event.channel_id == int(os.environ.get("ORIGINALITY_CHANNEL_ID")):
-        response = llm_response(event)
+        response = await llm_response(event)
     else:
         response = classical_response(event)
     if response:
