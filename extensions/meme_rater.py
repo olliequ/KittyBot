@@ -1,4 +1,4 @@
-import os, re
+import os
 import logging
 import db
 import sqlite3
@@ -27,16 +27,19 @@ MEME_RATE_PROMPT: Final[str] = os.environ.get("MEME_RATING_PROMPT",
 MINIMUM_MEME_RATING_TO_NOT_DELETE: Final[int] = int(os.environ.get("MEME_QUALITY_THRESHOLD", "6"))
 DELETE_SHIT: Final[bool] = False
 IMG_FILE_EXTENSIONS: Final = {"jpg", "jpeg", "png", "webp"}
-IMAGE_URL_REGEX = re.compile("(https?:\/\/.*\.(?:png|jpe?g|webp)\??.*)", flags=re.IGNORECASE)
 
-async def get_meme_rating(image_url: str, user: str, att_ext: str):
+async def get_meme_rating(image_url: str, user: str):
     image = requests.get(image_url, stream=True)
     if not image.raw:
         logging.info("Not image")
         return ''
     response = await kitty_meme_agent.run(image=image, user=user)
     logging.info(f'Meme rating response: {response}')
-    return response
+
+    try:
+        return min(max(0, int(response)), 10)
+    except Exception as e:
+        return 0
 
 def number_emoji(number: int):
     if number == 10:
@@ -45,11 +48,37 @@ def number_emoji(number: int):
         unicode = f"{number}\N{VARIATION SELECTOR-16}\N{COMBINING ENCLOSING KEYCAP}"
     return hikari.UnicodeEmoji.parse(unicode)
 
-@plugin.listener(hikari.GuildMessageCreateEvent)
-async def main(event: hikari.GuildMessageCreateEvent) -> None:
+
+@plugin.listener(hikari.GuildMessageUpdateEvent)
+async def msg_update(event: hikari.GuildMessageUpdateEvent) -> None:
     if event.channel_id != MEME_CHANNEL_ID:
         return
-    cursor = db.cursor()
+
+    # We only want to rate the meme if it was not edited after the initial post
+    # Discord does not add an edited timestamp when embedding an image
+    if event.message.edited_timestamp:
+        return
+
+    ratings = []
+
+    for embed in event.message.embeds:
+        if not embed.image:
+            continue
+        image_url = embed.image.proxy_url
+        
+        try:
+            rating = await get_meme_rating(image_url, event.author.username)
+            ratings.append(rating)
+        except Exception as e:
+            continue
+
+    await rate_meme(event.message, ratings)
+    
+
+@plugin.listener(hikari.GuildMessageCreateEvent)
+async def msg_create(event: hikari.GuildMessageCreateEvent) -> None:
+    if event.channel_id != MEME_CHANNEL_ID:
+        return
     ratings = []
     
     for attachment in event.message.attachments:
@@ -59,43 +88,57 @@ async def main(event: hikari.GuildMessageCreateEvent) -> None:
             continue
         image_url = attachment.url
         try:
-            rating = await get_meme_rating(image_url, event.author.username, att_ext)
-            ratings.append(int(rating))
+            rating = await get_meme_rating(image_url, event.author.username)
+            ratings.append(rating)
         except Exception as e:
             continue
     
-    for match in IMAGE_URL_REGEX.finditer(event.message.content):
-        image_url = match.group(1)
-        try:
-            rating = await get_meme_rating(image_url, event.author.username, att_ext)
-            ratings.append(int(rating))
-        except Exception as e:
-            continue
+    await rate_meme(event.message, ratings)
 
+
+async def rate_meme(message: hikari.Message, ratings: list[int]) -> None:
     if not ratings:
         return
+    
+    cursor = db.cursor()
+    
+    curr_ratings = cursor.execute("select meme_rating, rating_count from meme_stats where message_id = ?", (message.id,)).fetchone()
+    entry_exists = True
+    if not curr_ratings:
+        curr_ratings = (0, 0)
+        entry_exists = False
 
-    avg_rating = min(max(0, sum(ratings) // len(ratings)), 10)
+    avg_rating = min(max(0, sum(ratings) + curr_ratings[0] // (len(ratings) + curr_ratings[1])), 10)
 
-    await event.message.add_reaction(emoji=number_emoji(avg_rating))
-    await event.message.add_reaction(emoji="🐱")
+    if entry_exists:
+        await message.remove_all_reactions()
+
+    await message.add_reaction(emoji=number_emoji(avg_rating))
+    await message.add_reaction(emoji="🐱")
 
     if avg_rating >= MINIMUM_MEME_RATING_TO_NOT_DELETE:
-        await event.message.add_reaction(emoji="👍")
+        await message.add_reaction(emoji="👍")
     elif DELETE_SHIT:
-        await event.message.delete()
-        await event.message.respond(
+        await message.delete()
+        await message.respond(
             f"That meme was garbage 💩💩💩. I rated it {avg_rating}/10. Send something better."
         )
     else:
-        await event.message.add_reaction(emoji="💩")
+        await message.add_reaction(emoji="💩")
 
     # add some basic meme stats to the db so we can track who is improving, rotting, or standing still
     # avg rating row inserted is just for this set of memes. Another query elsewhere aggregates.
-    cursor.execute(
-        "insert into meme_stats values(?, ?, ?, ?)",
-        (event.author_id, event.message_id, avg_rating, event.message.timestamp),
-    )
+    if entry_exists:
+        cursor.execute(
+            "update meme_stats set meme_rating = ?, rating_count = ?, meme_score = ? WHERE message_id = ?",
+            (sum(ratings) + curr_ratings[0], len(ratings) + curr_ratings[1], avg_rating, message.id)
+        )
+    else:
+        cursor.execute(
+            "insert into meme_stats values(?, ?, ?, ?, ?, ?)",
+            (message.author.id, message.id, avg_rating, message.timestamp, sum(ratings), len(ratings)),
+        )
+    
     db.commit()
 
 
