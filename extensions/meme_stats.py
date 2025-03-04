@@ -9,7 +9,7 @@ import matplotlib.font_manager as fm
 import matplotlib.image as image
 import matplotlib.pyplot as plt
 from io import BytesIO
-import pandas as pd # sorry
+import pandas as pd
 
 plugin = lightbulb.Plugin("MemeStats")
 
@@ -61,7 +61,7 @@ async def main(ctx: lightbulb.Context) -> None:
     plt.title(f'Meme Scores Over Time ({time_period}) for {user.display_name}', fontsize=16)
     plt.xticks(fontsize=8)
     plt.yticks(fontsize=12)
-    plt.ylim(bottom=0, top=10)  # Start y-axis at 0
+    plt.ylim(bottom=0, top=max(10, df["avg_meme_score"].max()))  # Start y-axis at 0
     plt.grid(False)
     plt.tight_layout()
     plt.savefig(buffer, format='png', dpi=300)
