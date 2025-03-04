@@ -1,4 +1,4 @@
-import os
+import os, re
 import logging
 import db
 import sqlite3
@@ -9,8 +9,6 @@ import requests
 from commons.agents import kitty_meme_agent
 from typing import Final
 from pydantic_ai import BinaryContent
-
-
 
 plugin = lightbulb.Plugin("MemeRater")
 
@@ -29,8 +27,7 @@ MEME_RATE_PROMPT: Final[str] = os.environ.get("MEME_RATING_PROMPT",
 MINIMUM_MEME_RATING_TO_NOT_DELETE: Final[int] = int(os.environ.get("MEME_QUALITY_THRESHOLD", "6"))
 DELETE_SHIT: Final[bool] = False
 IMG_FILE_EXTENSIONS: Final = {"jpg", "jpeg", "png", "webp"}
-
-
+IMAGE_URL_REGEX = re.compile("(https?:\/\/.*\.(?:png|jpe?g|webp)\??.*)", flags=re.IGNORECASE)
 
 async def get_meme_rating(image_url: str, user: str, att_ext: str):
     image = requests.get(image_url, stream=True)
@@ -66,6 +63,15 @@ async def main(event: hikari.GuildMessageCreateEvent) -> None:
             ratings.append(int(rating))
         except Exception as e:
             continue
+    
+    for match in IMAGE_URL_REGEX.finditer(event.message.content):
+        image_url = match.group(1)
+        try:
+            rating = await get_meme_rating(image_url, event.author.username, att_ext)
+            ratings.append(int(rating))
+        except Exception as e:
+            continue
+
     if not ratings:
         return
 
