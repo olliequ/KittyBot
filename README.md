@@ -36,7 +36,7 @@
 
 - Kitti is an open-source, community-powered bot for the `CS@unimelb` Discord server.
 - This bot is made using **Hikari** & **Lightbulb**. These are two nice & simple **Python** libraries.
-- **Note**: Python version 3.10 is required.
+- **Note**: Python version 3.11 is required.
 - The docs for these two libraries are https://www.hikari-py.dev/hikari/ & https://hikari-lightbulb.readthedocs.io/en/latest/.
 - The following _get-started_ guide is very nice if you want to quickly understand how these libraries work: https://novanai.readthedocs.io/en/latest/lightbulb/index.html
 - **Pull requests are very much accepted (and encouraged!)** if you want to add features to the bot & server :)
@@ -60,6 +60,7 @@ RANK_CHANGE_FLOOR=30 # Only users above this rank will be announced when they ov
 GEMINI_API_KEY=abcd # Access to google gemini LLM
 BOT_ADMIN_ROLE=11111111111111111 # Role has access to some commands
 RANT_AND_VENT_CHANNEL_ID=11111111111111111 # The channel you want rantpatrol to be active in
+MEME_CHANNEL_ID=1111111111111111 # your meme channel where kitti will rate memes posted
 ```
 
 - The `/fortune` command requires the `fortunes` package to be installed and pointed to by the `FORTUNE_DIRECTORY` variable in `.env`.
