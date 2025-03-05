@@ -9,9 +9,11 @@ import requests
 from commons.agents import kitty_meme_agent
 from typing import Final
 from pydantic_ai import BinaryContent
+import asyncio
 
 plugin = lightbulb.Plugin("MemeRater")
 
+RATER_LOCK = asyncio.Lock()
 
 MEME_CHANNEL_ID = int(os.environ.get("MEME_CHANNEL_ID", 0))
 MEME_RATE_PROMPT: Final[str] = os.environ.get("MEME_RATING_PROMPT",
@@ -62,9 +64,9 @@ async def msg_update(event: hikari.GuildMessageUpdateEvent) -> None:
     ratings = []
 
     for embed in event.message.embeds:
-        if not embed.image:
+        if not embed.thumbnail:
             continue
-        image_url = embed.image.proxy_url
+        image_url = embed.thumbnail.proxy_url
         
         try:
             rating = await get_meme_rating(image_url, event.author.username)
@@ -97,49 +99,50 @@ async def msg_create(event: hikari.GuildMessageCreateEvent) -> None:
 
 
 async def rate_meme(message: hikari.Message, ratings: list[int]) -> None:
-    if not ratings:
-        return
-    
-    cursor = db.cursor()
-    
-    curr_ratings = cursor.execute("select meme_rating, rating_count from meme_stats where message_id = ?", (message.id,)).fetchone()
-    entry_exists = True
-    if not curr_ratings:
-        curr_ratings = (0, 0)
-        entry_exists = False
+    async with RATER_LOCK:
+        if not ratings:
+            return
+        
+        cursor = db.cursor()
+        
+        curr_ratings = cursor.execute("select meme_rating, rating_count from meme_stats where message_id = ?", (message.id,)).fetchone()
+        entry_exists = True
+        if not curr_ratings:
+            curr_ratings = (0, 0)
+            entry_exists = False
 
-    avg_rating = min(max(0, sum(ratings) + curr_ratings[0] // (len(ratings) + curr_ratings[1])), 10)
+        avg_rating = min(max(0, (sum(ratings) + curr_ratings[0]) // (len(ratings) + curr_ratings[1])), 10)
 
-    if entry_exists:
-        await message.remove_all_reactions()
+        if entry_exists:
+            await message.remove_all_reactions()
 
-    await message.add_reaction(emoji=number_emoji(avg_rating))
-    await message.add_reaction(emoji="🐱")
+        await message.add_reaction(emoji=number_emoji(avg_rating))
+        await message.add_reaction(emoji="🐱")
 
-    if avg_rating >= MINIMUM_MEME_RATING_TO_NOT_DELETE:
-        await message.add_reaction(emoji="👍")
-    elif DELETE_SHIT:
-        await message.delete()
-        await message.respond(
-            f"That meme was garbage 💩💩💩. I rated it {avg_rating}/10. Send something better."
-        )
-    else:
-        await message.add_reaction(emoji="💩")
+        if avg_rating >= MINIMUM_MEME_RATING_TO_NOT_DELETE:
+            await message.add_reaction(emoji="👍")
+        elif DELETE_SHIT:
+            await message.delete()
+            await message.respond(
+                f"That meme was garbage 💩💩💩. I rated it {avg_rating}/10. Send something better."
+            )
+        else:
+            await message.add_reaction(emoji="💩")
 
-    # add some basic meme stats to the db so we can track who is improving, rotting, or standing still
-    # avg rating row inserted is just for this set of memes. Another query elsewhere aggregates.
-    if entry_exists:
-        cursor.execute(
-            "update meme_stats set meme_rating = ?, rating_count = ?, meme_score = ? WHERE message_id = ?",
-            (sum(ratings) + curr_ratings[0], len(ratings) + curr_ratings[1], avg_rating, message.id)
-        )
-    else:
-        cursor.execute(
-            "insert into meme_stats values(?, ?, ?, ?, ?, ?)",
-            (message.author.id, message.id, avg_rating, message.timestamp, sum(ratings), len(ratings)),
-        )
-    
-    db.commit()
+        # add some basic meme stats to the db so we can track who is improving, rotting, or standing still
+        # avg rating row inserted is just for this set of memes. Another query elsewhere aggregates.
+        if entry_exists:
+            cursor.execute(
+                "update meme_stats set meme_rating = ?, rating_count = ?, meme_score = ? WHERE message_id = ?",
+                (sum(ratings) + curr_ratings[0], len(ratings) + curr_ratings[1], avg_rating, message.id)
+            )
+        else:
+            cursor.execute(
+                "insert into meme_stats values(?, ?, ?, ?, ?, ?)",
+                (message.author.id, message.id, avg_rating, message.timestamp, sum(ratings), len(ratings)),
+            )
+        
+        db.commit()
 
 
 
