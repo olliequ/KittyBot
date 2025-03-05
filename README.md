@@ -28,7 +28,7 @@
   2. `emoji`: Returns an embed of the top 5 used emojis of the user, their total messages, and what 'rank' they are in terms of total messages sent.
   - If no option is specified, the `emoji` type is chosen by default.
 - `/wordcloud` command: Returns a 'wordcloud' of all unicode emojis used to-date by a specified user.
-- `/setprompt` command: Set prompt for Gemini LLM queries
+- `/setprompt` command: Set prompt for Gemini LLM queries.
 - All commands have a 10-second cooldown period (per user), and are generally called in using command form.
 - There are several other Easter Eggs in Kitti easily discovered through usage ;)
 
