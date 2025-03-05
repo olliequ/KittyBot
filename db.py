@@ -1,6 +1,11 @@
 import sqlite3
 import os
 import logging
+import typing as t
+from collections.abc import Callable
+
+# Reexport type for convenience of module users
+Cursor = sqlite3.Cursor
 
 def cursor():
     return conn.cursor()
@@ -29,7 +34,15 @@ def start():
     c.execute("CREATE TABLE IF NOT EXISTS options (name TEXT, value TEXT)")
     c.execute("CREATE UNIQUE INDEX IF NOT EXISTS options_idx ON options (name)")
 
-def get_option(name: str, default=None):
+@t.overload
+def get_option(name: str) -> t.Optional[str]:
+    ...
+
+@t.overload
+def get_option(name: str, default: str) -> str:
+    ...
+
+def get_option(name: str, default: t.Optional[str] = None) -> t.Optional[str]:
     res = cursor().execute("select value from options where name = ?", (name,)).fetchone()
     if res is None:
         return default
@@ -40,7 +53,7 @@ def set_option(name: str, value: str):
                      (name, value))
     commit()
 
-def create_function(name, nargs, fn):
+def create_function(name: str, nargs: int, fn: Callable[..., t.Any]):
     conn.create_function(name, nargs, fn)
 
 sqlite3.enable_callback_tracebacks(True)

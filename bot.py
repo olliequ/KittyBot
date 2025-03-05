@@ -16,7 +16,7 @@ bot = lightbulb.BotApp(
 
 
 @bot.listen(hikari.StartedEvent)
-async def botStartup(event):
+async def botStartup(event: hikari.StartedEvent):
     print("Bot has started up!")
 
 
@@ -24,7 +24,7 @@ async def botStartup(event):
 async def on_error(event: lightbulb.CommandErrorEvent) -> None:
     if isinstance(event.exception, lightbulb.CommandInvocationError):
         await event.context.respond(
-            f"Something went wrong during invocation of command `{event.context.command.name}`.")
+            f"Something went wrong during invocation of command `{event.context.command.name if event.context.command else ''}`.")
         raise event.exception
 
     # Unwrap the exception to get the original cause

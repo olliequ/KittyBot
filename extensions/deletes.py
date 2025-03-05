@@ -1,16 +1,15 @@
 import re
 from datetime import datetime
 from itertools import chain
-from emoji import emoji_list, replace_emoji
+from emoji import emoji_list
 import hikari, lightbulb
 import db
-import numpy as np
-import matplotlib.pyplot as plt
-from io import BytesIO
+from commons.datautil import get_member
+import typing as t
 
 plugin = lightbulb.Plugin("deletesinquiry")
 
-def decrement_emoji_count(cursor, usages):
+def decrement_emoji_count(cursor: db.Cursor, usages: t.Sequence[tuple[str, str]]):
     cursor.execute(f"""
         INSERT INTO emoji_counts (user, emoji, count)
         VALUES {','.join(['(?, ?, 0)'] * len(usages))} 
@@ -50,16 +49,18 @@ async def delete_increment(event: hikari.GuildMessageDeleteEvent) -> None:
     db.commit()
 
 async def show_deletes(ctx: lightbulb.Context) -> None:
+    if ctx.member is None:
+        return
     cursor = db.cursor()
     cursor.execute("""
         SELECT user, count FROM message_deletes
         ORDER BY count DESC
         LIMIT 5""")
     deletes = cursor.fetchall()
-    top_deleter = ctx.get_guild().get_member(deletes[0][0])
-    delete_list = []
+    top_deleter = get_member(ctx, deletes[0][0])
+    delete_list: list[str] = []
     for rank in range(len(deletes)):
-        rank_str = f'`#{rank + 1}` {ctx.get_guild().get_member(deletes[rank][0]).display_name} has `{deletes[rank][1]}` message(s) deleted!'
+        rank_str = f'`#{rank + 1}` {get_member(ctx, deletes[rank][0]).display_name} has `{deletes[rank][1]}` message(s) deleted!'
         delete_list.append(rank_str)
 
     embed = (
