@@ -6,6 +6,7 @@ Eventually, some time in the future, all possible strings will have been said, a
 
 Inspired by: https://blog.xkcd.com/2008/01/14/robot9000-and-xkcd-signal-attacking-noise-in-chat/
 """
+
 import os, re
 import hashlib
 import hikari, lightbulb
@@ -98,5 +99,5 @@ async def delete_hash(event: hikari.GuildMessageDeleteEvent) -> None:
 
 
 def load(bot: lightbulb.BotApp):
-    db.create_function("md5", 1, lambda v : hashlib.md5(v.encode('utf-8')).hexdigest())
+    db.create_function("md5", 1, lambda v: hashlib.md5(v.encode("utf-8")).hexdigest())
     bot.add_plugin(plugin)

@@ -28,19 +28,27 @@ async def get_file_name(emoji: str, bot: lightbulb.BotApp) -> Optional[str]:
     if cache_result:
         return cache_result
 
+
 def _get_cached_file_name(emoji_id: str) -> Optional[str]:
-    for ext in ("gif", "png", "jpg"):  # Emoji can be cached in any format. So need to check all possible
+    for ext in (
+        "gif",
+        "png",
+        "jpg",
+    ):  # Emoji can be cached in any format. So need to check all possible
         tp = f"assets/{emoji_id}.{ext}"
         if os.path.exists(tp):
             return tp
 
+
 async def _download_emoji(emoji_id: str, bot: lightbulb.BotApp):
     try:
-        info = await bot.rest.fetch_emoji(int(os.environ["DEFAULT_GUILDS"].split(',')[0]), emoji_id)
+        info = await bot.rest.fetch_emoji(
+            int(os.environ["DEFAULT_GUILDS"].split(",")[0]), emoji_id
+        )
     except NotFoundError:  # Emoji no longer available. Ignore
         return
 
     print("Downloading New Emoji", info, info.url)
     r = requests.get(info.url)
-    with open(f"assets/{info.filename}", 'wb') as outfile:
+    with open(f"assets/{info.filename}", "wb") as outfile:
         outfile.write(r.content)

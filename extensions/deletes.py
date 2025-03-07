@@ -10,13 +10,17 @@ from io import BytesIO
 
 plugin = lightbulb.Plugin("deletesinquiry")
 
+
 def decrement_emoji_count(cursor, usages):
-    cursor.execute(f"""
+    cursor.execute(
+        f"""
         INSERT INTO emoji_counts (user, emoji, count)
         VALUES {','.join(['(?, ?, 0)'] * len(usages))} 
         ON CONFLICT (user, emoji) DO UPDATE
         SET count = emoji_counts.count - 1""",
-        tuple(chain.from_iterable(usages)))
+        tuple(chain.from_iterable(usages)),
+    )
+
 
 @plugin.listener(hikari.GuildMessageDeleteEvent)
 async def delete_increment(event: hikari.GuildMessageDeleteEvent) -> None:
@@ -24,49 +28,58 @@ async def delete_increment(event: hikari.GuildMessageDeleteEvent) -> None:
     User has deleted a message -- update the count.
     """
     message_object = event.old_message
-    if message_object is None: # Then the message is really old and we can't retrieve its contents. Return to avoid exception.
+    if (
+        message_object is None
+    ):  # Then the message is really old and we can't retrieve its contents. Return to avoid exception.
         return
 
-    user_id = message_object.author.id  # ID of the message author (not neccessarily the deleter).
-    content = message_object.content    # Contents of message.
+    user_id = (
+        message_object.author.id
+    )  # ID of the message author (not neccessarily the deleter).
+    content = message_object.content  # Contents of message.
     if message_object.author.is_bot:
         return
 
     cursor = db.cursor()
     if content:
-        custom_emoji = re.findall(r'<.?:.+?:\d+>', content)
+        custom_emoji = re.findall(r"<.?:.+?:\d+>", content)
         unicode_emoji = emoji_list(content)
-        emoji = custom_emoji + [x['emoji'] for x in unicode_emoji]
+        emoji = custom_emoji + [x["emoji"] for x in unicode_emoji]
 
         if len(emoji):
             decrement_emoji_count(cursor, [(str(user_id), e) for e in emoji])
 
-    cursor.execute("""
+    cursor.execute(
+        """
         INSERT INTO message_deletes (user, count)
         VALUES (?, 1)
         ON CONFLICT (user) DO UPDATE
         SET count = message_deletes.count + 1""",
-        (user_id,))
+        (user_id,),
+    )
     db.commit()
+
 
 async def show_deletes(ctx: lightbulb.Context) -> None:
     cursor = db.cursor()
-    cursor.execute("""
+    cursor.execute(
+        """
         SELECT user, count FROM message_deletes
         ORDER BY count DESC
-        LIMIT 5""")
+        LIMIT 5"""
+    )
     deletes = cursor.fetchall()
     top_deleter = ctx.get_guild().get_member(deletes[0][0])
     delete_list = []
     for rank in range(len(deletes)):
-        rank_str = f'`#{rank + 1}` {ctx.get_guild().get_member(deletes[rank][0]).display_name} has `{deletes[rank][1]}` message(s) deleted!'
+        rank_str = f"`#{rank + 1}` {ctx.get_guild().get_member(deletes[rank][0]).display_name} has `{deletes[rank][1]}` message(s) deleted!"
         delete_list.append(rank_str)
 
     embed = (
         hikari.Embed(
             title=f"Sneaky Deleters ;)",
             colour=0x3B9DFF,
-            timestamp=datetime.now().astimezone()
+            timestamp=datetime.now().astimezone(),
         )
         .set_footer(
             text=f"Requested by {ctx.member.display_name}",
@@ -75,18 +88,20 @@ async def show_deletes(ctx: lightbulb.Context) -> None:
         .set_thumbnail(ctx.member.avatar_url or ctx.member.default_avatar_url)
         .add_field(
             "Top 5 deleters:",
-            '\n'.join(delete_list) if len(delete_list) else 'None',
-            inline=False
+            "\n".join(delete_list) if len(delete_list) else "None",
+            inline=False,
         )
     )
     await ctx.respond(embed)
-     
+
+
 @plugin.command
 @lightbulb.add_cooldown(10, 1, lightbulb.UserBucket)
 @lightbulb.command("deletesinquiry", "Details the top deleters ;)")
 @lightbulb.implements(lightbulb.SlashCommand)
 async def main(ctx: lightbulb.Context) -> None:
     await show_deletes(ctx)
+
 
 def load(bot: lightbulb.BotApp) -> None:
     bot.add_plugin(plugin)
