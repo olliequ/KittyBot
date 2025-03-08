@@ -61,16 +61,18 @@ async def main(ctx: lightbulb.Context) -> None:
     counts = [
         i
         for i in counts
-        if not i[0].startswith('<') or await emoji_cache.get_file_name(i[0], ctx.bot)
+        if not i[0].startswith("<") or await emoji_cache.get_file_name(i[0], ctx.bot)
     ]
 
     if len(counts) == 0:
-        await ctx.respond(f"{ctx.options.target.display_name if ctx.options.target else 'server'} has not used any emoji.")
+        await ctx.respond(
+            f"{ctx.options.target.display_name if ctx.options.target else 'server'} has not used any emoji."
+        )
         return
 
-    all_thumbnails: list[
-        (Image.Image, str)
-    ] = []  # List of Image and type (Custom or Unicode)
+    all_thumbnails: list[(Image.Image, str)] = (
+        []
+    )  # List of Image and type (Custom or Unicode)
     max_num_frames = 1
     script_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -83,11 +85,7 @@ async def main(ctx: lightbulb.Context) -> None:
         if p[3][0] == "<":  # Custom Emoji have "<" in the beginning
             file_name = await emoji_cache.get_file_name(p[3], ctx.bot)
             if file_name:
-                thumbnail = Image.open(
-                    os.path.join(
-                        script_dir, "..", file_name
-                    )
-                )
+                thumbnail = Image.open(os.path.join(script_dir, "..", file_name))
                 max_num_frames = max(max_num_frames, thumbnail.n_frames)
                 all_thumbnails.append((thumbnail, "custom"))
         else:  # Regular Unicode Emoji

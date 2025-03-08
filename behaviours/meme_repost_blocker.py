@@ -1,19 +1,19 @@
 import os
 
-import hikari, lightbulb
+import hikari
 from PIL import Image
 import imagehash
+import behaviours
 import db
 import re
 import requests
 import io
 
-plugin = lightbulb.Plugin("ImageHashDetector")
 phash_th = "PHASH_TH"
 chash_th = "CHASH_TH"
 HASH_SIZE = 16
 
-@plugin.listener(hikari.GuildMessageCreateEvent)
+
 async def main(event: hikari.GuildMessageCreateEvent) -> None:
     # Don't handle messages from bots or without content
     if event.is_bot:
@@ -40,13 +40,19 @@ async def main(event: hikari.GuildMessageCreateEvent) -> None:
             image = Image.open(file_buffer)
             hash_color = imagehash.colorhash(image, HASH_SIZE)
             # Check if the approximate hash exists in the database
-            c.execute("""
+            c.execute(
+                """
                 SELECT rowid, message_id, channel_id, guild_id
                 FROM image_hashes
                 WHERE hammingDistance(hash, ?) < ?
                     AND hammingDistanceColor(hash_color, ?) < ?
                 ORDER BY rowid ASC""",
-                (str(image_hash), int(os.getenv(phash_th, "50")), str(hash_color), int(os.getenv(chash_th, "50")))
+                (
+                    str(image_hash),
+                    int(os.getenv(phash_th, "50")),
+                    str(hash_color),
+                    int(os.getenv(chash_th, "50")),
+                ),
             )
 
             results = c.fetchall()
@@ -60,10 +66,11 @@ async def main(event: hikari.GuildMessageCreateEvent) -> None:
                     print(await event.app.rest.fetch_message(channel_id, message_id))
 
                 except hikari.errors.NotFoundError:
-                    c.execute("""
+                    c.execute(
+                        """
                         DELETE FROM image_hashes
                         WHERE rowid = ?""",
-                        (row_id,)
+                        (row_id,),
                     )
                 else:
                     valid_results.append(result)
@@ -72,11 +79,13 @@ async def main(event: hikari.GuildMessageCreateEvent) -> None:
             # a) similarity is not necessarily transitive
             # b) the first could be deleted, so this message becomes the only record of it
             # Do this before sending the response so network errors do not prevent us getting to a db commit.
-            c.execute("""
+            c.execute(
+                """
                 INSERT INTO image_hashes
                 (hash, hash_color, message_id, channel_id, guild_id)
                 VALUES (?, ?, ?, ?, ?)""",
-                (str(image_hash),
+                (
+                    str(image_hash),
                     str(hash_color),
                     event.message_id,
                     event.channel_id,
@@ -92,8 +101,18 @@ async def main(event: hikari.GuildMessageCreateEvent) -> None:
                 guild_id = valid_results[0][3]
                 response_message = f"Hey {event.author.mention}! Your image has seemingly already been posted before. Time to strive for more originality? <:kermitsippy:1019863020295442533>\n\nIt was first posted here: https://discord.com/channels/{guild_id}/{channel_id}/{message_id}"
                 await event.message.respond(response_message)
+                raise behaviours.EndProcessing()
 
-def load(bot: lightbulb.BotApp) -> None:
-    db.create_function("hammingDistance", 2, lambda a, b : imagehash.hex_to_hash(a) - imagehash.hex_to_hash(b))
-    db.create_function("hammingDistanceColor", 2, lambda a, b : imagehash.hex_to_flathash(a, HASH_SIZE) - imagehash.hex_to_flathash(b, HASH_SIZE))
-    bot.add_plugin(plugin)
+
+def load() -> None:
+    db.create_function(
+        "hammingDistance",
+        2,
+        lambda a, b: imagehash.hex_to_hash(a) - imagehash.hex_to_hash(b),
+    )
+    db.create_function(
+        "hammingDistanceColor",
+        2,
+        lambda a, b: imagehash.hex_to_flathash(a, HASH_SIZE)
+        - imagehash.hex_to_flathash(b, HASH_SIZE),
+    )

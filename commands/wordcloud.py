@@ -19,12 +19,14 @@ from PIL import Image, ImageFont, ImageDraw, ImageChops, ImageOps
 plugin = lightbulb.Plugin("WordCloud")
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
+
 def emoji_size(font: ImageFont.FreeTypeFont, emoji: str) -> tuple[float, float]:
     """
     Return (width, height)
     """
     (left, top, right, bottom) = font.getbbox(emoji)
     return (right, bottom)
+
 
 @plugin.command
 @lightbulb.add_cooldown(10, 1, lightbulb.UserBucket)
@@ -56,7 +58,9 @@ async def main(ctx: lightbulb.Context) -> None:
     # code credit https://gist.github.com/pbojinov/7f680445d50a9bd5a421
 
     # calculate mask if it doesn't exist
-    mask_path = os.path.join(d, "assets", f"{hashlib.md5(top_emoji.encode()).hexdigest()}.png")
+    mask_path = os.path.join(
+        d, "assets", f"{hashlib.md5(top_emoji.encode()).hexdigest()}.png"
+    )
     if not os.path.isfile(mask_path):
         W, H = (512, 400)  # image size
         background = (255, 255, 255)  # white
@@ -78,9 +82,9 @@ async def main(ctx: lightbulb.Context) -> None:
         black, white = 0, 0
         for pixel in image.getdata():
             match (pixel):
-                case ((255, 255, 255)):
+                case (255, 255, 255):
                     white += 1
-                case ((0, 0, 0)):
+                case (0, 0, 0):
                     black += 1
 
         if black < white:
@@ -117,7 +121,7 @@ async def main(ctx: lightbulb.Context) -> None:
         # the matplotlib way:
         plt.imshow(wc, interpolation="none")
         plt.axis("off")
-        plt.title(f'Unicode Emoji Cloud for {ctx.options.target.display_name}')
+        plt.title(f"Unicode Emoji Cloud for {ctx.options.target.display_name}")
 
         buffer = BytesIO()
         plt.savefig(buffer, format="png", bbox_inches="tight", pad_inches=0)
