@@ -11,7 +11,9 @@ bot = lightbulb.BotApp(
     prefix="+",
     banner=None,
     intents=hikari.Intents.ALL,
-    default_enabled_guilds=tuple(int(v) for v in os.environ["DEFAULT_GUILDS"].split(','))
+    default_enabled_guilds=tuple(
+        int(v) for v in os.environ["DEFAULT_GUILDS"].split(",")
+    ),
 )
 
 
@@ -24,7 +26,8 @@ async def botStartup(event):
 async def on_error(event: lightbulb.CommandErrorEvent) -> None:
     if isinstance(event.exception, lightbulb.CommandInvocationError):
         await event.context.respond(
-            f"Something went wrong during invocation of command `{event.context.command.name}`.")
+            f"Something went wrong during invocation of command `{event.context.command.name}`."
+        )
         raise event.exception
 
     # Unwrap the exception to get the original cause
@@ -34,7 +37,8 @@ async def on_error(event: lightbulb.CommandErrorEvent) -> None:
         await event.context.respond("You are not the owner of this bot.")
     elif isinstance(exception, lightbulb.CommandIsOnCooldown):
         await event.context.respond(
-            f"This command is on cooldown for you {event.context.author.mention}. Try again in `{exception.retry_after:.2f}` seconds.")
+            f"This command is on cooldown for you {event.context.author.mention}. Try again in `{exception.retry_after:.2f}` seconds."
+        )
 
 
 """

@@ -5,11 +5,12 @@ import extensions.fortune
 
 plugin = lightbulb.Plugin("Say")
 
+
 @plugin.command
-@lightbulb.option("character", "Which character?", 
-                  required=True, choices=cowsay.char_names)
-@lightbulb.option("message", "Message to say", 
-                  required=True)
+@lightbulb.option(
+    "character", "Which character?", required=True, choices=cowsay.char_names
+)
+@lightbulb.option("message", "Message to say", required=True)
 @lightbulb.command("say", "Say a custom message with an ASCII character.")
 @lightbulb.implements(lightbulb.SlashCommand)
 async def main(ctx: lightbulb.Context) -> None:
@@ -26,12 +27,15 @@ async def main(ctx: lightbulb.Context) -> None:
         await ctx.respond(say("That message was too long."))
     else:
         await ctx.respond(message)
-        
+
+
 def say(msg: str, character: str = "cow") -> str:
     return code_block(cowsay.get_output_string(text=msg, char=character))
 
+
 def code_block(s: str) -> str:
     return f"```{s}```"
+
 
 def load(bot: lightbulb.BotApp) -> None:
     bot.add_plugin(plugin)
