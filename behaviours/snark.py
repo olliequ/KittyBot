@@ -1,10 +1,10 @@
 import os, re, datetime, hashlib
-import hikari, lightbulb
-import db
-from commons.agents import kitty_gemini_agent
-import logging as log
 
-plugin = lightbulb.Plugin("Snark")
+import hikari
+import behaviours
+import db
+import commons.agents
+import logging as log
 
 eight_ball_responses = [
     "It is certain.",
@@ -75,41 +75,22 @@ async def llm_response(event) -> str | None:
     message_content = event.content
     try:
         prompt = db.get_option("LLM_PROMPT")
-        response = await kitty_gemini_agent.run(
+        response = await commons.agents.agent('chat').run(
             message_content, event.author.mention, prompt
         )
         if not response:
             return "No."
     except Exception as e:
-        log.info(e)
+        log.exception("Cannot get LLM response", exc_info=e)
         return classical_response(event)
     return response.replace("@everyone", "everyone").replace("@here", "here")
 
 
-@plugin.command
-@lightbulb.option(
-    "prompt", "New prompt. {} is replaced with input.", type=str, required=True
-)
-@lightbulb.command("setprompt", "Update LLM prompt")
-@lightbulb.implements(lightbulb.SlashCommand)
-async def setprompt(ctx: lightbulb.Context) -> None:
-    current_roles = (await ctx.member.fetch_roles())[1:]
-    for role in current_roles:
-        if role.id == int(os.environ["BOT_ADMIN_ROLE"]):
-            prompt = ctx.options.prompt
-            db.set_option("LLM_PROMPT", prompt)
-            print("Prompt is now: " + prompt)
-            await ctx.respond("OK")
-            return
-    await ctx.respond("Not an admin")
-
-
-@plugin.listener(hikari.GuildMessageCreateEvent)
-async def main(event) -> None:
+async def main(event: hikari.GuildMessageCreateEvent) -> None:
     if event.is_bot or not event.content:
         return
     mentioned_ids = event.message.user_mentions_ids
-    if plugin.bot.application.id not in mentioned_ids:
+    if not mentioned_ids or event.shard.get_user_id() not in mentioned_ids:
         return
     if event.channel_id == int(os.environ.get("ORIGINALITY_CHANNEL_ID")):
         response = await llm_response(event)
@@ -117,7 +98,4 @@ async def main(event) -> None:
         response = classical_response(event)
     if response:
         await event.message.respond(response, user_mentions=True, reply=True)
-
-
-def load(bot: lightbulb.BotApp) -> None:
-    bot.add_plugin(plugin)
+        raise behaviours.EndProcessing()

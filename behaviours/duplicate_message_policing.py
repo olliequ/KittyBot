@@ -9,17 +9,15 @@ Inspired by: https://blog.xkcd.com/2008/01/14/robot9000-and-xkcd-signal-attackin
 
 import os, re
 import hashlib
-import hikari, lightbulb
+import hikari
+import behaviours
 import db
 import sqlite3
 import humanize
 from datetime import datetime, timezone
 import asyncio
 
-plugin = lightbulb.Plugin("duplicate_message_policing")
 
-
-@plugin.listener(hikari.GuildMessageCreateEvent)
 async def delete_duplicate(event: hikari.GuildMessageCreateEvent) -> None:
     """
     Deletes duplicate messages (excepting some). A duplicate message is simply a matching string
@@ -84,9 +82,9 @@ async def delete_duplicate(event: hikari.GuildMessageCreateEvent) -> None:
         # delete deletion message after defined number of seconds (second best, due to inability to send ephemeral message directly)
         await asyncio.sleep(DELETION_NOTIFICATION_LONGEVITY)
         await response.delete()
+        raise behaviours.EndProcessing()
 
 
-@plugin.listener(hikari.GuildMessageDeleteEvent)
 async def delete_hash(event: hikari.GuildMessageDeleteEvent) -> None:
     """
     Deletes a message record such that another user (or the same user) can send this message again.
@@ -98,6 +96,5 @@ async def delete_hash(event: hikari.GuildMessageDeleteEvent) -> None:
     db.commit()
 
 
-def load(bot: lightbulb.BotApp):
+def load():
     db.create_function("md5", 1, lambda v: hashlib.md5(v.encode("utf-8")).hexdigest())
-    bot.add_plugin(plugin)

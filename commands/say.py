@@ -1,7 +1,7 @@
 import lightbulb
 import cowsay
 
-import extensions.fortune
+import commands.fortune
 
 plugin = lightbulb.Plugin("Say")
 
@@ -20,7 +20,7 @@ async def main(ctx: lightbulb.Context) -> None:
     else:
         message = ctx.options.message.strip()
         if message == "fortune" or ctx.prefix + message == "fortune":
-            message = extensions.fortune.fortune()
+            message = commands.fortune.fortune()
         message = say(message, character)
 
     if len(message) > 2000:

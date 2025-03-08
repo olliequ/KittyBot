@@ -1,7 +1,6 @@
-import os, re
-import hikari, lightbulb
+import re
 
-plugin = lightbulb.Plugin("paid")
+import behaviours
 
 """
 Bot makes a slight correction.
@@ -16,7 +15,6 @@ def contains_word(s, w):
     return f" {w} " in f" {s} "
 
 
-@plugin.listener(hikari.GuildMessageCreateEvent)
 async def main(event):
     if event.is_bot or not event.content:
         return
@@ -38,9 +36,6 @@ async def main(event):
         output_message = f"""FTFY.\n\nAlthough *payed* exists (the reason why autocorrection didn't help you), it is only correct in:\n\n**1)** Nautical context, when it means to paint a surface, or to cover with something like tar or resin in order to make it waterproof or corrosion-resistant. *The deck is yet to be payed*.\n**2)** Payed out when letting strings, cables or ropes out, by slacking them. *The rope is payed out! You can pull now*.\n\nUnfortunately {event.author.mention}, I was unable to find nautical or rope-related words in your comment."""
         response = f"> {corrected_message}\n\n{output_message}"
         await event.message.respond(response, reply=True, user_mentions=True)
+        raise behaviours.EndProcessing()
     else:
         return
-
-
-def load(bot: lightbulb.BotApp):
-    bot.add_plugin(plugin)
