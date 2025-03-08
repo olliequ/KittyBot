@@ -6,6 +6,7 @@ import db
 from typing import Any, Final, Optional
 import os
 import logging as log
+from collections import deque
 
 
 class KittyState(BaseModel):
@@ -76,6 +77,7 @@ class KittyAgent:
         self.model_settings = model_settings
         self.model = model
         self.prompt = prompt
+        self.messages = deque(maxlen=20)
         self.setup_agent()
 
     def setup_agent(self):
@@ -95,9 +97,13 @@ class KittyAgent:
             self.prompt = prompt
         state = KittyState(query=query, user=user)
         try:
-            response = await self.agent.run(query, deps=state)
+            response = await self.agent.run(
+                query, deps=state, message_history=list(self.messages)
+            )
         except Exception as e:
             raise Exception(f"Error running agent: {e}")
+        for messages in response.new_messages():
+            self.messages.append(messages)
         return response.data.answer
 
 
