@@ -6,7 +6,7 @@ import hikari
 import lightbulb
 from PIL import Image
 import requests
-from commons.agents import kitty_meme_agent
+from commons.agents import kitty_meme_agent, kitty_reasoner_meme_rater
 from typing import Final
 from pydantic_ai import BinaryContent
 import asyncio
@@ -39,9 +39,15 @@ async def get_meme_rating(image_url: str, user: str):
     if not image.raw:
         logging.info("Not image")
         return ""
-    response = await kitty_meme_agent.run(image=image, user=user)
+    try:
+        if kitty_reasoner_meme_rater:
+            response = await kitty_reasoner_meme_rater.run(image=image, user=user)
+        else:
+            raise Exception("No reasoner meme rater")
+    except Exception as e:
+        logging.info(f"Error running reasoner meme rater: {e}")
+        response = await kitty_meme_agent.run(image=image, user=user)
     logging.info(f"Meme rating response: {response}")
-
     try:
         return min(max(0, int(response)), 10)
     except Exception as e:
