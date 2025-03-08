@@ -4,48 +4,59 @@ import db
 
 plugin = lightbulb.Plugin("Emoji lovers.")
 
+
 def plural_or_not(number):
     if number == 1:
-        return 'time'
+        return "time"
     else:
-        return 'times'
+        return "times"
+
 
 async def show_emoji_lovers(ctx: lightbulb.Context, emoji) -> None:
     # user_id = ctx.author
     cursor = db.cursor()
-    cursor.execute("""
+    cursor.execute(
+        """
         SELECT user, count FROM emoji_counts
         WHERE emoji = ? AND count > 0
         ORDER BY count DESC
         LIMIT 5""",
-        (emoji,))
+        (emoji,),
+    )
     users = cursor.fetchall()
     user_list = []
     for rank in range(len(users)):
-        user = ctx.get_guild().get_member(users[rank][0]) # Check user is still in server.
+        user = ctx.get_guild().get_member(
+            users[rank][0]
+        )  # Check user is still in server.
         if user is not None:
-            user_list.append(f'`#{rank + 1}` {user.display_name} has used {emoji} `{users[rank][1]}` {plural_or_not(users[rank][1])}!')
-        else: # Handle if user is no longer in the server (and thus doesn't have a display name).
-            user_list.append(f'`#{rank + 1}` {users[rank][0]} has used {emoji} `{users[rank][1]}` {plural_or_not(users[rank][1])}!')
+            user_list.append(
+                f"`#{rank + 1}` {user.display_name} has used {emoji} `{users[rank][1]}` {plural_or_not(users[rank][1])}!"
+            )
+        else:  # Handle if user is no longer in the server (and thus doesn't have a display name).
+            user_list.append(
+                f"`#{rank + 1}` {users[rank][0]} has used {emoji} `{users[rank][1]}` {plural_or_not(users[rank][1])}!"
+            )
 
     embed = (
         hikari.Embed(
             title=f"Biggest users of {emoji}!",
             colour=0x3B9DFF,
-            timestamp=datetime.now().astimezone()
-            )
-            .set_footer(
+            timestamp=datetime.now().astimezone(),
+        )
+        .set_footer(
             text=f"Requested by {ctx.member.display_name}",
             icon=ctx.member.avatar_url,
-            )
-            .set_thumbnail(hikari.Emoji.parse(emoji).url)
-            .add_field(
+        )
+        .set_thumbnail(hikari.Emoji.parse(emoji).url)
+        .add_field(
             "Top 5 lovers:",
-            '\n'.join(user_list) if len(user_list) else 'None',
-            inline=False
+            "\n".join(user_list) if len(user_list) else "None",
+            inline=False,
         )
     )
     await ctx.respond(embed)
+
 
 @plugin.command
 @lightbulb.add_cooldown(10, 1, lightbulb.UserBucket)
@@ -54,6 +65,7 @@ async def show_emoji_lovers(ctx: lightbulb.Context, emoji) -> None:
 @lightbulb.implements(lightbulb.SlashCommand)
 async def main(ctx: lightbulb.Context) -> None:
     await show_emoji_lovers(ctx, ctx.options.emoji)
+
 
 def load(bot: lightbulb.BotApp) -> None:
     bot.add_plugin(plugin)

@@ -46,6 +46,7 @@
 - For readability purposes, if you want to add a function/command, **please write it in a new python file placed in the** `extensions` **folder** -- just like the `userinfo` and `fortune` commands are.
 - **Important**: If you want to develop/contribute/test/play-around, you will need to create a `.env` file and inside it add your bot token (as explained in the guide), and the '_default guild_' IDs. It will need to be like: `BOT_TOKEN = 123456` and `DEFAULT_GUILDS = 123456,56789` (comma-seperated list). Specifying guild IDs in `.env` is **not** neccessary, and actually the act of specifying certain IDs to it (can be many guilds) means that slash commands will only be available in those guilds. The benefit of specifying default guilds is that the slash commands become available **instantly** in those servers, which is good for testing purposes. Note: 'guild' means Discord server.
 - So, to be clear, your `.env` file should be located in the top layer of the repository (same level as `bot.py` and `requirements.txt`) and could look like this:
+- Run [`black`](https://github.com/psf/black) on PR - we enforce this on PRs!
 
 ```
 BOT_TOKEN = 123456 # Your bot’s token from the Discord Developer Portal.

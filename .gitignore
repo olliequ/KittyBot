@@ -14,3 +14,4 @@ data.db
 /assets/*.gif
 /assets/*.json
 /.venv
+/.mypy_cache/
