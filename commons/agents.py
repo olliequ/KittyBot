@@ -12,15 +12,19 @@ class KittyState(BaseModel):
     query: str = Field(description="The query to answer")
     user: str = Field(description="The user who asked the query")
 
+
 class MemeState(BaseModel):
     user: str = Field(description="The user who posted the meme")
+
 
 class MemeAnswer(BaseModel):
     rate: int = Field(description="The rating of the meme")
     explanation: Optional[str] = Field(description="The explanation of the rating")
-    
+
+
 class MemeDescription(BaseModel):
     description: str = Field(description="The textual description of the meme")
+
 
 class KittyAnswer(BaseModel):
     answer: str = Field(description="The answer to the query")
@@ -54,15 +58,16 @@ EYE_RATE_PROMPT: Final[str] = os.environ.get(
 
 REASONER_MEME_PROMPT: Final[str] = os.environ.get(
     "REASONER_MEME_PROMPT",
-        """
+    """
     Rate the following meme on a scale from 1 to 10, where 10 is the funniest.
     The rating should be based solely on how humorous a group of computer science enthusiasts—particularly those familiar with algorithms, programming languages, system design, debugging struggles, and internet culture—would find it.
     Prioritize technical wit, inside jokes, and references to common CS experiences (e.g., recursion jokes, stack overflows, regex pain).
     Do NOT factor in general audience appeal.
     If the description said is not a meme, factors the explanation in your rate and give a 0. 
     ONLY return an integer.
-    """
+    """,
 )
+
 
 class KittyAgent:
     def __init__(
@@ -128,18 +133,34 @@ class KittyMemeRater:
             raise Exception(f"Error running agent: {e}")
         return response.data.rate
 
-class ReasonerMemeRater():
-    def __init__(self, eye_model_settings: ModelSettings, eye_model: str, reasoner_model: str, eye_prompt: str, reasoner_prompt: str):
+
+class ReasonerMemeRater:
+    def __init__(
+        self,
+        eye_model_settings: ModelSettings,
+        eye_model: str,
+        reasoner_model: str,
+        eye_prompt: str,
+        reasoner_prompt: str,
+    ):
         self.eye_model_settings = eye_model_settings
         self.eye_model = eye_model
         self.reasoner_model = reasoner_model
         self.eye_prompt = eye_prompt
-        self.reasoner_prompt = reasoner_prompt 
+        self.reasoner_prompt = reasoner_prompt
         self.setup_agent()
 
     def setup_agent(self):
-        self.eyes = Agent(self.eye_model, model_settings=self.eye_model_settings, deps_type=MemeState, result_type=MemeDescription)
-        self.reasoner = Agent(self.reasoner_model, deps_type=MemeDescription, result_type=MemeAnswer)
+        self.eyes = Agent(
+            self.eye_model,
+            model_settings=self.eye_model_settings,
+            deps_type=MemeState,
+            result_type=MemeDescription,
+        )
+        self.reasoner = Agent(
+            self.reasoner_model, deps_type=MemeDescription, result_type=MemeAnswer
+        )
+
         @self.eyes.system_prompt
         def system_prompt_eye(state: RunContext[MemeState]):
             return self.eye_prompt.format_map(state.deps.model_dump())
@@ -152,15 +173,20 @@ class ReasonerMemeRater():
         if prompt:
             self.prompt = prompt
         state = MemeState(user=user)
-        image = BinaryContent(data=image.content, media_type=image.headers['Content-Type'])
+        image = BinaryContent(
+            data=image.content, media_type=image.headers["Content-Type"]
+        )
         try:
             eyes_response = await self.eyes.run([image], deps=state)
             log.info(f"Eyes response: {eyes_response.data.description}")
-            response = await self.reasoner.run(eyes_response.data.description, deps=eyes_response.data)
+            response = await self.reasoner.run(
+                eyes_response.data.description, deps=eyes_response.data
+            )
             log.info(response.data)
         except Exception as e:
             raise Exception(f"Error running agent: {e}")
-        return response.data.rate    
+        return response.data.rate
+
 
 gemini_model_settings = GeminiModelSettings(
     **generation_config,  # general model settings can also be specified
@@ -176,7 +202,11 @@ kitty_meme_agent = KittyMemeRater(
 
 if os.getenv("REASONER_MEME").lower() == "true":
     kitty_reasoner_meme_rater = ReasonerMemeRater(
-        gemini_model_settings, "gemini-2.0-flash-lite", "gemini-2.0-flash-lite", EYE_RATE_PROMPT, REASONER_MEME_PROMPT 
+        gemini_model_settings,
+        "gemini-2.0-flash-lite",
+        "gemini-2.0-flash-lite",
+        EYE_RATE_PROMPT,
+        REASONER_MEME_PROMPT,
     )
 else:
     kitty_reasoner_meme_rater = None
