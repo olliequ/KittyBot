@@ -7,7 +7,7 @@ import commons.agents
 import logging as log
 import languagemodels as lm
 
-lm.config["instruct_model"] ='Qwen2.5-0.5B-Instruct'
+lm.config["instruct_model"] = "Qwen2.5-0.5B-Instruct"
 lm.config["max_tokens"] = 2000
 
 eight_ball_responses = [
