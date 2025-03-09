@@ -213,7 +213,4 @@ def load():
         )
 
 def agent(name: str):
-    try:
-        return _agents[name]
-    except KeyError:
-        return None
+    return _agents[name]

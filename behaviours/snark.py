@@ -41,8 +41,10 @@ def find_whole_word(word, text):
     return re.compile(r"\b({0})\b".format(word), flags=re.IGNORECASE).search(text)
 
 
-def classical_response(event) -> str | None:
+def classical_response(event: hikari.GuildMessageCreateEvent) -> str | None:
     message_content = event.content
+    if not message_content:
+        return None
     regexp = re.compile(r"(\S|\s)\?(\s|$)")
     response = None
     if regexp.search(message_content):
@@ -63,7 +65,8 @@ def classical_response(event) -> str | None:
         response = f"Hey {event.author.mention}, I am a cat. With robot intestines. If you're bored, you should ask me a question, or check out my `+userinfo`, `+ping`, `+fortune` and `+fact` commands :cat:"
     elif (
         event.message.referenced_message
-        and event.message.referenced_message.author.id == plugin.bot.application.id
+        and event.message.referenced_message.author
+        and event.message.referenced_message.author.id == event.shard.get_user_id()
     ):
         return None
     else:

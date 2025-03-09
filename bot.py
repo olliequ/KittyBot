@@ -3,10 +3,14 @@
 import os
 import dotenv, aiohttp
 import hikari, lightbulb
+
+# Some modules are naughty and expect to load things from the environment
+# immediately on import.
+dotenv.load_dotenv()
+
 import behaviours
 import commons.agents
 
-dotenv.load_dotenv()
 
 bot = lightbulb.BotApp(
     os.environ["BOT_TOKEN"],
