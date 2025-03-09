@@ -1,9 +1,12 @@
 import os, re, datetime, hashlib
 import hikari, lightbulb
 import db
-from commons.agents import kitty_gemini_agent
+from commons.agents import kitty_gemini_agent, DEFAULT_PROMPT
 import logging as log
+import languagemodels as lm
 
+lm.config["instruct_model"] ='Qwen2.5-0.5B-Instruct'
+lm.config["max_tokens"] = 2000
 plugin = lightbulb.Plugin("Snark")
 
 eight_ball_responses = [
@@ -74,15 +77,25 @@ def classical_response(event) -> str | None:
 async def llm_response(event) -> str | None:
     message_content = event.content
     try:
-        prompt = db.get_option("LLM_PROMPT")
+        prompt = db.get_option("LLM_PROMPT", DEFAULT_PROMPT)
         response = await kitty_gemini_agent.run(
             message_content, event.author.mention, prompt
         )
         if not response:
             return "No."
     except Exception as e:
-        log.info(e)
-        return classical_response(event)
+        log.error("Error running llm_response")
+        log.error(e)
+        try:
+            lm_prompt = f"""
+            System: {prompt}
+            User: {message_content}
+            Assistant:
+            """
+            response = lm.chat(lm_prompt)
+        except Exception as e:
+            log.error(e)
+            return classical_response(event)
     return response.replace("@everyone", "everyone").replace("@here", "here")
 
 
