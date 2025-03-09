@@ -5,6 +5,10 @@ import behaviours
 import db
 import commons.agents
 import logging as log
+import languagemodels as lm
+
+lm.config["instruct_model"] ='Qwen2.5-0.5B-Instruct'
+lm.config["max_tokens"] = 2000
 
 eight_ball_responses = [
     "It is certain.",
@@ -77,15 +81,24 @@ def classical_response(event: hikari.GuildMessageCreateEvent) -> str | None:
 async def llm_response(event) -> str | None:
     message_content = event.content
     try:
-        prompt = db.get_option("LLM_PROMPT")
+        prompt = db.get_option("LLM_PROMPT", commons.agents.DEFAULT_PROMPT)
         response = await commons.agents.agent("chat").run(
             message_content, event.author.mention, prompt
         )
         if not response:
             return "No."
     except Exception as e:
-        log.exception("Cannot get LLM response", exc_info=e)
-        return classical_response(event)
+        log.exception("Error running llm_response", exc_info=e)
+        try:
+            lm_prompt = f"""
+            System: {prompt}
+            User: {message_content}
+            Assistant:
+            """
+            response = lm.chat(lm_prompt)
+        except Exception as e:
+            log.exception("Cannot get local LLM response", exc_info=e)
+            return classical_response(event)
     return response.replace("@everyone", "everyone").replace("@here", "here")
 
 
