@@ -5,7 +5,7 @@ from commons.agents import kitty_gemini_agent, DEFAULT_PROMPT
 import logging as log
 import languagemodels as lm
 
-lm.config["instruct_model"] ='Qwen2.5-0.5B-Instruct'
+lm.config["instruct_model"] = "Qwen2.5-0.5B-Instruct"
 lm.config["max_tokens"] = 2000
 plugin = lightbulb.Plugin("Snark")
 
