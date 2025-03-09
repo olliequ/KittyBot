@@ -10,6 +10,7 @@ from collections import deque
 
 _agents = {}
 
+
 class KittyState(BaseModel):
     query: str = Field(description="The query to answer")
     user: str = Field(description="The user who asked the query")
@@ -194,23 +195,25 @@ class ReasonerMemeRater:
             raise Exception(f"Error running agent: {e}")
         return response.data.rate
 
+
 def load():
     gemini_model_settings = GeminiModelSettings(
         **generation_config,  # general model settings can also be specified
         gemini_safety_settings=safety_settings,
     )
-    _agents['chat'] = KittyAgent(gemini_model_settings, "gemini-2.0-flash-lite")
-    _agents['meme_rater'] = KittyMemeRater(
+    _agents["chat"] = KittyAgent(gemini_model_settings, "gemini-2.0-flash-lite")
+    _agents["meme_rater"] = KittyMemeRater(
         gemini_model_settings, "gemini-2.0-flash-lite", MEME_RATE_PROMPT
     )
     if os.getenv("REASONER_MEME", "").lower() == "true":
-        _agents['reasoner_meme_rater'] = ReasonerMemeRater(
+        _agents["reasoner_meme_rater"] = ReasonerMemeRater(
             gemini_model_settings,
             "gemini-2.0-flash-lite",
             "gemini-2.0-flash-lite",
             EYE_RATE_PROMPT,
             REASONER_MEME_PROMPT,
         )
+
 
 def agent(name: str):
     return _agents[name]

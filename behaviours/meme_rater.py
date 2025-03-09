@@ -34,14 +34,14 @@ async def get_meme_rating(image_url: str, user: str):
         logging.info("Not image")
         return ""
     try:
-        kitty_reasoner_meme_rater = commons.agents.agent('reasoner_meme_rater')
+        kitty_reasoner_meme_rater = commons.agents.agent("reasoner_meme_rater")
         if kitty_reasoner_meme_rater:
             response = await kitty_reasoner_meme_rater.run(image=image, user=user)
         else:
             raise Exception("No reasoner meme rater")
     except Exception as e:
         logging.info(f"Error running reasoner meme rater: {e}")
-        response = await commons.agents.agent('meme_rater').run(image=image, user=user)    
+        response = await commons.agents.agent("meme_rater").run(image=image, user=user)
     logging.info(f"Meme rating response: {response}")
     try:
         return min(max(0, int(response)), 10)

@@ -78,7 +78,7 @@ async def llm_response(event) -> str | None:
     message_content = event.content
     try:
         prompt = db.get_option("LLM_PROMPT")
-        response = await commons.agents.agent('chat').run(
+        response = await commons.agents.agent("chat").run(
             message_content, event.author.mention, prompt
         )
         if not response:

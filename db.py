@@ -2,7 +2,6 @@ import sqlite3
 import os
 
 
-
 def cursor():
     return conn.cursor()
 
