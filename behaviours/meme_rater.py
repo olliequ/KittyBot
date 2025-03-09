@@ -1,17 +1,11 @@
 import os
 import logging
 import db
-import sqlite3
 import hikari
-import lightbulb
-from PIL import Image
 import requests
-from commons.agents import kitty_meme_agent, kitty_reasoner_meme_rater
+import commons.agents
 from typing import Final
-from pydantic_ai import BinaryContent
 import asyncio
-
-plugin = lightbulb.Plugin("MemeRater")
 
 RATER_LOCK = asyncio.Lock()
 
@@ -40,13 +34,14 @@ async def get_meme_rating(image_url: str, user: str):
         logging.info("Not image")
         return ""
     try:
+        kitty_reasoner_meme_rater = commons.agents.agent("reasoner_meme_rater")
         if kitty_reasoner_meme_rater:
             response = await kitty_reasoner_meme_rater.run(image=image, user=user)
         else:
             raise Exception("No reasoner meme rater")
     except Exception as e:
         logging.info(f"Error running reasoner meme rater: {e}")
-        response = await kitty_meme_agent.run(image=image, user=user)
+        response = await commons.agents.agent("meme_rater").run(image=image, user=user)
     logging.info(f"Meme rating response: {response}")
     try:
         return min(max(0, int(response)), 10)
@@ -62,7 +57,6 @@ def number_emoji(number: int):
     return hikari.UnicodeEmoji.parse(unicode)
 
 
-@plugin.listener(hikari.GuildMessageUpdateEvent)
 async def msg_update(event: hikari.GuildMessageUpdateEvent) -> None:
     if event.channel_id != MEME_CHANNEL_ID:
         return
@@ -88,7 +82,6 @@ async def msg_update(event: hikari.GuildMessageUpdateEvent) -> None:
     await rate_meme(event.message, ratings)
 
 
-@plugin.listener(hikari.GuildMessageCreateEvent)
 async def msg_create(event: hikari.GuildMessageCreateEvent) -> None:
     if event.channel_id != MEME_CHANNEL_ID:
         return
@@ -174,7 +167,3 @@ async def rate_meme(message: hikari.Message, ratings: list[int]) -> None:
             )
 
         db.commit()
-
-
-def load(bot: lightbulb.BotApp) -> None:
-    bot.add_plugin(plugin)

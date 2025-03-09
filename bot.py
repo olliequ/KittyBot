@@ -4,7 +4,13 @@ import os
 import dotenv, aiohttp
 import hikari, lightbulb
 
+# Some modules are naughty and expect to load things from the environment
+# immediately on import.
 dotenv.load_dotenv()
+
+import behaviours
+import commons.agents
+
 
 bot = lightbulb.BotApp(
     os.environ["BOT_TOKEN"],
@@ -41,13 +47,6 @@ async def on_error(event: lightbulb.CommandErrorEvent) -> None:
         )
 
 
-"""
-Below creates 2 listeners, one for when the bot is starting, and one for when the bot is stopping. 
-When the bot is starting, it creates a new aiohttp.ClientSession named aio_session and stores it in the bot.d data store. 
-When the bot is stopping, it closes the aio_session.
-"""
-
-
 @bot.listen()
 async def on_starting(event: hikari.StartingEvent) -> None:
     bot.d.aio_session = aiohttp.ClientSession()
@@ -58,7 +57,9 @@ async def on_stopping(event: hikari.StoppingEvent) -> None:
     await bot.d.aio_session.close()
 
 
-bot.load_extensions_from("./extensions/", must_exist=True)
+commons.agents.load()
+bot.load_extensions_from("./commands/", must_exist=True)
+behaviours.register(bot)
 
 if __name__ == "__main__":
     if os.name != "nt":

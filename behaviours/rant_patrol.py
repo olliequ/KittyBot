@@ -1,15 +1,14 @@
 import re
-import hikari, lightbulb
+import hikari
 import os
 import random
 
-plugin = lightbulb.Plugin("Rantpatrol")
+import behaviours
 
 RANT_REGEX = re.compile("^[^ ]*(rant|vent) *:", flags=re.IGNORECASE)
 FORMAT_REGEX = re.compile("^(anti-|co-)?(rant|vent): ")
 
 
-@plugin.listener(hikari.GuildMessageCreateEvent)
 async def main(event: hikari.GuildMessageCreateEvent):
     if not event.is_human or not event.content:
         return
@@ -31,7 +30,4 @@ async def main(event: hikari.GuildMessageCreateEvent):
 
     if response:
         await event.message.respond(response, reply=True, user_mentions=True)
-
-
-def load(bot: lightbulb.BotApp):
-    bot.add_plugin(plugin)
+        raise behaviours.EndProcessing()

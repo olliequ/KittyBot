@@ -1,12 +1,6 @@
-import os
-import re
 from datetime import datetime
-from itertools import chain
-from emoji import emoji_list
 import hikari, lightbulb
 import db
-import numpy as np
-import matplotlib.pyplot as plt
 
 plugin = lightbulb.Plugin("userstats")
 
@@ -16,57 +10,6 @@ def plural_or_not(number):
         return "time"
     else:
         return "times"
-
-
-def add_emoji_count(cursor, usages):
-    cursor.execute(
-        f"""
-        INSERT INTO emoji_counts (user, emoji, count)
-        VALUES {','.join(['(?, ?, 1)'] * len(usages))} 
-        ON CONFLICT (user, emoji) DO UPDATE
-        SET count = emoji_counts.count + 1""",
-        tuple(chain.from_iterable(usages)),
-    )
-
-
-def remove_emoji_count(cursor, user_id, emoji):
-    cursor.execute(
-        f"""
-        UPDATE emoji_counts
-        SET count = count - 1
-        WHERE user = ? AND emoji = ? AND count > 0""",
-        (user_id, emoji),
-    )
-
-
-def add_message_count(cursor, user_id):
-    cursor.execute(
-        """
-        INSERT INTO message_counts (user, count)
-        VALUES (?, 1)
-        ON CONFLICT (user) DO UPDATE
-        SET count = message_counts.count + 1""",
-        (user_id,),
-    )
-
-
-def has_rank_changed(cursor, user_id):
-    cursor.execute(
-        """
-        WITH leads AS (
-            SELECT user,
-                   count - (LEAD(count) OVER (ORDER BY count DESC)) AS lead
-            FROM message_counts
-            ORDER BY count DESC
-            LIMIT ?
-        )
-        SELECT lead FROM leads WHERE user = ?""",
-        (int(os.getenv("RANK_CHANGE_FLOOR", "30")), user_id),
-    )
-    row = cursor.fetchone()
-    if row is None:
-        return False
-    return row[0] == 1
 
 
 def get_count_and_rank(cursor, user_id):
@@ -87,58 +30,6 @@ def get_count_and_rank(cursor, user_id):
     if row:
         return (row[0], row[1])
     return (None, None)
-
-
-@plugin.listener(hikari.GuildReactionAddEvent)
-async def analyse_reaction(event) -> None:
-    cursor = db.cursor()
-    if event.emoji_id is None:
-        # Standard unicode emoji character
-        add_emoji_count(cursor, [(event.user_id, event.emoji_name)])
-    else:
-        # Discord specific
-        add_emoji_count(
-            cursor, [(event.user_id, f"<:{event.emoji_name}:{event.emoji_id}>")]
-        )
-    db.commit()
-
-
-@plugin.listener(hikari.GuildReactionDeleteEvent)
-async def remove_reaction(event) -> None:
-    cursor = db.cursor()
-    if event.emoji_id is None:
-        # Standard unicode emoji character
-        remove_emoji_count(cursor, event.user_id, event.emoji_name)
-    else:
-        # Discord specific
-        remove_emoji_count(
-            cursor, event.user_id, f"<:{event.emoji_name}:{event.emoji_id}>"
-        )
-    db.commit()
-
-
-@plugin.listener(hikari.GuildMessageCreateEvent)
-async def analyse_message(event) -> None:
-    if not event.is_human:
-        return
-    if not (event.content or len(event.message.attachments)):
-        return
-
-    user_id = str(event.author_id)
-    cursor = db.cursor()
-    add_message_count(cursor, user_id)
-
-    if event.content:
-        custom_emoji = re.findall(r"<.?:.+?:\d+>", event.content)
-        unicode_emoji = emoji_list(event.content)
-        emoji = custom_emoji + [x["emoji"] for x in unicode_emoji]
-        if len(emoji):
-            add_emoji_count(cursor, [(user_id, e) for e in emoji])
-
-    if has_rank_changed(cursor, user_id):
-        await announce_rank_change(cursor, event, user_id)
-
-    db.commit()
 
 
 async def emoji_stats(ctx: lightbulb.Context, user) -> None:
@@ -231,16 +122,6 @@ async def general_info(ctx: lightbulb.Context, target) -> None:
         )
     )
     await ctx.respond(embed)  # Respond to the interaction with the embed.
-
-
-async def announce_rank_change(cursor, event, user_id):
-    (count, rank) = get_count_and_rank(cursor, user_id)
-    if count is None or rank is None:
-        return
-    await event.message.respond(
-        f"Congratulations {event.author.mention}, you are now ranked #{rank} with {count} messages",
-        user_mentions=True,
-    )
 
 
 @plugin.command

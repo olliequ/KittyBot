@@ -8,6 +8,8 @@ import os
 import logging as log
 from collections import deque
 
+_agents = {}
+
 
 class KittyState(BaseModel):
     query: str = Field(description="The query to answer")
@@ -194,25 +196,24 @@ class ReasonerMemeRater:
         return response.data.rate
 
 
-gemini_model_settings = GeminiModelSettings(
-    **generation_config,  # general model settings can also be specified
-    gemini_safety_settings=safety_settings,
-)
-
-kitty_gemini_agent = KittyAgent(gemini_model_settings, "gemini-2.0-flash-lite")
-
-
-kitty_meme_agent = KittyMemeRater(
-    gemini_model_settings, "gemini-2.0-flash-lite", MEME_RATE_PROMPT
-)
-
-if os.getenv("REASONER_MEME").lower() == "true":
-    kitty_reasoner_meme_rater = ReasonerMemeRater(
-        gemini_model_settings,
-        "gemini-2.0-flash-lite",
-        "gemini-2.0-flash-lite",
-        EYE_RATE_PROMPT,
-        REASONER_MEME_PROMPT,
+def load():
+    gemini_model_settings = GeminiModelSettings(
+        **generation_config,  # general model settings can also be specified
+        gemini_safety_settings=safety_settings,
     )
-else:
-    kitty_reasoner_meme_rater = None
+    _agents["chat"] = KittyAgent(gemini_model_settings, "gemini-2.0-flash-lite")
+    _agents["meme_rater"] = KittyMemeRater(
+        gemini_model_settings, "gemini-2.0-flash-lite", MEME_RATE_PROMPT
+    )
+    if os.getenv("REASONER_MEME", "").lower() == "true":
+        _agents["reasoner_meme_rater"] = ReasonerMemeRater(
+            gemini_model_settings,
+            "gemini-2.0-flash-lite",
+            "gemini-2.0-flash-lite",
+            EYE_RATE_PROMPT,
+            REASONER_MEME_PROMPT,
+        )
+
+
+def agent(name: str):
+    return _agents[name]

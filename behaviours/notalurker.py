@@ -1,15 +1,12 @@
-import os, re
-import hikari, lightbulb
-
-plugin = lightbulb.Plugin("NotALurker")
+import os
+import re
 
 """
 Bot adds #notalurker role for those who comment.
 """
 
 
-@plugin.listener(hikari.GuildMessageCreateEvent)
-async def main(event):
+async def main(event) -> None:
     if event.is_bot or not event.content or "NOTALURKER_ROLE" not in os.environ:
         return
     channelSentIn = event.channel_id
@@ -22,7 +19,3 @@ async def main(event):
         if role.id == int(os.environ["NOTALURKER_ROLE"]):
             return
     await event.get_member().add_role(int(os.environ["NOTALURKER_ROLE"]))
-
-
-def load(bot: lightbulb.BotApp):
-    bot.add_plugin(plugin)

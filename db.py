@@ -1,6 +1,5 @@
 import sqlite3
 import os
-import logging
 
 
 def cursor():
@@ -45,7 +44,7 @@ def start():
         c.execute("ALTER TABLE meme_stats ADD meme_rating INTEGER")
         c.execute("ALTER TABLE meme_stats ADD rating_count INTEGER")
     except Exception as ex:
-        logging.info(ex)
+        pass
     # EmojiCache Table Removed
     c.execute("CREATE TABLE IF NOT EXISTS options (name TEXT, value TEXT)")
     c.execute("CREATE UNIQUE INDEX IF NOT EXISTS options_idx ON options (name)")

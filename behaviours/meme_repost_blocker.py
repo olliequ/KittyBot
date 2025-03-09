@@ -1,20 +1,19 @@
 import os
 
-import hikari, lightbulb
+import hikari
 from PIL import Image
 import imagehash
+import behaviours
 import db
 import re
 import requests
 import io
 
-plugin = lightbulb.Plugin("ImageHashDetector")
 phash_th = "PHASH_TH"
 chash_th = "CHASH_TH"
 HASH_SIZE = 16
 
 
-@plugin.listener(hikari.GuildMessageCreateEvent)
 async def main(event: hikari.GuildMessageCreateEvent) -> None:
     # Don't handle messages from bots or without content
     if event.is_bot:
@@ -102,9 +101,10 @@ async def main(event: hikari.GuildMessageCreateEvent) -> None:
                 guild_id = valid_results[0][3]
                 response_message = f"Hey {event.author.mention}! Your image has seemingly already been posted before. Time to strive for more originality? <:kermitsippy:1019863020295442533>\n\nIt was first posted here: https://discord.com/channels/{guild_id}/{channel_id}/{message_id}"
                 await event.message.respond(response_message)
+                raise behaviours.EndProcessing()
 
 
-def load(bot: lightbulb.BotApp) -> None:
+def load() -> None:
     db.create_function(
         "hammingDistance",
         2,
@@ -116,4 +116,3 @@ def load(bot: lightbulb.BotApp) -> None:
         lambda a, b: imagehash.hex_to_flathash(a, HASH_SIZE)
         - imagehash.hex_to_flathash(b, HASH_SIZE),
     )
-    bot.add_plugin(plugin)
