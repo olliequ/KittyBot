@@ -1,5 +1,7 @@
 import os
 import logging
+
+import hikari.users
 import db
 import hikari
 import requests
@@ -136,7 +138,7 @@ async def rate_meme(
             10,
         )
 
-        str_explanations = "\n".join(explanations)
+        str_explanations = "                   ".join(explanations)
 
         if entry_exists:
             await message.remove_all_reactions()
@@ -182,3 +184,31 @@ async def rate_meme(
             )
 
         db.commit()
+
+
+async def respond_to_question_mark(event: hikari.GuildReactionAddEvent) -> None:
+    # In memes only?
+    channel_id = event.channel_id
+    if channel_id == MEME_CHANNEL_ID:
+        cursor = db.cursor()
+        logging.info(event)
+        if event.emoji_name == "❓":
+            channel_id, requester_id, response_to_msg_id = (
+                event.channel_id,
+                event.user_id,
+                event.message_id,
+            )
+            cursor.execute(
+                """
+            SELECT meme_reasoning
+            FROM meme_stats
+            WHERE message_id = ?""",
+                (response_to_msg_id,),
+            )
+            row = cursor.fetchone()
+            await event.app.rest.create_message(
+                channel=channel_id,
+                reply=response_to_msg_id,
+                content=f"@{requester_id} {row}",  # Idk how to tag people
+                user_mentions=[requester_id],
+            )
