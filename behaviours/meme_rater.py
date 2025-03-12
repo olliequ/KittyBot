@@ -6,6 +6,7 @@ import requests
 import commons.agents
 from typing import Final
 import asyncio
+from commons.agents import MemeAnswer
 
 RATER_LOCK = asyncio.Lock()
 
@@ -36,15 +37,19 @@ async def get_meme_rating(image_url: str, user: str):
     try:
         kitty_reasoner_meme_rater = commons.agents.agent("reasoner_meme_rater")
         if kitty_reasoner_meme_rater:
-            response = await kitty_reasoner_meme_rater.run(image=image, user=user)
+            response: MemeAnswer = await kitty_reasoner_meme_rater.run(
+                image=image, user=user
+            )
         else:
             raise Exception("No reasoner meme rater")
     except Exception as e:
         logging.info(f"Error running reasoner meme rater: {e}")
-        response = await commons.agents.agent("meme_rater").run(image=image, user=user)
+        response: MemeAnswer = await commons.agents.agent("meme_rater").run(
+            image=image, user=user
+        )
     logging.info(f"Meme rating response: {response}")
     try:
-        return min(max(0, int(response)), 10)
+        return min(max(0, int(response.rate)), 10)
     except Exception as e:
         return 0
 
@@ -145,17 +150,18 @@ async def rate_meme(message: hikari.Message, ratings: list[int]) -> None:
         # avg rating row inserted is just for this set of memes. Another query elsewhere aggregates.
         if entry_exists:
             cursor.execute(
-                "update meme_stats set meme_rating = ?, rating_count = ?, meme_score = ? WHERE message_id = ?",
+                "update meme_stats set meme_rating = ?, rating_count = ?, meme_score = ?, meme_reasoning=?, WHERE message_id = ?",
                 (
                     sum(ratings) + curr_ratings[0],
                     len(ratings) + curr_ratings[1],
                     avg_rating,
                     message.id,
+                    "SHEESH",
                 ),
             )
         else:
             cursor.execute(
-                "insert into meme_stats values(?, ?, ?, ?, ?, ?)",
+                "insert into meme_stats values(?, ?, ?, ?, ?, ?, ?)",
                 (
                     message.author.id,
                     message.id,
@@ -163,6 +169,7 @@ async def rate_meme(message: hikari.Message, ratings: list[int]) -> None:
                     message.timestamp,
                     sum(ratings),
                     len(ratings),
+                    "SHEESH",
                 ),
             )
 

@@ -128,7 +128,9 @@ class KittyMemeRater:
         def system_prompt(state: RunContext[MemeState]):
             return self.prompt.format_map(state.deps.model_dump())
 
-    async def run(self, image: BinaryContent, user: str = "ANON", prompt: str = None):
+    async def run(
+        self, image: BinaryContent, user: str = "ANON", prompt: str = None
+    ) -> MemeAnswer:
         if prompt:
             self.prompt = prompt
         state = MemeState(user=user)
@@ -139,7 +141,7 @@ class KittyMemeRater:
             response = await self.agent.run([image], deps=state)
         except Exception as e:
             raise Exception(f"Error running agent: {e}")
-        return response.data.rate
+        return response.data
 
 
 class ReasonerMemeRater:
@@ -177,7 +179,9 @@ class ReasonerMemeRater:
         def system_prompt_reasoner(state):
             return self.reasoner_prompt.format_map(state.deps.model_dump())
 
-    async def run(self, image: BinaryContent, user: str = "ANON", prompt: str = None):
+    async def run(
+        self, image: BinaryContent, user: str = "ANON", prompt: str = None
+    ) -> MemeAnswer:
         if prompt:
             self.prompt = prompt
         state = MemeState(user=user)
@@ -191,9 +195,10 @@ class ReasonerMemeRater:
                 eyes_response.data.description, deps=eyes_response.data
             )
             log.info(response.data)
+            log.info("SNEED")
         except Exception as e:
             raise Exception(f"Error running agent: {e}")
-        return response.data.rate
+        return response.data
 
 
 def load():

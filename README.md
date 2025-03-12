@@ -62,6 +62,7 @@ GEMINI_API_KEY=abcd # Access to google gemini LLM
 BOT_ADMIN_ROLE=11111111111111111 # Role has access to some commands
 RANT_AND_VENT_CHANNEL_ID=11111111111111111 # The channel you want rantpatrol to be active in
 MEME_CHANNEL_ID=1111111111111111 # your meme channel where kitti will rate memes posted
+REASONER_MEME=true #whether meme reasoning is enabled
 ```
 
 - The `/fortune` command requires the `fortunes` package to be installed and pointed to by the `FORTUNE_DIRECTORY` variable in `.env`.

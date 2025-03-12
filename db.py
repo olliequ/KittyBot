@@ -43,6 +43,7 @@ def start():
         c.execute("ALTER TABLE image_hashes ADD hash_color TEXT NOT NULL")
         c.execute("ALTER TABLE meme_stats ADD meme_rating INTEGER")
         c.execute("ALTER TABLE meme_stats ADD rating_count INTEGER")
+        c.execute("ALTER TABLE meme_stats ADD meme_reasoning TEXT")
     except Exception as ex:
         pass
     # EmojiCache Table Removed
