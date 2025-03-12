@@ -41,11 +41,21 @@ def start():
 
     try:
         c.execute("ALTER TABLE image_hashes ADD hash_color TEXT NOT NULL")
+    except Exception as ex:
+        pass
+    try:
         c.execute("ALTER TABLE meme_stats ADD meme_rating INTEGER")
+    except Exception as ex:
+        pass
+    try:
         c.execute("ALTER TABLE meme_stats ADD rating_count INTEGER")
+    except Exception as ex:
+        pass
+    try:
         c.execute("ALTER TABLE meme_stats ADD meme_reasoning TEXT")
     except Exception as ex:
         pass
+
     # EmojiCache Table Removed
     c.execute("CREATE TABLE IF NOT EXISTS options (name TEXT, value TEXT)")
     c.execute("CREATE UNIQUE INDEX IF NOT EXISTS options_idx ON options (name)")

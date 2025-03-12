@@ -195,7 +195,6 @@ class ReasonerMemeRater:
                 eyes_response.data.description, deps=eyes_response.data
             )
             log.info(response.data)
-            log.info("SNEED")
         except Exception as e:
             raise Exception(f"Error running agent: {e}")
         return response.data

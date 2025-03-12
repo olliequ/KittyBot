@@ -5,10 +5,9 @@ import hikari.users
 import db
 import hikari
 import requests
-import commons.agents
+import commons.agents as ca
 from typing import Final
 import asyncio
-from commons.agents import MemeAnswer
 
 RATER_LOCK = asyncio.Lock()
 
@@ -31,29 +30,29 @@ DELETE_SHIT: Final[bool] = False
 IMG_FILE_EXTENSIONS: Final = {"jpg", "jpeg", "png", "webp"}
 
 
-async def get_meme_rating(image_url: str, user: str) -> MemeAnswer:
+async def get_meme_rating(image_url: str, user: str) -> ca.MemeAnswer | None:
     image = requests.get(image_url, stream=True)
     if not image.raw:
         logging.info("Not image")
-        return ""
+        return None
     try:
-        kitty_reasoner_meme_rater = commons.agents.agent("reasoner_meme_rater")
+        kitty_reasoner_meme_rater = ca.agent("reasoner_meme_rater")
         if kitty_reasoner_meme_rater:
-            response: MemeAnswer = await kitty_reasoner_meme_rater.run(
+            response: ca.MemeAnswer = await kitty_reasoner_meme_rater.run(
                 image=image, user=user
             )
         else:
             raise Exception("No reasoner meme rater")
     except Exception as e:
         logging.info(f"Error running reasoner meme rater: {e}")
-        response = await commons.agents.agent("meme_rater").run(image=image, user=user)
+        response = await ca.agent("meme_rater").run(image=image, user=user)
     logging.info(f"Meme rating response: {response}")
     try:
-        return MemeAnswer(
+        return ca.MemeAnswer(
             rate=min(max(0, int(response.rate)), 10), explanation=response.explanation
         )
     except Exception as e:
-        return MemeAnswer(rate=0, explanation="SHIT BROKE")
+        return None
 
 
 def number_emoji(number: int):
@@ -138,7 +137,7 @@ async def rate_meme(
             10,
         )
 
-        str_explanations = "                   ".join(explanations)
+        str_explanations = "💩jimbob💩".join(explanations)
 
         if entry_exists:
             await message.remove_all_reactions()
@@ -155,6 +154,7 @@ async def rate_meme(
             )
         else:
             await message.add_reaction(emoji="💩")
+        await message.add_reaction(emoji="❓")
 
         # add some basic meme stats to the db so we can track who is improving, rotting, or standing still
         # avg rating row inserted is just for this set of memes. Another query elsewhere aggregates.
@@ -189,26 +189,28 @@ async def rate_meme(
 async def respond_to_question_mark(event: hikari.GuildReactionAddEvent) -> None:
     # In memes only?
     channel_id = event.channel_id
-    if channel_id == MEME_CHANNEL_ID:
-        cursor = db.cursor()
-        logging.info(event)
-        if event.emoji_name == "❓":
-            channel_id, requester_id, response_to_msg_id = (
-                event.channel_id,
-                event.user_id,
-                event.message_id,
-            )
-            cursor.execute(
-                """
-            SELECT meme_reasoning
-            FROM meme_stats
-            WHERE message_id = ?""",
-                (response_to_msg_id,),
-            )
-            row = cursor.fetchone()
+    cursor = db.cursor()
+    if (
+        channel_id == MEME_CHANNEL_ID
+        and event.emoji_name == "❓"
+        and not event.member.is_bot
+    ):
+        channel_id, requester_id, response_to_msg_id = (
+            event.channel_id,
+            event.user_id,
+            event.message_id,
+        )
+        cursor.execute(
+            """
+        SELECT meme_reasoning
+        FROM meme_stats
+        WHERE message_id = ?""",
+            (response_to_msg_id,),
+        )
+        row = cursor.fetchone()
+        if row is not None:
             await event.app.rest.create_message(
                 channel=channel_id,
                 reply=response_to_msg_id,
-                content=f"@{requester_id} {row}",  # Idk how to tag people
-                user_mentions=[requester_id],
+                content=f"{row[0]}",  # Idk how to tag people
             )
