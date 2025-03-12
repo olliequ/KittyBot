@@ -29,7 +29,7 @@ DELETE_SHIT: Final[bool] = False
 IMG_FILE_EXTENSIONS: Final = {"jpg", "jpeg", "png", "webp"}
 
 
-async def get_meme_rating(image_url: str, user: str):
+async def get_meme_rating(image_url: str, user: str) -> MemeAnswer:
     image = requests.get(image_url, stream=True)
     if not image.raw:
         logging.info("Not image")
@@ -44,14 +44,14 @@ async def get_meme_rating(image_url: str, user: str):
             raise Exception("No reasoner meme rater")
     except Exception as e:
         logging.info(f"Error running reasoner meme rater: {e}")
-        response: MemeAnswer = await commons.agents.agent("meme_rater").run(
-            image=image, user=user
-        )
+        response = await commons.agents.agent("meme_rater").run(image=image, user=user)
     logging.info(f"Meme rating response: {response}")
     try:
-        return min(max(0, int(response.rate)), 10)
+        return MemeAnswer(
+            rate=min(max(0, int(response.rate)), 10), explanation=response.explanation
+        )
     except Exception as e:
-        return 0
+        return MemeAnswer(rate=0, explanation="SHIT BROKE")
 
 
 def number_emoji(number: int):
@@ -72,6 +72,7 @@ async def msg_update(event: hikari.GuildMessageUpdateEvent) -> None:
         return
 
     ratings = []
+    explanations = list[str]()
 
     for embed in event.message.embeds:
         if not embed.thumbnail:
@@ -79,18 +80,20 @@ async def msg_update(event: hikari.GuildMessageUpdateEvent) -> None:
         image_url = embed.thumbnail.proxy_url
 
         try:
-            rating = await get_meme_rating(image_url, event.author.username)
-            ratings.append(rating)
+            res = await get_meme_rating(image_url, event.author.username)
+            ratings.append(res.rate)
+            explanations.append(res.explanation)
         except Exception as e:
             continue
 
-    await rate_meme(event.message, ratings)
+    await rate_meme(event.message, ratings, explanations)
 
 
 async def msg_create(event: hikari.GuildMessageCreateEvent) -> None:
     if event.channel_id != MEME_CHANNEL_ID:
         return
     ratings = []
+    explanations = list[str]()
 
     for attachment in event.message.attachments:
         att_ext = attachment.extension
@@ -99,15 +102,18 @@ async def msg_create(event: hikari.GuildMessageCreateEvent) -> None:
             continue
         image_url = attachment.url
         try:
-            rating = await get_meme_rating(image_url, event.author.username)
-            ratings.append(rating)
+            res = await get_meme_rating(image_url, event.author.username)
+            ratings.append(res.rate)
+            explanations.append(res.explanation)
         except Exception as e:
             continue
 
-    await rate_meme(event.message, ratings)
+    await rate_meme(event.message, ratings, explanations)
 
 
-async def rate_meme(message: hikari.Message, ratings: list[int]) -> None:
+async def rate_meme(
+    message: hikari.Message, ratings: list[int], explanations: list[str]
+) -> None:
     async with RATER_LOCK:
         if not ratings:
             return
@@ -129,6 +135,8 @@ async def rate_meme(message: hikari.Message, ratings: list[int]) -> None:
             ),
             10,
         )
+
+        str_explanations = "\n".join(explanations)
 
         if entry_exists:
             await message.remove_all_reactions()
@@ -156,7 +164,7 @@ async def rate_meme(message: hikari.Message, ratings: list[int]) -> None:
                     len(ratings) + curr_ratings[1],
                     avg_rating,
                     message.id,
-                    "SHEESH",
+                    str_explanations,
                 ),
             )
         else:
@@ -169,7 +177,7 @@ async def rate_meme(message: hikari.Message, ratings: list[int]) -> None:
                     message.timestamp,
                     sum(ratings),
                     len(ratings),
-                    "SHEESH",
+                    str_explanations,
                 ),
             )
 
