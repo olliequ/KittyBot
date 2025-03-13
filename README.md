@@ -1,5 +1,7 @@
 # KittiBot - a sentient Discord bot!
 
+See the `docs` folder to see how to quickly spin up a local test Kitti development environment!
+
 ## Current Functionality
 
 - Automatically assigns the `#NotALurker` role to members who qualify for it (previously mods had to manually assign it).
@@ -46,7 +48,6 @@
 - For readability purposes, if you want to add a function/command, **please write it in a new python file placed in the** `extensions` **folder** -- just like the `userinfo` and `fortune` commands are.
 - **Important**: If you want to develop/contribute/test/play-around, you will need to create a `.env` file and inside it add your bot token (as explained in the guide), and the '_default guild_' IDs. It will need to be like: `BOT_TOKEN = 123456` and `DEFAULT_GUILDS = 123456,56789` (comma-seperated list). Specifying guild IDs in `.env` is **not** neccessary, and actually the act of specifying certain IDs to it (can be many guilds) means that slash commands will only be available in those guilds. The benefit of specifying default guilds is that the slash commands become available **instantly** in those servers, which is good for testing purposes. Note: 'guild' means Discord server.
 - So, to be clear, your `.env` file should be located in the top layer of the repository (same level as `bot.py` and `requirements.txt`) and could look like this:
-- Run [`black`](https://github.com/psf/black) on PR - we enforce this on PRs!
 
 ```
 BOT_TOKEN = 123456 # Your bot’s token from the Discord Developer Portal.
@@ -64,6 +65,7 @@ RANT_AND_VENT_CHANNEL_ID=11111111111111111 # The channel you want rantpatrol to 
 MEME_CHANNEL_ID=1111111111111111 # your meme channel where kitti will rate memes posted
 ```
 
+- Run [`black`](https://github.com/psf/black) on PR - we enforce this on PRs!
 - The `/fortune` command requires the `fortunes` package to be installed and pointed to by the `FORTUNE_DIRECTORY` variable in `.env`.
   - If you're on Linux you can install `fortunes` with `sudo apt-get install -y fortune` and in `.env` set `FORTUNE_DIRECTORY=/usr/share/games/fortunes`
   - If you're on macOS you can install `fortunes` with `brew install fortune` and in `.env` set `FORTUNE_DIRECTORY=/usr/local/Cellar/fortune/9708/share/games/fortunes`
