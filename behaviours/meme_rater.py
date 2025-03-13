@@ -135,7 +135,7 @@ async def rate_meme(
         )
 
         if len(explanations) > 1:
-            str_explanations = '\n'.join(['* ' + s for s in explanations])
+            str_explanations = "\n".join(["* " + s for s in explanations])
         else:
             str_explanations = explanations[0]
 
