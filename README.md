@@ -28,7 +28,7 @@
   2. `emoji`: Returns an embed of the top 5 used emojis of the user, their total messages, and what 'rank' they are in terms of total messages sent.
   - If no option is specified, the `emoji` type is chosen by default.
 - `/wordcloud` command: Returns a 'wordcloud' of all unicode emojis used to-date by a specified user.
-- `/setprompt` command: Set prompt for Gemini LLM queries
+- `/setprompt` command: Set prompt for Gemini LLM queries.
 - All commands have a 10-second cooldown period (per user), and are generally called in using command form.
 - There are several other Easter Eggs in Kitti easily discovered through usage ;)
 
@@ -36,7 +36,7 @@
 
 - Kitti is an open-source, community-powered bot for the `CS@unimelb` Discord server.
 - This bot is made using **Hikari** & **Lightbulb**. These are two nice & simple **Python** libraries.
-- **Note**: Python version 3.10 is required.
+- **Note**: Python version 3.11 is required.
 - The docs for these two libraries are https://www.hikari-py.dev/hikari/ & https://hikari-lightbulb.readthedocs.io/en/latest/.
 - The following _get-started_ guide is very nice if you want to quickly understand how these libraries work: https://novanai.readthedocs.io/en/latest/lightbulb/index.html
 - **Pull requests are very much accepted (and encouraged!)** if you want to add features to the bot & server :)
@@ -46,6 +46,7 @@
 - For readability purposes, if you want to add a function/command, **please write it in a new python file placed in the** `extensions` **folder** -- just like the `userinfo` and `fortune` commands are.
 - **Important**: If you want to develop/contribute/test/play-around, you will need to create a `.env` file and inside it add your bot token (as explained in the guide), and the '_default guild_' IDs. It will need to be like: `BOT_TOKEN = 123456` and `DEFAULT_GUILDS = 123456,56789` (comma-seperated list). Specifying guild IDs in `.env` is **not** neccessary, and actually the act of specifying certain IDs to it (can be many guilds) means that slash commands will only be available in those guilds. The benefit of specifying default guilds is that the slash commands become available **instantly** in those servers, which is good for testing purposes. Note: 'guild' means Discord server.
 - So, to be clear, your `.env` file should be located in the top layer of the repository (same level as `bot.py` and `requirements.txt`) and could look like this:
+- Run [`black`](https://github.com/psf/black) on PR - we enforce this on PRs!
 
 ```
 BOT_TOKEN = 123456 # Your bot’s token from the Discord Developer Portal.
@@ -60,6 +61,7 @@ RANK_CHANGE_FLOOR=30 # Only users above this rank will be announced when they ov
 GEMINI_API_KEY=abcd # Access to google gemini LLM
 BOT_ADMIN_ROLE=11111111111111111 # Role has access to some commands
 RANT_AND_VENT_CHANNEL_ID=11111111111111111 # The channel you want rantpatrol to be active in
+MEME_CHANNEL_ID=1111111111111111 # your meme channel where kitti will rate memes posted
 ```
 
 - The `/fortune` command requires the `fortunes` package to be installed and pointed to by the `FORTUNE_DIRECTORY` variable in `.env`.
