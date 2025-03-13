@@ -5,6 +5,7 @@ import os
 Kitti congratulates you for your efforts.
 """
 
+
 async def main(event):
     if event.is_bot or not event.content:
         return
@@ -24,7 +25,7 @@ async def main(event):
     total_message_count = data[0][0]
 
     target_number = os.environ["MESSAGE_TARGET"]
-    if (target_number is not None and int(target_number) == total_message_count):
+    if target_number is not None and int(target_number) == total_message_count:
         target_hit_response = f"""<a:partyblob:815938533470240799> <a:partyblob:815938533470240799> <a:partyblob:815938533470240799> HALF A MILLION MESSAGES -- WOW -- {event.author.mention}, congratulations on sending message number **{int(target_number):,}**! I give special role for u UwU <a:partyblob:815938533470240799> <a:partyblob:815938533470240799> <a:partyblob:815938533470240799>."""
         await event.message.respond(target_hit_response, user_mentions=True)
 

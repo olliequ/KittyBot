@@ -75,8 +75,10 @@ def has_rank_changed(cursor, user_id):
         return False
     return row[0] == 1
 
+
 def get_user_overtaken(cursor, user_id):
-    cursor.execute("""
+    cursor.execute(
+        """
         WITH ranked_users AS (
             SELECT user,
                    ROW_NUMBER() OVER (ORDER BY count DESC) AS rank
@@ -91,13 +93,14 @@ def get_user_overtaken(cursor, user_id):
         FROM ranked_users ru
         JOIN user_current_rank ucr ON ru.rank = ucr.rank + 1
         WHERE ru.user != ?;
-        """, 
-        (user_id, user_id)
+        """,
+        (user_id, user_id),
     )
     row = cursor.fetchone()
     if row is None:
         return None  # No user has fallen a place
     return row[0]  # Returns the ID of the user who fell a place
+
 
 async def analyse_reaction(event) -> None:
     cursor = db.cursor()
@@ -154,5 +157,7 @@ async def announce_rank_change(cursor, event, user_id, fallen_user):
     (count, rank) = get_count_and_rank(cursor, user_id)
     if count is None or rank is None:
         return
-    await event.message.respond(f"Congratulations {event.author.mention} -  you've overtaken <@{fallen_user}> and are now ranked `#{rank}` with `{count:,}` messages! <@{fallen_user}>, do better <:kermitsippy:1019863020295442533>", user_mentions=True)
-
+    await event.message.respond(
+        f"Congratulations {event.author.mention} -  you've overtaken <@{fallen_user}> and are now ranked `#{rank}` with `{count:,}` messages! <@{fallen_user}>, do better <:kermitsippy:1019863020295442533>",
+        user_mentions=True,
+    )
