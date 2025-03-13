@@ -1,9 +1,9 @@
 import db
+import os
 
 """
 Kitti congratulates you for your efforts.
 """
-
 
 async def main(event):
     if event.is_bot or not event.content:
