@@ -37,21 +37,14 @@ async def get_meme_rating(image_url: str, user: str) -> ca.MemeAnswer | None:
         return None
     try:
         kitty_reasoner_meme_rater = ca.agent("reasoner_meme_rater")
-        if kitty_reasoner_meme_rater:
-            response: ca.MemeAnswer = await kitty_reasoner_meme_rater.run(
-                image=image, user=user
-            )
-        else:
-            raise Exception("No reasoner meme rater")
-    except Exception as e:
-        logging.info(f"Error running reasoner meme rater: {e}")
-        response = await ca.agent("meme_rater").run(image=image, user=user)
-    logging.info(f"Meme rating response: {response}")
-    try:
+        response: ca.MemeAnswer = await kitty_reasoner_meme_rater.run(
+            image=image, user=user
+        )
         return ca.MemeAnswer(
             rate=min(max(0, int(response.rate)), 10), explanation=response.explanation
         )
     except Exception as e:
+        logging.info(f"Error running reasoner meme rater: {e}")
         return None
 
 
@@ -82,6 +75,8 @@ async def msg_update(event: hikari.GuildMessageUpdateEvent) -> None:
 
         try:
             res = await get_meme_rating(image_url, event.author.username)
+            if not res:
+                continue
             ratings.append(res.rate)
             explanations.append(res.explanation)
         except Exception as e:
@@ -104,6 +99,8 @@ async def msg_create(event: hikari.GuildMessageCreateEvent) -> None:
         image_url = attachment.url
         try:
             res = await get_meme_rating(image_url, event.author.username)
+            if not res:
+                continue
             ratings.append(res.rate)
             explanations.append(res.explanation)
         except Exception as e:
@@ -116,7 +113,7 @@ async def rate_meme(
     message: hikari.Message, ratings: list[int], explanations: list[str]
 ) -> None:
     async with RATER_LOCK:
-        if not ratings:
+        if not ratings or not explanations:
             return
 
         cursor = db.cursor()
@@ -137,7 +134,10 @@ async def rate_meme(
             10,
         )
 
-        str_explanations = "💩jimbob💩".join(explanations)
+        if len(explanations) > 1:
+            str_explanations = '\n'.join(['* ' + s for s in explanations])
+        else:
+            str_explanations = explanations[0]
 
         if entry_exists:
             await message.remove_all_reactions()

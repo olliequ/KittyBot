@@ -22,7 +22,7 @@ class MemeState(BaseModel):
 
 class MemeAnswer(BaseModel):
     rate: int = Field(description="The rating of the meme")
-    explanation: Optional[str] = Field(description="The explanation of the rating")
+    explanation: str = Field(description="The explanation of the rating")
 
 
 class MemeDescription(BaseModel):
@@ -49,14 +49,10 @@ safety_settings = [
 
 DEFAULT_PROMPT = "You are the Savage Kitti Bot on Computer Science @ UniMelb Discord. Respond Appropriately. Kitti has a God Complex and doesn't hold back. You are gen z and reply succinct. User identity is {user}"
 
-MEME_RATE_PROMPT: Final[str] = os.environ.get(
-    "MEME_RATING_PROMPT",
-    "Rate this meme out of 10, with 10 being the funniest. Rate it solely on how funny a bunch of computer science nerds would find it. ONLY Return an integer.",
-)
 
 EYE_RATE_PROMPT: Final[str] = os.environ.get(
     "EYE_RATING_PROMPT",
-    "Describe this image, do not leave any  detail out, just describe it do not give any opinions on it unless is not a meme, then explain why. Ensure that the image is a meme and not debug or simple coding screenshots, that is code or debug output without any context. If you found this just said this is not a meme",
+    "Describe this image, please do not leave any detail out, just describe it do not give any opinions on it unless is not a meme, then explain why. Ensure that the image is a meme and not debug or simple coding screenshots, that is code or debug output without any context. If you found this just said this is not a meme",
 )
 
 REASONER_MEME_PROMPT: Final[str] = os.environ.get(
@@ -79,7 +75,7 @@ class KittyAgent:
         self.model_settings = model_settings
         self.model = model
         self.prompt = prompt
-        self.messages = deque(maxlen=20)
+        self.messages = deque(maxlen=10)
         self.setup_agent()
 
     def setup_agent(self):
@@ -107,41 +103,6 @@ class KittyAgent:
         for messages in response.new_messages():
             self.messages.append(messages)
         return response.data.answer
-
-
-class KittyMemeRater:
-    def __init__(self, model_settings: ModelSettings, model: str, prompt: str):
-        self.model_settings = model_settings
-        self.model = model
-        self.prompt = prompt
-        self.setup_agent()
-
-    def setup_agent(self):
-        self.agent = Agent(
-            self.model,
-            model_settings=self.model_settings,
-            deps_type=MemeState,
-            result_type=MemeAnswer,
-        )
-
-        @self.agent.system_prompt
-        def system_prompt(state: RunContext[MemeState]):
-            return self.prompt.format_map(state.deps.model_dump())
-
-    async def run(
-        self, image: BinaryContent, user: str = "ANON", prompt: str = None
-    ) -> MemeAnswer:
-        if prompt:
-            self.prompt = prompt
-        state = MemeState(user=user)
-        image = BinaryContent(
-            data=image.content, media_type=image.headers["Content-Type"]
-        )
-        try:
-            response = await self.agent.run([image], deps=state)
-        except Exception as e:
-            raise Exception(f"Error running agent: {e}")
-        return response.data
 
 
 class ReasonerMemeRater:
@@ -206,17 +167,13 @@ def load():
         gemini_safety_settings=safety_settings,
     )
     _agents["chat"] = KittyAgent(gemini_model_settings, "gemini-2.0-flash-lite")
-    _agents["meme_rater"] = KittyMemeRater(
-        gemini_model_settings, "gemini-2.0-flash-lite", MEME_RATE_PROMPT
+    _agents["reasoner_meme_rater"] = ReasonerMemeRater(
+        gemini_model_settings,
+        "gemini-2.0-flash-lite",
+        "gemini-2.0-flash-lite",
+        EYE_RATE_PROMPT,
+        REASONER_MEME_PROMPT,
     )
-    if os.getenv("REASONER_MEME", "").lower() == "true":
-        _agents["reasoner_meme_rater"] = ReasonerMemeRater(
-            gemini_model_settings,
-            "gemini-2.0-flash-lite",
-            "gemini-2.0-flash-lite",
-            EYE_RATE_PROMPT,
-            REASONER_MEME_PROMPT,
-        )
 
 
 def agent(name: str):
