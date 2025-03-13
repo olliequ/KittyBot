@@ -43,7 +43,7 @@ _message_delete_chain: _Chain[hikari.GuildMessageDeleteEvent] = [
 ]
 
 _reaction_add_chain: _Chain[hikari.GuildReactionAddEvent] = [
-    [userinfo.analyse_reaction]
+    [userinfo.analyse_reaction, meme_rater.respond_to_question_mark]
 ]
 
 _reaction_remove_chain: _Chain[hikari.GuildReactionDeleteEvent] = [

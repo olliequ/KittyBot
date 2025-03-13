@@ -1,9 +1,11 @@
 import os
 import logging
+
+import hikari.users
 import db
 import hikari
 import requests
-import commons.agents
+import commons.agents as ca
 from typing import Final
 import asyncio
 
@@ -28,25 +30,22 @@ DELETE_SHIT: Final[bool] = False
 IMG_FILE_EXTENSIONS: Final = {"jpg", "jpeg", "png", "webp"}
 
 
-async def get_meme_rating(image_url: str, user: str):
+async def get_meme_rating(image_url: str, user: str) -> ca.MemeAnswer | None:
     image = requests.get(image_url, stream=True)
     if not image.raw:
         logging.info("Not image")
-        return ""
+        return None
     try:
-        kitty_reasoner_meme_rater = commons.agents.agent("reasoner_meme_rater")
-        if kitty_reasoner_meme_rater:
-            response = await kitty_reasoner_meme_rater.run(image=image, user=user)
-        else:
-            raise Exception("No reasoner meme rater")
+        kitty_reasoner_meme_rater = ca.agent("reasoner_meme_rater")
+        response: ca.MemeAnswer = await kitty_reasoner_meme_rater.run(
+            image=image, user=user
+        )
+        return ca.MemeAnswer(
+            rate=min(max(0, int(response.rate)), 10), explanation=response.explanation
+        )
     except Exception as e:
         logging.info(f"Error running reasoner meme rater: {e}")
-        response = await commons.agents.agent("meme_rater").run(image=image, user=user)
-    logging.info(f"Meme rating response: {response}")
-    try:
-        return min(max(0, int(response)), 10)
-    except Exception as e:
-        return 0
+        return None
 
 
 def number_emoji(number: int):
@@ -67,6 +66,7 @@ async def msg_update(event: hikari.GuildMessageUpdateEvent) -> None:
         return
 
     ratings = []
+    explanations = list[str]()
 
     for embed in event.message.embeds:
         if not embed.thumbnail:
@@ -74,18 +74,22 @@ async def msg_update(event: hikari.GuildMessageUpdateEvent) -> None:
         image_url = embed.thumbnail.proxy_url
 
         try:
-            rating = await get_meme_rating(image_url, event.author.username)
-            ratings.append(rating)
+            res = await get_meme_rating(image_url, event.author.username)
+            if not res:
+                continue
+            ratings.append(res.rate)
+            explanations.append(res.explanation)
         except Exception as e:
             continue
 
-    await rate_meme(event.message, ratings)
+    await rate_meme(event.message, ratings, explanations)
 
 
 async def msg_create(event: hikari.GuildMessageCreateEvent) -> None:
     if event.channel_id != MEME_CHANNEL_ID:
         return
     ratings = []
+    explanations = list[str]()
 
     for attachment in event.message.attachments:
         att_ext = attachment.extension
@@ -94,17 +98,22 @@ async def msg_create(event: hikari.GuildMessageCreateEvent) -> None:
             continue
         image_url = attachment.url
         try:
-            rating = await get_meme_rating(image_url, event.author.username)
-            ratings.append(rating)
+            res = await get_meme_rating(image_url, event.author.username)
+            if not res:
+                continue
+            ratings.append(res.rate)
+            explanations.append(res.explanation)
         except Exception as e:
             continue
 
-    await rate_meme(event.message, ratings)
+    await rate_meme(event.message, ratings, explanations)
 
 
-async def rate_meme(message: hikari.Message, ratings: list[int]) -> None:
+async def rate_meme(
+    message: hikari.Message, ratings: list[int], explanations: list[str]
+) -> None:
     async with RATER_LOCK:
-        if not ratings:
+        if not ratings or not explanations:
             return
 
         cursor = db.cursor()
@@ -125,6 +134,11 @@ async def rate_meme(message: hikari.Message, ratings: list[int]) -> None:
             10,
         )
 
+        if len(explanations) > 1:
+            str_explanations = "\n".join(["* " + s for s in explanations])
+        else:
+            str_explanations = explanations[0]
+
         if entry_exists:
             await message.remove_all_reactions()
 
@@ -140,22 +154,24 @@ async def rate_meme(message: hikari.Message, ratings: list[int]) -> None:
             )
         else:
             await message.add_reaction(emoji="💩")
+        await message.add_reaction(emoji="❓")
 
         # add some basic meme stats to the db so we can track who is improving, rotting, or standing still
         # avg rating row inserted is just for this set of memes. Another query elsewhere aggregates.
         if entry_exists:
             cursor.execute(
-                "update meme_stats set meme_rating = ?, rating_count = ?, meme_score = ? WHERE message_id = ?",
+                "update meme_stats set meme_rating = ?, rating_count = ?, meme_score = ?, meme_reasoning=?, WHERE message_id = ?",
                 (
                     sum(ratings) + curr_ratings[0],
                     len(ratings) + curr_ratings[1],
                     avg_rating,
                     message.id,
+                    str_explanations,
                 ),
             )
         else:
             cursor.execute(
-                "insert into meme_stats values(?, ?, ?, ?, ?, ?)",
+                "insert into meme_stats values(?, ?, ?, ?, ?, ?, ?)",
                 (
                     message.author.id,
                     message.id,
@@ -163,7 +179,38 @@ async def rate_meme(message: hikari.Message, ratings: list[int]) -> None:
                     message.timestamp,
                     sum(ratings),
                     len(ratings),
+                    str_explanations,
                 ),
             )
 
         db.commit()
+
+
+async def respond_to_question_mark(event: hikari.GuildReactionAddEvent) -> None:
+    # In memes only?
+    channel_id = event.channel_id
+    cursor = db.cursor()
+    if (
+        channel_id == MEME_CHANNEL_ID
+        and event.emoji_name == "❓"
+        and not event.member.is_bot
+    ):
+        channel_id, requester_id, response_to_msg_id = (
+            event.channel_id,
+            event.user_id,
+            event.message_id,
+        )
+        cursor.execute(
+            """
+        SELECT meme_reasoning
+        FROM meme_stats
+        WHERE message_id = ?""",
+            (response_to_msg_id,),
+        )
+        row = cursor.fetchone()
+        if row is not None:
+            await event.app.rest.create_message(
+                channel=channel_id,
+                reply=response_to_msg_id,
+                content=f"{row[0]}",  # Idk how to tag people
+            )
