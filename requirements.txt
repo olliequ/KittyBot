@@ -42,4 +42,3 @@ pilmoji==2.0.2
 imagehash==4.3.1
 hikari-toolbox==0.1.4
 google-generativeai==0.3.2
-grpcio==1.68.1
