@@ -1,4 +1,4 @@
-from typing import Dict, Any
+# No imports needed for built-in types
 
 DISCORD_MESSAGE_LIMIT = 2000
 
