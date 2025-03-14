@@ -3,6 +3,7 @@
 import os
 import dotenv, aiohttp
 import hikari, lightbulb
+from commons.message_utils import send_long_message
 
 # Some modules are naughty and expect to load things from the environment
 # immediately on import.
@@ -31,20 +32,18 @@ async def botStartup(event):
 @bot.listen(lightbulb.CommandErrorEvent)
 async def on_error(event: lightbulb.CommandErrorEvent) -> None:
     if isinstance(event.exception, lightbulb.CommandInvocationError):
-        await event.context.respond(
-            f"Something went wrong during invocation of command `{event.context.command.name}`."
-        )
+        error_message = f"Something went wrong during invocation of command `{event.context.command.name}`."
+        await send_long_message(event.context, error_message)
         raise event.exception
 
     # Unwrap the exception to get the original cause
     exception = event.exception.__cause__ or event.exception
 
     if isinstance(exception, lightbulb.NotOwner):
-        await event.context.respond("You are not the owner of this bot.")
+        await send_long_message(event.context, "You are not the owner of this bot.")
     elif isinstance(exception, lightbulb.CommandIsOnCooldown):
-        await event.context.respond(
-            f"This command is on cooldown for you {event.context.author.mention}. Try again in `{exception.retry_after:.2f}` seconds."
-        )
+        cooldown_message = f"This command is on cooldown for you {event.context.author.mention}. Try again in `{exception.retry_after:.2f}` seconds."
+        await send_long_message(event.context, cooldown_message)
 
 
 @bot.listen()
