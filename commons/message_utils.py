@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Any, Dict
 
 DISCORD_MESSAGE_LIMIT = 2000
 
@@ -56,15 +56,27 @@ def split_message(content: str) -> List[str]:
     
     return messages
 
-async def send_long_message(ctx, content: str) -> None:
+async def send_long_message(ctx, content: str, **kwargs) -> None:
     """
     Send a message that might exceed Discord's character limit by splitting it into multiple messages.
     
     Args:
-        ctx: The command context
+        ctx: The command context or message object with a respond method
         content (str): The message content to send
+        **kwargs: Additional keyword arguments to pass to the respond method
+                 (e.g., user_mentions=True, reply=True)
     """
     message_parts = split_message(content)
     
-    for part in message_parts:
-        await ctx.respond(part) 
+    # Send the first part with all kwargs (including reply=True if provided)
+    if message_parts:
+        await ctx.respond(message_parts[0], **kwargs)
+    
+    # Send any remaining parts without the reply flag
+    # This prevents all messages from being replies to the original message
+    remaining_kwargs = kwargs.copy()
+    if 'reply' in remaining_kwargs:
+        del remaining_kwargs['reply']
+    
+    for part in message_parts[1:]:
+        await ctx.respond(part, **remaining_kwargs) 

@@ -6,6 +6,7 @@ import db
 import commons.agents
 import logging as log
 import languagemodels as lm
+from commons.message_utils import send_long_message
 
 lm.config["instruct_model"] = "Qwen2.5-0.5B-Instruct"
 lm.config["max_tokens"] = 2000
@@ -113,5 +114,5 @@ async def main(event: hikari.GuildMessageCreateEvent) -> None:
     else:
         response = classical_response(event)
     if response:
-        await event.message.respond(response, user_mentions=True, reply=True)
+        await send_long_message(event.message, response, user_mentions=True, reply=True)
         raise behaviours.EndProcessing()
