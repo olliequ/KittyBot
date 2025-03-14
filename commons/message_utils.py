@@ -1,8 +1,8 @@
-from typing import List, Any, Dict
+from typing import Dict, Any
 
 DISCORD_MESSAGE_LIMIT = 2000
 
-def split_message(content: str) -> List[str]:
+def split_message(content: str) -> list[str]:
     """
     Split a message into multiple parts if it exceeds Discord's character limit.
     
@@ -10,7 +10,7 @@ def split_message(content: str) -> List[str]:
         content (str): The message content to split
         
     Returns:
-        List[str]: List of message parts that are within Discord's character limit
+        list[str]: List of message parts that are within Discord's character limit
     """
     if len(content) <= DISCORD_MESSAGE_LIMIT:
         return [content]
