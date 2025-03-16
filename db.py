@@ -66,12 +66,12 @@ def start():
 
 
 @overload
-def get_option(name: str) -> Optional[str]:
-    ...
+def get_option(name: str) -> Optional[str]: ...
+
 
 @overload
-def get_option(name: str, default: str) -> str:
-    ...
+def get_option(name: str, default: str) -> str: ...
+
 
 def get_option(name: str, default: Optional[str] = None) -> Optional[str]:
     res = (

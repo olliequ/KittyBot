@@ -36,9 +36,7 @@ async def get_meme_rating(image_url: str, user: str | None) -> agents.MemeAnswer
         logging.info("Not image")
         return None
     try:
-        response = await agents.meme_rater_agent().run(
-            web_image=image, user=user
-        )
+        response = await agents.meme_rater_agent().run(web_image=image, user=user)
         return agents.MemeAnswer(
             rate=min(max(0, int(response.rate)), 10), explanation=response.explanation
         )
@@ -175,7 +173,9 @@ async def rate_meme(
         else:
             if not isinstance(message, hikari.Message):
                 # This should be rare, only happening if we dropped message creation events
-                message = await message.app.rest.fetch_message(message.channel_id, message)
+                message = await message.app.rest.fetch_message(
+                    message.channel_id, message
+                )
             cursor.execute(
                 "insert into meme_stats values(?, ?, ?, ?, ?, ?, ?)",
                 (

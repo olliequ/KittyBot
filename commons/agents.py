@@ -1,7 +1,11 @@
 from pydantic import BaseModel, Field
 from pydantic_ai.models import Model
 from pydantic_ai.settings import ModelSettings
-from pydantic_ai.models.gemini import GeminiModel, GeminiModelSettings, GeminiSafetySettings
+from pydantic_ai.models.gemini import (
+    GeminiModel,
+    GeminiModelSettings,
+    GeminiSafetySettings,
+)
 from pydantic_ai.messages import BinaryContent, ModelMessage
 from pydantic_ai import Agent, RunContext
 from typing import Final
@@ -10,6 +14,7 @@ import logging as log
 from collections import deque
 
 import requests
+
 
 class KittyState(BaseModel):
     query: str = Field(description="The query to answer")
@@ -85,7 +90,9 @@ class KittyAgent:
         )
 
         @self.agent.system_prompt
-        def system_prompt(state: RunContext[KittyState]): # pyright: ignore [reportUnusedFunction]
+        def system_prompt(  # pyright: ignore [reportUnusedFunction]
+            state: RunContext[KittyState],
+        ):
             return self.prompt.format_map(state.deps.model_dump())
 
     async def run(self, query: str, user: str = "ANON", prompt: str | None = None):
@@ -131,11 +138,15 @@ class ReasonerMemeRater:
         )
 
         @self.eyes.system_prompt
-        def system_prompt_eye(state: RunContext[MemeState]): # pyright: ignore [reportUnusedFunction]
+        def system_prompt_eye(  # pyright: ignore [reportUnusedFunction]
+            state: RunContext[MemeState],
+        ):
             return self.eye_prompt.format_map(state.deps.model_dump())
 
         @self.reasoner.system_prompt
-        def system_prompt_reasoner(state: RunContext[MemeDescription]): # pyright: ignore [reportUnusedFunction]
+        def system_prompt_reasoner(  # pyright: ignore [reportUnusedFunction]
+            state: RunContext[MemeDescription],
+        ):
             return self.reasoner_prompt.format_map(state.deps.model_dump())
 
     async def run(
@@ -162,13 +173,16 @@ class ReasonerMemeRater:
 _chat_agent: KittyAgent
 _meme_rater_agent: ReasonerMemeRater
 
+
 def load():
     global _chat_agent, _meme_rater_agent
     gemini_model_settings = GeminiModelSettings(
         **generation_config,  # general model settings can also be specified
         gemini_safety_settings=safety_settings,
     )
-    _chat_agent = KittyAgent(gemini_model_settings, GeminiModel("gemini-2.0-flash-lite"))
+    _chat_agent = KittyAgent(
+        gemini_model_settings, GeminiModel("gemini-2.0-flash-lite")
+    )
     _meme_rater_agent = ReasonerMemeRater(
         gemini_model_settings,
         GeminiModel("gemini-2.0-flash-lite"),
@@ -180,6 +194,7 @@ def load():
 
 def chat_agent() -> KittyAgent:
     return _chat_agent
+
 
 def meme_rater_agent() -> ReasonerMemeRater:
     return _meme_rater_agent

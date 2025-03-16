@@ -27,7 +27,10 @@ def get_count_and_rank(cursor: db.Cursor, user_id: str):
     return (None, None)
 
 
-def add_emoji_count(cursor: db.Cursor, usages: Sequence[tuple[str | hikari.Snowflake, str | hikari.UnicodeEmoji]]):
+def add_emoji_count(
+    cursor: db.Cursor,
+    usages: Sequence[tuple[str | hikari.Snowflake, str | hikari.UnicodeEmoji]],
+):
     cursor.execute(
         f"""
         INSERT INTO emoji_counts (user, emoji, count)
@@ -151,13 +154,20 @@ async def analyse_message(event: hikari.GuildMessageCreateEvent) -> None:
         if len(emoji):
             add_emoji_count(cursor, [(user_id, e) for e in emoji])
 
-    if has_rank_changed(cursor, user_id) and (fallen_user := get_user_overtaken(cursor, user_id)):
+    if has_rank_changed(cursor, user_id) and (
+        fallen_user := get_user_overtaken(cursor, user_id)
+    ):
         await announce_rank_change(cursor, event, user_id, fallen_user)
 
     db.commit()
 
 
-async def announce_rank_change(cursor: db.Cursor, event: hikari.GuildMessageCreateEvent, user_id: str, fallen_user: str):
+async def announce_rank_change(
+    cursor: db.Cursor,
+    event: hikari.GuildMessageCreateEvent,
+    user_id: str,
+    fallen_user: str,
+):
     (count, rank) = get_count_and_rank(cursor, user_id)
     if count is None or rank is None:
         return

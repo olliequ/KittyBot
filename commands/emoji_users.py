@@ -28,9 +28,7 @@ async def show_emoji_lovers(ctx: lightbulb.Context, emoji: str) -> None:
     users = cursor.fetchall()
     user_list = list[str]()
     for rank in range(len(users)):
-        user = get_member(ctx, 
-            users[rank][0]
-        )  # Check user is still in server.
+        user = get_member(ctx, users[rank][0])  # Check user is still in server.
         if user is not None:
             user_list.append(
                 f"`#{rank + 1}` {user.display_name} has used {emoji} `{users[rank][1]}` {plural_or_not(users[rank][1])}!"

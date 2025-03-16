@@ -20,4 +20,6 @@ async def main(event: hikari.GuildMessageCreateEvent) -> None:
     for role in currentRoles:
         if role.id == int(os.environ["NOTALURKER_ROLE"]):
             return
-    await event.app.rest.add_role_to_member(event.guild_id, event.author, int(os.environ['NOTALURKER_ROLE']))
+    await event.app.rest.add_role_to_member(
+        event.guild_id, event.author, int(os.environ["NOTALURKER_ROLE"])
+    )

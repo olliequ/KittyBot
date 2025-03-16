@@ -25,7 +25,9 @@ async def main(ctx: lightbulb.Context) -> None:
             await ctx.respond("Unknown target language")
             return
     url = "https://translate-service.scratch.mit.edu/translate"
-    response = requests.get(url, params={"language": str(lang), "text": ctx.options.text})
+    response = requests.get(
+        url, params={"language": str(lang), "text": ctx.options.text}
+    )
     if response.status_code != 200:
         await ctx.respond("Translation error")
     else:

@@ -99,5 +99,6 @@ async def delete_hash(event: hikari.GuildMessageDeleteEvent) -> None:
 
 def load():
     def md5(v: str) -> str:
-        return hashlib.md5(v.encode('utf-8')).hexdigest()
+        return hashlib.md5(v.encode("utf-8")).hexdigest()
+
     db.create_function("md5", 1, md5)

@@ -17,6 +17,7 @@ HASH_SIZE = 16
 
 _Results = Sequence[tuple[int, hikari.Snowflake, hikari.Snowflake, hikari.Snowflake]]
 
+
 async def main(event: hikari.GuildMessageCreateEvent) -> None:
     # Don't handle messages from bots or without content
     if event.is_bot:
@@ -113,8 +114,12 @@ async def main(event: hikari.GuildMessageCreateEvent) -> None:
 def load() -> None:
     def hammingDistance(a: str, b: str):
         return imagehash.hex_to_hash(a) - imagehash.hex_to_hash(b)
+
     db.create_function("hammingDistance", 2, hammingDistance)
 
     def hammingDistanceColor(a: str, b: str):
-        return imagehash.hex_to_flathash(a, HASH_SIZE) - imagehash.hex_to_flathash(b, HASH_SIZE)
+        return imagehash.hex_to_flathash(a, HASH_SIZE) - imagehash.hex_to_flathash(
+            b, HASH_SIZE
+        )
+
     db.create_function("hammingDistanceColor", 2, hammingDistanceColor)

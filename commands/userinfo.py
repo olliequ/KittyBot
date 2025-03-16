@@ -118,10 +118,10 @@ async def general_info(ctx: lightbulb.Context, target: hikari.Member) -> None:
             inline=True,
         )
     embed.add_field(
-            "Roles",
-            ", ".join(r.mention for r in roles),
-            inline=False,
-        )
+        "Roles",
+        ", ".join(r.mention for r in roles),
+        inline=False,
+    )
     await ctx.respond(embed)  # Respond to the interaction with the embed.
 
 

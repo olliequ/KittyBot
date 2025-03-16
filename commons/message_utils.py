@@ -4,6 +4,7 @@ from typing import Optional, Protocol, Any
 
 DISCORD_MESSAGE_LIMIT = 2000
 
+
 class NoEntityError(Exception):
     pass
 

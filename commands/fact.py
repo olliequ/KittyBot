@@ -11,7 +11,7 @@ def init():
     misconceptionsURL = "https://en.wikipedia.org/wiki/List_of_common_misconceptions"
     page = requests.get(misconceptionsURL)
     soup = BeautifulSoup(page.content, "html.parser")
-    lists = soup.select('.mw-parser-output ul')
+    lists = soup.select(".mw-parser-output ul")
     for i in range(13, 79 if len(lists) >= 79 else len(lists)):
         for line in lists[i]:
             if line.text != "\n":
