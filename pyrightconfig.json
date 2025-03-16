@@ -1,6 +1,10 @@
 {
     "typeCheckingMode": "strict",
-    "reportUnusedFunction": "information",
-    "reportMissingTypeStubs": "none",
-    "ignore": [ "commands" ]
+    "ignore": [
+        "commands/meme_stats.py",
+        "commands/emojicloud.py",
+        "commands/messageboard.py",
+        "commands/usermessages.py",
+        "commands/wordcloud.py"
+    ]
 }

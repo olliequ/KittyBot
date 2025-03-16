@@ -85,7 +85,7 @@ class KittyAgent:
         )
 
         @self.agent.system_prompt
-        def system_prompt(state: RunContext[KittyState]):
+        def system_prompt(state: RunContext[KittyState]): # pyright: ignore [reportUnusedFunction]
             return self.prompt.format_map(state.deps.model_dump())
 
     async def run(self, query: str, user: str = "ANON", prompt: str | None = None):
@@ -131,11 +131,11 @@ class ReasonerMemeRater:
         )
 
         @self.eyes.system_prompt
-        def system_prompt_eye(state: RunContext[MemeState]):
+        def system_prompt_eye(state: RunContext[MemeState]): # pyright: ignore [reportUnusedFunction]
             return self.eye_prompt.format_map(state.deps.model_dump())
 
         @self.reasoner.system_prompt
-        def system_prompt_reasoner(state: RunContext[MemeDescription]):
+        def system_prompt_reasoner(state: RunContext[MemeDescription]): # pyright: ignore [reportUnusedFunction]
             return self.reasoner_prompt.format_map(state.deps.model_dump())
 
     async def run(

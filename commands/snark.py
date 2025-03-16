@@ -12,6 +12,8 @@ plugin = lightbulb.Plugin("Snark")
 @lightbulb.command("setprompt", "Update LLM prompt")
 @lightbulb.implements(lightbulb.SlashCommand)
 async def setprompt(ctx: lightbulb.Context) -> None:
+    if not ctx.member:
+        return
     current_roles = (await ctx.member.fetch_roles())[1:]
     for role in current_roles:
         if role.id == int(os.environ["BOT_ADMIN_ROLE"]):

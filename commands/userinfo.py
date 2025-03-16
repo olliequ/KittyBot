@@ -1,18 +1,19 @@
 from datetime import datetime
 import hikari, lightbulb
+from commons.message_utils import NoEntityError, get_member
 import db
 
 plugin = lightbulb.Plugin("userstats")
 
 
-def plural_or_not(number):
+def plural_or_not(number: int):
     if number == 1:
         return "time"
     else:
         return "times"
 
 
-def get_count_and_rank(cursor, user_id):
+def get_count_and_rank(cursor: db.Cursor, user_id: hikari.Snowflake):
     cursor.execute(
         """
         WITH ranks AS (
@@ -32,7 +33,9 @@ def get_count_and_rank(cursor, user_id):
     return (None, None)
 
 
-async def emoji_stats(ctx: lightbulb.Context, user) -> None:
+async def emoji_stats(ctx: lightbulb.Context, user: hikari.Member) -> None:
+    if not ctx.member:
+        return
     user_id = user.id
     cursor = db.cursor()
     cursor.execute(
@@ -44,7 +47,7 @@ async def emoji_stats(ctx: lightbulb.Context, user) -> None:
         (user_id,),
     )
     emoji = cursor.fetchall()
-    emoji_list = []
+    emoji_list = list[str]()
     for rank in range(len(emoji)):
         emoji_list.append(
             f"`#{rank + 1}` {emoji[rank][0]} used `{emoji[rank][1]}` {plural_or_not(emoji[rank][1])}!"
@@ -76,15 +79,12 @@ async def emoji_stats(ctx: lightbulb.Context, user) -> None:
     await ctx.respond(embed)
 
 
-async def general_info(ctx: lightbulb.Context, target) -> None:
-    target = ctx.get_guild().get_member(ctx.options.target or ctx.user)
-
-    if not target:
-        await ctx.respond("That user is not in the server.")
+async def general_info(ctx: lightbulb.Context, target: hikari.Member) -> None:
+    if not ctx.member:
         return
 
     created_at = int(target.created_at.timestamp())
-    joined_at = int(target.joined_at.timestamp())
+    joined_at = int(target.joined_at.timestamp()) if target.joined_at else None
 
     roles = (await target.fetch_roles())[:]  # All but @everyone
 
@@ -110,17 +110,18 @@ async def general_info(ctx: lightbulb.Context, target) -> None:
             f"<t:{created_at}:d>\n(<t:{created_at}:R>)",
             inline=True,
         )
-        .add_field(
+    )
+    if joined_at:
+        embed.add_field(
             "Joined server on",
             f"<t:{joined_at}:d>\n(<t:{joined_at}:R>)",
             inline=True,
         )
-        .add_field(
+    embed.add_field(
             "Roles",
             ", ".join(r.mention for r in roles),
             inline=False,
         )
-    )
     await ctx.respond(embed)  # Respond to the interaction with the embed.
 
 
@@ -135,10 +136,14 @@ async def general_info(ctx: lightbulb.Context, target) -> None:
 @lightbulb.command("userinfo", "Get information about someone specific!")
 @lightbulb.implements(lightbulb.PrefixCommand, lightbulb.SlashCommand)
 async def main(ctx: lightbulb.Context) -> None:
-    user = ctx.get_guild().get_member(ctx.options.target)
-    if ctx.options.target and ctx.options.type == "general":
+    try:
+        user = get_member(ctx, ctx.options.target)
+    except NoEntityError:
+        await ctx.respond("That user is not in the server.")
+        return
+    if ctx.options.type == "general":
         await general_info(ctx, user)
-    elif (ctx.options.target and ctx.options.type == "emoji") or not ctx.options.type:
+    else:
         await emoji_stats(ctx, user)
 
 

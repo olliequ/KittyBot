@@ -18,7 +18,7 @@ async def main(ctx: lightbulb.Context) -> None:
     await ctx.respond(get_random_pickup_line(ctx.options.type))
 
 
-def get_random_pickup_line(type) -> str:
+def get_random_pickup_line(type: str) -> str:
     response = requests.get(f"https://api.jcwyt.com/{type}")
     return response.text
 

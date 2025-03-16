@@ -5,7 +5,9 @@ import db
 plugin = lightbulb.Plugin("Emoji stats.")
 
 
-async def show_emoji_stats(ctx: lightbulb.Context, user, emoji) -> None:
+async def show_emoji_stats(ctx: lightbulb.Context, user: hikari.User, emoji: str) -> None:
+    if ctx.member is None:
+        return
     user_id = user.id
     cursor = db.cursor()
     cursor.execute(
