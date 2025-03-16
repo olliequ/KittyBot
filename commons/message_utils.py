@@ -1,6 +1,32 @@
-# No imports needed for built-in types
+import hikari
+from typing import Optional, Protocol, Any
+
 
 DISCORD_MESSAGE_LIMIT = 2000
+
+class NoEntityError(Exception):
+    pass
+
+
+class _GuildProvider(Protocol):
+    def get_guild(self) -> Optional[hikari.Guild]: ...
+
+
+def get_member(ctx: _GuildProvider, user_id: hikari.Snowflakeish) -> hikari.Member:
+    """
+    Wrapper function for getting a discord member. For fullest
+    correctness this should make a rest query when the entity is not
+    found in the hikari cache, but in reality the cache is fully
+    populated for guilds & members unless something goes wrong or
+    there are > 75k members. So we ignore that possibility.
+    """
+    guild = ctx.get_guild()
+    if guild is None:
+        raise NoEntityError("Cannot get context guild")
+    member = guild.get_member(user_id)
+    if member is None:
+        raise NoEntityError(f"Unknown member {user_id}")
+    return member
 
 
 def split_message(content: str) -> list[str]:
@@ -16,7 +42,7 @@ def split_message(content: str) -> list[str]:
     if len(content) <= DISCORD_MESSAGE_LIMIT:
         return [content]
 
-    messages = []
+    messages: list[str] = []
     current_message = ""
 
     # Split by newlines first to try to keep logical breaks
@@ -58,7 +84,7 @@ def split_message(content: str) -> list[str]:
     return messages
 
 
-async def send_long_message(ctx, content: str, **kwargs) -> None:
+async def send_long_message(ctx: hikari.Message, content: str, **kwargs: Any) -> None:
     """
     Send a message that might exceed Discord's character limit by splitting it into multiple messages.
 

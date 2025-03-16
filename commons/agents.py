@@ -1,15 +1,15 @@
 from pydantic import BaseModel, Field
-from pydantic_ai.models.gemini import GeminiModelSettings, ModelSettings
-from pydantic_ai.messages import BinaryContent
+from pydantic_ai.models import Model
+from pydantic_ai.settings import ModelSettings
+from pydantic_ai.models.gemini import GeminiModel, GeminiModelSettings, GeminiSafetySettings
+from pydantic_ai.messages import BinaryContent, ModelMessage
 from pydantic_ai import Agent, RunContext
-import db
-from typing import Any, Final, Optional
+from typing import Final
 import os
 import logging as log
 from collections import deque
 
-_agents = {}
-
+import requests
 
 class KittyState(BaseModel):
     query: str = Field(description="The query to answer")
@@ -33,14 +33,12 @@ class KittyAnswer(BaseModel):
     answer: str = Field(description="The answer to the query")
 
 
-generation_config = {
+generation_config: ModelSettings = {
     "temperature": 1,
-    "top_p": 1,
-    "top_k": 1,
     "max_tokens": 2000,
 }
 
-safety_settings = [
+safety_settings: list[GeminiSafetySettings] = [
     {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_ONLY_HIGH"},
     {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_ONLY_HIGH"},
     {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_ONLY_HIGH"},
@@ -70,12 +68,12 @@ REASONER_MEME_PROMPT: Final[str] = os.environ.get(
 
 class KittyAgent:
     def __init__(
-        self, model_settings: ModelSettings, model: str, prompt: str = DEFAULT_PROMPT
+        self, model_settings: ModelSettings, model: Model, prompt: str = DEFAULT_PROMPT
     ):
         self.model_settings = model_settings
         self.model = model
         self.prompt = prompt
-        self.messages = deque(maxlen=10)
+        self.messages: deque[ModelMessage] = deque(maxlen=10)
         self.setup_agent()
 
     def setup_agent(self):
@@ -90,7 +88,7 @@ class KittyAgent:
         def system_prompt(state: RunContext[KittyState]):
             return self.prompt.format_map(state.deps.model_dump())
 
-    async def run(self, query: str, user: str = "ANON", prompt: str = None):
+    async def run(self, query: str, user: str = "ANON", prompt: str | None = None):
         if prompt:
             self.prompt = prompt
         state = KittyState(query=query, user=user)
@@ -109,8 +107,8 @@ class ReasonerMemeRater:
     def __init__(
         self,
         eye_model_settings: ModelSettings,
-        eye_model: str,
-        reasoner_model: str,
+        eye_model: Model,
+        reasoner_model: Model,
         eye_prompt: str,
         reasoner_prompt: str,
     ):
@@ -137,17 +135,17 @@ class ReasonerMemeRater:
             return self.eye_prompt.format_map(state.deps.model_dump())
 
         @self.reasoner.system_prompt
-        def system_prompt_reasoner(state):
+        def system_prompt_reasoner(state: RunContext[MemeDescription]):
             return self.reasoner_prompt.format_map(state.deps.model_dump())
 
     async def run(
-        self, image: BinaryContent, user: str = "ANON", prompt: str = None
+        self, web_image: requests.Response, user: str | None, prompt: str | None = None
     ) -> MemeAnswer:
         if prompt:
             self.prompt = prompt
-        state = MemeState(user=user)
+        state = MemeState(user=user if user else "ANON")
         image = BinaryContent(
-            data=image.content, media_type=image.headers["Content-Type"]
+            data=web_image.content, media_type=web_image.headers["Content-Type"]
         )
         try:
             eyes_response = await self.eyes.run([image], deps=state)
@@ -161,20 +159,27 @@ class ReasonerMemeRater:
         return response.data
 
 
+_chat_agent: KittyAgent
+_meme_rater_agent: ReasonerMemeRater
+
 def load():
+    global _chat_agent, _meme_rater_agent
     gemini_model_settings = GeminiModelSettings(
         **generation_config,  # general model settings can also be specified
         gemini_safety_settings=safety_settings,
     )
-    _agents["chat"] = KittyAgent(gemini_model_settings, "gemini-2.0-flash-lite")
-    _agents["reasoner_meme_rater"] = ReasonerMemeRater(
+    _chat_agent = KittyAgent(gemini_model_settings, GeminiModel("gemini-2.0-flash-lite"))
+    _meme_rater_agent = ReasonerMemeRater(
         gemini_model_settings,
-        "gemini-2.0-flash-lite",
-        "gemini-2.0-flash-lite",
+        GeminiModel("gemini-2.0-flash-lite"),
+        GeminiModel("gemini-2.0-flash-lite"),
         EYE_RATE_PROMPT,
         REASONER_MEME_PROMPT,
     )
 
 
-def agent(name: str):
-    return _agents[name]
+def chat_agent() -> KittyAgent:
+    return _chat_agent
+
+def meme_rater_agent() -> ReasonerMemeRater:
+    return _meme_rater_agent

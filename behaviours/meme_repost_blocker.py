@@ -1,6 +1,8 @@
 import os
+from typing import Sequence
 
 import hikari
+import hikari.errors
 from PIL import Image
 import imagehash
 import behaviours
@@ -13,6 +15,7 @@ phash_th = "PHASH_TH"
 chash_th = "CHASH_TH"
 HASH_SIZE = 16
 
+_Results = Sequence[tuple[int, hikari.Snowflake, hikari.Snowflake, hikari.Snowflake]]
 
 async def main(event: hikari.GuildMessageCreateEvent) -> None:
     # Don't handle messages from bots or without content
@@ -26,7 +29,10 @@ async def main(event: hikari.GuildMessageCreateEvent) -> None:
     for attachment in event.message.attachments:
         # Check if the attachment is an image
         file_name = attachment.filename
-        file_extension = re.search(r"\.(\w+)$", file_name).group(1)
+        file_name_match = re.search(r"\.(\w+)$", file_name)
+        if not file_name_match:
+            continue
+        file_extension = file_name_match.group(1)
         image_file_extensions = ["bmp", "gif", "jpg", "jpeg", "png", "tiff", "webp"]
         if file_extension in image_file_extensions:
             # Calculate the approximate hash of the image
@@ -55,15 +61,15 @@ async def main(event: hikari.GuildMessageCreateEvent) -> None:
                 ),
             )
 
-            results = c.fetchall()
-            valid_results = []
+            results: _Results = c.fetchall()
+            valid_results: _Results = []
             for result in results:
                 # We have a match in the database, but we need to verify that message has not been since deleted
                 row_id = result[0]
                 message_id = result[1]
                 channel_id = result[2]
                 try:
-                    print(await event.app.rest.fetch_message(channel_id, message_id))
+                    await event.app.rest.fetch_message(channel_id, message_id)
 
                 except hikari.errors.NotFoundError:
                     c.execute(
@@ -105,14 +111,10 @@ async def main(event: hikari.GuildMessageCreateEvent) -> None:
 
 
 def load() -> None:
-    db.create_function(
-        "hammingDistance",
-        2,
-        lambda a, b: imagehash.hex_to_hash(a) - imagehash.hex_to_hash(b),
-    )
-    db.create_function(
-        "hammingDistanceColor",
-        2,
-        lambda a, b: imagehash.hex_to_flathash(a, HASH_SIZE)
-        - imagehash.hex_to_flathash(b, HASH_SIZE),
-    )
+    def hammingDistance(a: str, b: str):
+        return imagehash.hex_to_hash(a) - imagehash.hex_to_hash(b)
+    db.create_function("hammingDistance", 2, hammingDistance)
+
+    def hammingDistanceColor(a: str, b: str):
+        return imagehash.hex_to_flathash(a, HASH_SIZE) - imagehash.hex_to_flathash(b, HASH_SIZE)
+    db.create_function("hammingDistanceColor", 2, hammingDistanceColor)

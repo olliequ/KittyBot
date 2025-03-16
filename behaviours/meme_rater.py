@@ -5,7 +5,7 @@ import hikari.users
 import db
 import hikari
 import requests
-import commons.agents as ca
+from commons import agents
 from typing import Final
 import asyncio
 
@@ -30,17 +30,16 @@ DELETE_SHIT: Final[bool] = False
 IMG_FILE_EXTENSIONS: Final = {"jpg", "jpeg", "png", "webp"}
 
 
-async def get_meme_rating(image_url: str, user: str) -> ca.MemeAnswer | None:
+async def get_meme_rating(image_url: str, user: str | None) -> agents.MemeAnswer | None:
     image = requests.get(image_url, stream=True)
     if not image.raw:
         logging.info("Not image")
         return None
     try:
-        kitty_reasoner_meme_rater = ca.agent("reasoner_meme_rater")
-        response: ca.MemeAnswer = await kitty_reasoner_meme_rater.run(
-            image=image, user=user
+        response = await agents.meme_rater_agent().run(
+            web_image=image, user=user
         )
-        return ca.MemeAnswer(
+        return agents.MemeAnswer(
             rate=min(max(0, int(response.rate)), 10), explanation=response.explanation
         )
     except Exception as e:
@@ -57,7 +56,7 @@ def number_emoji(number: int):
 
 
 async def msg_update(event: hikari.GuildMessageUpdateEvent) -> None:
-    if event.channel_id != MEME_CHANNEL_ID:
+    if event.channel_id != MEME_CHANNEL_ID or not event.message.embeds:
         return
 
     # We only want to rate the meme if it was not edited after the initial post
@@ -65,30 +64,34 @@ async def msg_update(event: hikari.GuildMessageUpdateEvent) -> None:
     if event.message.edited_timestamp:
         return
 
-    ratings = []
+    ratings = list[int]()
     explanations = list[str]()
 
     for embed in event.message.embeds:
         if not embed.thumbnail:
             continue
         image_url = embed.thumbnail.proxy_url
+        if not image_url:
+            continue
 
         try:
-            res = await get_meme_rating(image_url, event.author.username)
+            username = None
+            if event.author:
+                username = event.author.username
+            res = await get_meme_rating(image_url, username)
             if not res:
                 continue
             ratings.append(res.rate)
             explanations.append(res.explanation)
-        except Exception as e:
+        except Exception:
             continue
-
     await rate_meme(event.message, ratings, explanations)
 
 
 async def msg_create(event: hikari.GuildMessageCreateEvent) -> None:
     if event.channel_id != MEME_CHANNEL_ID:
         return
-    ratings = []
+    ratings = list[int]()
     explanations = list[str]()
 
     for attachment in event.message.attachments:
@@ -103,14 +106,14 @@ async def msg_create(event: hikari.GuildMessageCreateEvent) -> None:
                 continue
             ratings.append(res.rate)
             explanations.append(res.explanation)
-        except Exception as e:
+        except Exception:
             continue
 
     await rate_meme(event.message, ratings, explanations)
 
 
 async def rate_meme(
-    message: hikari.Message, ratings: list[int], explanations: list[str]
+    message: hikari.PartialMessage, ratings: list[int], explanations: list[str]
 ) -> None:
     async with RATER_LOCK:
         if not ratings or not explanations:
@@ -165,11 +168,14 @@ async def rate_meme(
                     sum(ratings) + curr_ratings[0],
                     len(ratings) + curr_ratings[1],
                     avg_rating,
-                    message.id,
                     str_explanations,
+                    message.id,
                 ),
             )
         else:
+            if not isinstance(message, hikari.Message):
+                # This should be rare, only happening if we dropped message creation events
+                message = await message.app.rest.fetch_message(message.channel_id, message)
             cursor.execute(
                 "insert into meme_stats values(?, ?, ?, ?, ?, ?, ?)",
                 (
@@ -195,7 +201,7 @@ async def respond_to_question_mark(event: hikari.GuildReactionAddEvent) -> None:
         and event.emoji_name == "❓"
         and not event.member.is_bot
     ):
-        channel_id, requester_id, response_to_msg_id = (
+        channel_id, _requester_id, response_to_msg_id = (
             event.channel_id,
             event.user_id,
             event.message_id,

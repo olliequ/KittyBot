@@ -35,14 +35,14 @@ eight_ball_responses = [
 ]
 
 
-def choose_eightball_response(message):
+def choose_eightball_response(message: str):
     # Add current date down to hour precision to vary the response periodically
     hash_input = message + datetime.datetime.now().strftime("%Y%m%d%H")
     index = hashlib.md5(hash_input.encode()).digest()[0] % len(eight_ball_responses)
     return eight_ball_responses[index]
 
 
-def find_whole_word(word, text):
+def find_whole_word(word: str, text: str):
     return re.compile(r"\b({0})\b".format(word), flags=re.IGNORECASE).search(text)
 
 
@@ -79,11 +79,13 @@ def classical_response(event: hikari.GuildMessageCreateEvent) -> str | None:
     return response
 
 
-async def llm_response(event) -> str | None:
+async def llm_response(event: hikari.GuildMessageCreateEvent) -> str | None:
     message_content = event.content
+    if not message_content:
+        return None
+    prompt = db.get_option("LLM_PROMPT", commons.agents.DEFAULT_PROMPT)
     try:
-        prompt = db.get_option("LLM_PROMPT", commons.agents.DEFAULT_PROMPT)
-        response = await commons.agents.agent("chat").run(
+        response = await commons.agents.chat_agent().run(
             message_content, event.author.mention, prompt
         )
         if not response:
@@ -109,7 +111,7 @@ async def main(event: hikari.GuildMessageCreateEvent) -> None:
     mentioned_ids = event.message.user_mentions_ids
     if not mentioned_ids or event.shard.get_user_id() not in mentioned_ids:
         return
-    if event.channel_id == int(os.environ.get("ORIGINALITY_CHANNEL_ID")):
+    if event.channel_id == int(os.environ.get("ORIGINALITY_CHANNEL_ID", "0")):
         response = await llm_response(event)
     else:
         response = classical_response(event)
