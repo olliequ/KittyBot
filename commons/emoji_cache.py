@@ -2,14 +2,14 @@
 Cache Custom Emojis Locally for Better Performance
 """
 
-from typing import Optional
 import os
+import hikari
 import lightbulb
 from hikari import CustomEmoji, NotFoundError
 import requests
 
 
-async def get_file_name(emoji: str, bot: lightbulb.BotApp) -> Optional[str]:
+async def get_file_name(emoji: str, bot: lightbulb.BotApp) -> str | None:
     """
     Return a path to the image file for the specified custom emoji. Returns None
     if emoji does not exist or is not a custom emoji.
@@ -29,7 +29,7 @@ async def get_file_name(emoji: str, bot: lightbulb.BotApp) -> Optional[str]:
         return cache_result
 
 
-def _get_cached_file_name(emoji_id: str) -> Optional[str]:
+def _get_cached_file_name(emoji_id: hikari.Snowflake) -> str | None:
     for ext in (
         "gif",
         "png",
@@ -40,7 +40,7 @@ def _get_cached_file_name(emoji_id: str) -> Optional[str]:
             return tp
 
 
-async def _download_emoji(emoji_id: str, bot: lightbulb.BotApp):
+async def _download_emoji(emoji_id: hikari.Snowflake, bot: lightbulb.BotApp):
     try:
         info = await bot.rest.fetch_emoji(
             int(os.environ["DEFAULT_GUILDS"].split(",")[0]), emoji_id

@@ -1,5 +1,9 @@
 import sqlite3
 import os
+from typing import Callable, overload, Any, Optional
+
+# Reexport type for convenience of module users
+Cursor = sqlite3.Cursor
 
 
 def cursor():
@@ -41,19 +45,19 @@ def start():
 
     try:
         c.execute("ALTER TABLE image_hashes ADD hash_color TEXT NOT NULL")
-    except Exception as ex:
+    except Exception:
         pass
     try:
         c.execute("ALTER TABLE meme_stats ADD meme_rating INTEGER")
-    except Exception as ex:
+    except Exception:
         pass
     try:
         c.execute("ALTER TABLE meme_stats ADD rating_count INTEGER")
-    except Exception as ex:
+    except Exception:
         pass
     try:
         c.execute("ALTER TABLE meme_stats ADD meme_reasoning TEXT")
-    except Exception as ex:
+    except Exception:
         pass
 
     # EmojiCache Table Removed
@@ -61,7 +65,15 @@ def start():
     c.execute("CREATE UNIQUE INDEX IF NOT EXISTS options_idx ON options (name)")
 
 
-def get_option(name: str, default=None):
+@overload
+def get_option(name: str) -> Optional[str]: ...
+
+
+@overload
+def get_option(name: str, default: str) -> str: ...
+
+
+def get_option(name: str, default: Optional[str] = None) -> Optional[str]:
     res = (
         cursor().execute("select value from options where name = ?", (name,)).fetchone()
     )
@@ -78,7 +90,7 @@ def set_option(name: str, value: str):
     commit()
 
 
-def create_function(name, nargs, fn):
+def create_function(name: str, nargs: int, fn: Callable[..., Any]):
     conn.create_function(name, nargs, fn)
 
 

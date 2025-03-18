@@ -1,11 +1,13 @@
 import os
 import re
 from itertools import chain
+from typing import Sequence
 from emoji import emoji_list
+import hikari
 import db
 
 
-def get_count_and_rank(cursor, user_id):
+def get_count_and_rank(cursor: db.Cursor, user_id: str):
     cursor.execute(
         """
         WITH ranks AS (
@@ -25,7 +27,10 @@ def get_count_and_rank(cursor, user_id):
     return (None, None)
 
 
-def add_emoji_count(cursor, usages):
+def add_emoji_count(
+    cursor: db.Cursor,
+    usages: Sequence[tuple[str | hikari.Snowflake, str | hikari.UnicodeEmoji]],
+):
     cursor.execute(
         f"""
         INSERT INTO emoji_counts (user, emoji, count)
@@ -36,7 +41,7 @@ def add_emoji_count(cursor, usages):
     )
 
 
-def remove_emoji_count(cursor, user_id, emoji):
+def remove_emoji_count(cursor: db.Cursor, user_id: hikari.Snowflake, emoji: str):
     cursor.execute(
         f"""
         UPDATE emoji_counts
@@ -46,7 +51,7 @@ def remove_emoji_count(cursor, user_id, emoji):
     )
 
 
-def add_message_count(cursor, user_id):
+def add_message_count(cursor: db.Cursor, user_id: str):
     cursor.execute(
         """
         INSERT INTO message_counts (user, count)
@@ -57,7 +62,7 @@ def add_message_count(cursor, user_id):
     )
 
 
-def has_rank_changed(cursor, user_id):
+def has_rank_changed(cursor: db.Cursor, user_id: str):
     cursor.execute(
         """
         WITH leads AS (
@@ -76,7 +81,7 @@ def has_rank_changed(cursor, user_id):
     return row[0] == 1
 
 
-def get_user_overtaken(cursor, user_id):
+def get_user_overtaken(cursor: db.Cursor, user_id: str) -> str | None:
     cursor.execute(
         """
         WITH ranked_users AS (
@@ -102,7 +107,9 @@ def get_user_overtaken(cursor, user_id):
     return row[0]  # Returns the ID of the user who fell a place
 
 
-async def analyse_reaction(event) -> None:
+async def analyse_reaction(event: hikari.GuildReactionAddEvent) -> None:
+    if event.emoji_name is None:
+        return
     cursor = db.cursor()
     if event.emoji_id is None:
         # Standard unicode emoji character
@@ -115,7 +122,9 @@ async def analyse_reaction(event) -> None:
     db.commit()
 
 
-async def remove_reaction(event) -> None:
+async def remove_reaction(event: hikari.GuildReactionDeleteEvent) -> None:
+    if not event.emoji_name:
+        return
     cursor = db.cursor()
     if event.emoji_id is None:
         # Standard unicode emoji character
@@ -128,7 +137,7 @@ async def remove_reaction(event) -> None:
     db.commit()
 
 
-async def analyse_message(event) -> None:
+async def analyse_message(event: hikari.GuildMessageCreateEvent) -> None:
     if not event.is_human:
         return
     if not (event.content or len(event.message.attachments)):
@@ -145,15 +154,20 @@ async def analyse_message(event) -> None:
         if len(emoji):
             add_emoji_count(cursor, [(user_id, e) for e in emoji])
 
-    did_rank_change = has_rank_changed(cursor, user_id)
-    if did_rank_change:
-        fallen_user = get_user_overtaken(cursor, user_id)
+    if has_rank_changed(cursor, user_id) and (
+        fallen_user := get_user_overtaken(cursor, user_id)
+    ):
         await announce_rank_change(cursor, event, user_id, fallen_user)
 
     db.commit()
 
 
-async def announce_rank_change(cursor, event, user_id, fallen_user):
+async def announce_rank_change(
+    cursor: db.Cursor,
+    event: hikari.GuildMessageCreateEvent,
+    user_id: str,
+    fallen_user: str,
+):
     (count, rank) = get_count_and_rank(cursor, user_id)
     if count is None or rank is None:
         return

@@ -1,5 +1,5 @@
-import os, db
-import hikari, lightbulb
+import db
+import lightbulb
 
 plugin = lightbulb.Plugin("messagecount")
 
@@ -11,11 +11,8 @@ plugin = lightbulb.Plugin("messagecount")
 )
 @lightbulb.implements(lightbulb.SlashCommand)
 async def main(ctx: lightbulb.Context) -> None:
-    await main(ctx)
-
-
-async def main(ctx):
-    requesting_user = ctx.member.display_name
+    if not ctx.member:
+        return
     cursor = db.cursor()
     cursor.execute(
         """SELECT user, count FROM message_counts 

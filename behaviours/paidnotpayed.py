@@ -1,5 +1,7 @@
 import re
 
+import hikari
+
 import behaviours
 
 """
@@ -7,15 +9,15 @@ Bot makes a slight correction.
 """
 
 
-def find_whole_word(word, text):
+def find_whole_word(word: str, text: str):
     return re.compile(r"\b({0})\b".format(word), flags=re.IGNORECASE).search(text)
 
 
-def contains_word(s, w):
+def contains_word(s: str, w: str):
     return f" {w} " in f" {s} "
 
 
-async def main(event):
+async def main(event: hikari.GuildMessageCreateEvent):
     if event.is_bot or not event.content:
         return
 

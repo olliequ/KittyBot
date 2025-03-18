@@ -4,18 +4,17 @@ from bs4 import BeautifulSoup
 import lightbulb
 
 plugin = lightbulb.Plugin("Fact")
-randomFacts = []
+randomFacts = list[str]()
 
 
 def init():
     misconceptionsURL = "https://en.wikipedia.org/wiki/List_of_common_misconceptions"
     page = requests.get(misconceptionsURL)
     soup = BeautifulSoup(page.content, "html.parser")
-    results = soup.find(class_="mw-parser-output")
-    lists = results.find_all("ul")  # Returns an iterable of all lists on the page.
+    lists = soup.select(".mw-parser-output ul")
     for i in range(13, 79 if len(lists) >= 79 else len(lists)):
         for line in lists[i]:
-            if line != "\n":
+            if line.text != "\n":
                 line = re.sub(r"\[.*?\]", "", line.text)
                 randomFacts.append(line)
 

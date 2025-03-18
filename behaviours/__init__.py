@@ -1,4 +1,4 @@
-import typing as t
+from typing import TypeVar, Sequence, Callable, Coroutine
 import logging
 import asyncio
 import hikari
@@ -9,8 +9,8 @@ from behaviours import userinfo
 from behaviours import meme_repost_blocker, meme_rater, rant_patrol, paidnotpayed
 from behaviours import snark, deletes, duplicate_message_policing
 
-_Evt = t.TypeVar("_Evt", bound=hikari.Event)
-_Chain = list[list[t.Callable[[_Evt], t.Coroutine[None, None, None]]]]
+_Evt = TypeVar("_Evt", bound=hikari.Event)
+_Chain = Sequence[Sequence[Callable[[_Evt], Coroutine[None, None, None]]]]
 
 _message_create_chain: _Chain[hikari.GuildMessageCreateEvent] = [
     # Message filtering & deletion
@@ -65,7 +65,7 @@ def register(bot: lightbulb.BotApp):
     bot.listen(hikari.GuildReactionDeleteEvent)(_on_reaction_remove)
 
 
-async def _run_chain(event: hikari.Event, chain: _Chain):
+async def _run_chain(event: _Evt, chain: _Chain[_Evt]):
     for group in chain:
         coros = map(lambda f: f(event), group)
         res = await asyncio.gather(*coros, return_exceptions=True)

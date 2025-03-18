@@ -10,7 +10,7 @@ from matplotlib import cm
 from pilmoji import Pilmoji  # Used to generate decent Unicode emoji
 
 import db
-import emoji_cache
+import commons.emoji_cache as emoji_cache
 
 plugin = lightbulb.Plugin("EmojiCloud")
 

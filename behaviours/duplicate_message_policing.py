@@ -11,6 +11,7 @@ import os, re
 import hashlib
 import hikari
 import behaviours
+from commons.message_utils import get_member
 import db
 import sqlite3
 import humanize
@@ -26,7 +27,7 @@ async def delete_duplicate(event: hikari.GuildMessageCreateEvent) -> None:
 
     DELETION_NOTIFICATION_LONGEVITY = 15
     match (
-        event.channel_id == int(os.environ.get("ORIGINALITY_CHANNEL_ID")),
+        event.channel_id == int(os.environ.get("ORIGINALITY_CHANNEL_ID", "0")),
         os.environ.get("DEBUG", "false") in ("true", "1"),
     ):
         case (True, _):
@@ -63,7 +64,7 @@ async def delete_duplicate(event: hikari.GuildMessageCreateEvent) -> None:
             (event.author_id, event.message_id, event.content, event.message.timestamp),
         )
         db.commit()
-    except sqlite3.IntegrityError as e:
+    except sqlite3.IntegrityError:
         await event.message.delete()
         previous = cursor.execute(
             "select user, message_id, time_sent from message_hashes where message_hash = md5(?)",
@@ -75,7 +76,7 @@ async def delete_duplicate(event: hikari.GuildMessageCreateEvent) -> None:
         response = await event.message.respond(
             f"Hey {event.author.mention}! Unfortunately,"
             f" your message: `{event.message.content}`"
-            f" (first sent {humanize.naturaltime(datetime.now(timezone.utc) - original_time_sent)} by {event.get_guild().get_member(previous[0]).display_name})"
+            f" (first sent {humanize.naturaltime(datetime.now(timezone.utc) - original_time_sent)} by {get_member(event, previous[0]).display_name})"
             f" was deleted as it is ***NOT*** unique. Add some creativity to your message :robot:",
             user_mentions=True,
         )
@@ -97,4 +98,7 @@ async def delete_hash(event: hikari.GuildMessageDeleteEvent) -> None:
 
 
 def load():
-    db.create_function("md5", 1, lambda v: hashlib.md5(v.encode("utf-8")).hexdigest())
+    def md5(v: str) -> str:
+        return hashlib.md5(v.encode("utf-8")).hexdigest()
+
+    db.create_function("md5", 1, md5)

@@ -1,0 +1,10 @@
+{
+    "typeCheckingMode": "strict",
+    "ignore": [
+        "commands/meme_stats.py",
+        "commands/emojicloud.py",
+        "commands/messageboard.py",
+        "commands/usermessages.py",
+        "commands/wordcloud.py"
+    ]
+}

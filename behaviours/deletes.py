@@ -1,11 +1,12 @@
 import re
 from itertools import chain
+from typing import Sequence
 from emoji import emoji_list
 import hikari
 import db
 
 
-def decrement_emoji_count(cursor, usages):
+def decrement_emoji_count(cursor: db.Cursor, usages: Sequence[tuple[str, str]]):
     cursor.execute(
         f"""
         INSERT INTO emoji_counts (user, emoji, count)
