@@ -1,5 +1,6 @@
 import os, re, datetime, hashlib
-
+import concurrent.futures
+import asyncio
 import hikari
 import behaviours
 import db
@@ -79,6 +80,22 @@ def classical_response(event: hikari.GuildMessageCreateEvent) -> str | None:
     return response
 
 
+async def local_llm(event: hikari.GuildMessageCreateEvent) -> str | None:
+    prompt = db.get_option("LLM_PROMPT", commons.agents.DEFAULT_PROMPT)
+    try:
+        lm_prompt = f"""
+        System: {prompt}
+        User: {event.content}
+        Assistant:
+        """
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+            return await asyncio.get_running_loop().run_in_executor(pool,
+                        lambda : lm.chat(lm_prompt))
+    except Exception as e:
+        log.exception("Cannot get local LLM response", exc_info=e)
+        return classical_response(event)
+
+
 async def llm_response(event: hikari.GuildMessageCreateEvent) -> str | None:
     message_content = event.content
     if not message_content:
@@ -91,18 +108,10 @@ async def llm_response(event: hikari.GuildMessageCreateEvent) -> str | None:
         if not response:
             return "No."
     except Exception as e:
-        log.exception("Error running llm_response", exc_info=e)
-        try:
-            lm_prompt = f"""
-            System: {prompt}
-            User: {message_content}
-            Assistant:
-            """
-            response = lm.chat(lm_prompt)
-        except Exception as e:
-            log.exception("Cannot get local LLM response", exc_info=e)
-            return classical_response(event)
-    return response.replace("@everyone", "everyone").replace("@here", "here")
+        log.exception("Error running llm_response, fall back to local_llm", exc_info=e)
+        response = await local_llm(event)
+    if response:
+        return response.replace("@everyone", "everyone").replace("@here", "here")
 
 
 async def main(event: hikari.GuildMessageCreateEvent) -> None:
