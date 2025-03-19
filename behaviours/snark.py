@@ -89,8 +89,9 @@ async def local_llm(event: hikari.GuildMessageCreateEvent) -> str | None:
         Assistant:
         """
         with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
-            return await asyncio.get_running_loop().run_in_executor(pool,
-                        lambda : lm.chat(lm_prompt))
+            return await asyncio.get_running_loop().run_in_executor(
+                pool, lambda: lm.chat(lm_prompt)
+            )
     except Exception as e:
         log.exception("Cannot get local LLM response", exc_info=e)
         return classical_response(event)

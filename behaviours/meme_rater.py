@@ -31,6 +31,7 @@ IMG_FILE_EXTENSIONS: Final = {"jpg", "jpeg", "png", "webp"}
 
 explained = set[hikari.Snowflake]()
 
+
 async def get_meme_rating(image_url: str, user: str | None) -> agents.MemeAnswer | None:
     image = requests.get(image_url, stream=True)
     if not image.raw:
