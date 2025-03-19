@@ -3,7 +3,7 @@ name: Type Checking
 on: [push, pull_request]
 
 jobs:
-  lint:
+  typecheck:
     runs-on: ubuntu-latest
 
     steps:

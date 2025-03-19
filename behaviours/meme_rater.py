@@ -1,7 +1,6 @@
 import os
 import logging
 
-import hikari.users
 import db
 import hikari
 import requests
@@ -28,6 +27,8 @@ MINIMUM_MEME_RATING_TO_NOT_DELETE: Final[int] = int(
 )
 DELETE_SHIT: Final[bool] = False
 IMG_FILE_EXTENSIONS: Final = {"jpg", "jpeg", "png", "webp"}
+
+explained = set[hikari.Snowflake]()
 
 
 async def get_meme_rating(image_url: str, user: str | None) -> agents.MemeAnswer | None:
@@ -206,6 +207,8 @@ async def respond_to_question_mark(event: hikari.GuildReactionAddEvent) -> None:
             event.user_id,
             event.message_id,
         )
+        if response_to_msg_id in explained:
+            return
         cursor.execute(
             """
         SELECT meme_reasoning
@@ -220,3 +223,4 @@ async def respond_to_question_mark(event: hikari.GuildReactionAddEvent) -> None:
                 reply=response_to_msg_id,
                 content=f"{row[0]}",  # Idk how to tag people
             )
+            explained.add(response_to_msg_id)
