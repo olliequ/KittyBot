@@ -1,12 +1,11 @@
 import re
 import hikari
 import os
-import random
 
 import behaviours
 
 RANT_REGEX = re.compile("^[^ ]*(rant|vent) *:", flags=re.IGNORECASE)
-FORMAT_REGEX = re.compile("^(anti-|co-)*(rant|vent): ")
+FORMAT_REGEX = re.compile("^(anti-|co-)*(rant|vent): ", flags=re.IGNORECASE)
 
 
 async def main(event: hikari.GuildMessageCreateEvent):
@@ -17,7 +16,6 @@ async def main(event: hikari.GuildMessageCreateEvent):
     in_channel = event.channel_id == int(rant_channel_id)
     content = event.content
     is_a_rant = RANT_REGEX.match(content)
-    content = random.choice([content, content.lower()])
     is_valid = FORMAT_REGEX.match(content)
 
     response = None
