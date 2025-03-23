@@ -1,12 +1,6 @@
-import os
-import logging
-
-import db
-import hikari
-import requests
+import os, logging, db, hikari, requests, asyncio
 from commons import agents
 from typing import Final
-import asyncio
 
 RATER_LOCK = asyncio.Lock()
 
@@ -224,3 +218,36 @@ async def respond_to_question_mark(event: hikari.GuildReactionAddEvent) -> None:
                 content=f"{row[0]}",  # Idk how to tag people
             )
             explained.add(response_to_msg_id)
+
+# Deletes a meme if 4 or more entities (including Kitti if she reacted) react to a meme with the shit emoji.
+async def delete_meme(event: hikari.GuildReactionAddEvent) -> None:
+    # Return early if not in the correct channel, wrong emoji, or if the member is a bot.
+    if (
+        event.channel_id != MEME_CHANNEL_ID
+        or event.emoji_name != "💩"
+        or event.member.is_bot
+    ):
+        return
+
+    # Fetch message object
+    message = await event.app.rest.fetch_message(
+        channel=event.channel_id, message=event.message_id
+    )
+
+    # Find the "💩" reaction and return early.
+    shit_reaction = next(
+        (reaction for reaction in message.reactions if reaction.emoji == "💩"), None
+    )
+
+    if shit_reaction and shit_reaction.count >= 4:
+        await event.app.rest.delete_message(
+            channel=event.channel_id, message=event.message_id
+        )
+        await event.app.rest.create_message(
+            channel=event.channel_id,
+            content=(
+                f"Hey {message.author.mention}, your meme has been deemed as 'too shit' "
+                "by the community. Try again with a better meme."
+            ),
+        )
+
