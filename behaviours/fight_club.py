@@ -1,7 +1,7 @@
 import re
 import hikari
 
-CISSA_REGEX = re.compile(r"\s?CISSA(\s|$)")
+CISSA_REGEX = re.compile(r"\bCISSA\b")
 
 
 async def main(event: hikari.GuildMessageCreateEvent) -> None:
