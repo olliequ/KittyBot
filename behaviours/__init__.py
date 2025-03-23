@@ -49,7 +49,7 @@ _reaction_add_chain: _Chain[hikari.GuildReactionAddEvent] = [
     [
         meme_rater.respond_to_question_mark,
         meme_rater.delete_meme,
-    ]
+    ],
 ]
 
 _reaction_remove_chain: _Chain[hikari.GuildReactionDeleteEvent] = [

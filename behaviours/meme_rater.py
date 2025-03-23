@@ -1,4 +1,11 @@
-import os, logging, db, hikari, requests, asyncio, behaviours
+import os
+import logging
+import db
+import hikari
+import requests
+import asyncio
+import behaviours
+
 from commons import agents
 from typing import Final
 
@@ -220,6 +227,7 @@ async def respond_to_question_mark(event: hikari.GuildReactionAddEvent) -> None:
             explained.add(response_to_msg_id)
 
         raise behaviours.EndProcessing()
+
 
 # Deletes a meme if 4 or more entities (including Kitti if she reacted) react to a meme with the shit emoji.
 async def delete_meme(event: hikari.GuildReactionAddEvent) -> None:
