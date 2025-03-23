@@ -6,6 +6,7 @@ import behaviours
 
 RANT_REGEX = re.compile("^[^ ]*(rant|vent) *:", flags=re.IGNORECASE)
 FORMAT_REGEX = re.compile("^(anti-|co-)*(rant|vent): ", flags=re.IGNORECASE)
+STEM_REG = re.compile("^(anti-|co-)*(rant|vent):", flags=re.IGNORECASE)
 
 
 async def main(event: hikari.GuildMessageCreateEvent):
@@ -16,14 +17,18 @@ async def main(event: hikari.GuildMessageCreateEvent):
     in_channel = event.channel_id == int(rant_channel_id)
     content = event.content
     is_a_rant = RANT_REGEX.match(content)
+    is_stem_valid = STEM_REG.match(content)
     is_valid = FORMAT_REGEX.match(content)
 
+    print(is_a_rant)
+    print(is_valid)
+    print(is_stem_valid)
     response = None
     if is_a_rant and not in_channel:
         response = (
             f"You appear to be ranting or venting, please move to <#{rant_channel_id}>"
         )
-    elif is_a_rant and not is_valid:
+    elif is_a_rant and not is_valid and not is_stem_valid:
         response = "Your message must start with 'rant: ' or 'vent: ', with an optional pre-approved prefix. Try again or keep your complaints to yourself."
 
     if response:
