@@ -219,6 +219,7 @@ async def respond_to_question_mark(event: hikari.GuildReactionAddEvent) -> None:
             )
             explained.add(response_to_msg_id)
 
+
 # Deletes a meme if 4 or more entities (including Kitti if she reacted) react to a meme with the shit emoji.
 async def delete_meme(event: hikari.GuildReactionAddEvent) -> None:
     # Return early if not in the correct channel, wrong emoji, or if the member is a bot.
@@ -250,4 +251,3 @@ async def delete_meme(event: hikari.GuildReactionAddEvent) -> None:
                 "by the community. Try again with a better meme."
             ),
         )
-
