@@ -202,8 +202,9 @@ async def respond_to_question_mark(event: hikari.GuildReactionAddEvent) -> None:
         and event.emoji_name == "❓"
         and not event.member.is_bot
     ):
-        channel_id, _requester_id, response_to_msg_id = (
+        channel_id, requester_name, _requester_id, response_to_msg_id = (
             event.channel_id,
+            event.member.display_name,
             event.user_id,
             event.message_id,
         )
@@ -221,6 +222,6 @@ async def respond_to_question_mark(event: hikari.GuildReactionAddEvent) -> None:
             await event.app.rest.create_message(
                 channel=channel_id,
                 reply=response_to_msg_id,
-                content=f"{row[0]}",  # Idk how to tag people
+                content=f"Requested by: {requester_name} - {row[0]}",  # Idk how to tag people
             )
             explained.add(response_to_msg_id)
