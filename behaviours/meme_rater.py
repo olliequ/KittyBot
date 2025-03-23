@@ -1,4 +1,4 @@
-import os, logging, db, hikari, requests, asyncio
+import os, logging, db, hikari, requests, asyncio, behaviours
 from commons import agents
 from typing import Final
 
@@ -219,6 +219,7 @@ async def respond_to_question_mark(event: hikari.GuildReactionAddEvent) -> None:
             )
             explained.add(response_to_msg_id)
 
+        raise behaviours.EndProcessing()
 
 # Deletes a meme if 4 or more entities (including Kitti if she reacted) react to a meme with the shit emoji.
 async def delete_meme(event: hikari.GuildReactionAddEvent) -> None:
@@ -235,19 +236,22 @@ async def delete_meme(event: hikari.GuildReactionAddEvent) -> None:
         channel=event.channel_id, message=event.message_id
     )
 
-    # Find the "💩" reaction and return early.
+    # Find the "💩" reaction.
     shit_reaction = next(
         (reaction for reaction in message.reactions if reaction.emoji == "💩"), None
     )
 
-    if shit_reaction and shit_reaction.count >= 4:
+    if shit_reaction and shit_reaction.count >= 1:
         await event.app.rest.delete_message(
             channel=event.channel_id, message=event.message_id
         )
         await event.app.rest.create_message(
+            user_mentions=True,
             channel=event.channel_id,
             content=(
                 f"Hey {message.author.mention}, your meme has been deemed as 'too shit' "
                 "by the community. Try again with a better meme."
             ),
         )
+
+    raise behaviours.EndProcessing()
