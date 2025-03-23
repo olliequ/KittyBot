@@ -249,7 +249,7 @@ async def delete_meme(event: hikari.GuildReactionAddEvent) -> None:
         (reaction for reaction in message.reactions if reaction.emoji == "💩"), None
     )
 
-    if shit_reaction and shit_reaction.count >= 1:
+    if shit_reaction and shit_reaction.count >= 4:
         await event.app.rest.delete_message(
             channel=event.channel_id, message=event.message_id
         )
