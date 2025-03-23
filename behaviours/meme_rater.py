@@ -221,6 +221,6 @@ async def respond_to_question_mark(event: hikari.GuildReactionAddEvent) -> None:
             await event.app.rest.create_message(
                 channel=channel_id,
                 reply=response_to_msg_id,
-                content=f"{row[0]}",  # Idk how to tag people
+                content=f"Hey {event.member.mention}, thanks for requesting an explanation of a simple meme and clogging up this channel :cat:\n\n{str(row[0])}.",
             )
             explained.add(response_to_msg_id)
