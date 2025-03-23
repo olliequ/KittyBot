@@ -20,9 +20,6 @@ async def main(event: hikari.GuildMessageCreateEvent):
     is_stem_valid = STEM_REG.match(content)
     is_valid = FORMAT_REGEX.match(content)
 
-    print(is_a_rant)
-    print(is_valid)
-    print(is_stem_valid)
     response = None
     if is_a_rant and not in_channel:
         response = (
