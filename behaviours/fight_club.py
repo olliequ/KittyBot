@@ -1,5 +1,7 @@
 import re
 import hikari
+import behaviours
+
 
 CISSA_REGEX = re.compile(r"\bCISSA\b")
 
@@ -15,3 +17,4 @@ async def main(event: hikari.GuildMessageCreateEvent) -> None:
             reply=True,
             user_mentions=True,
         )
+        raise behaviours.EndProcessing()
