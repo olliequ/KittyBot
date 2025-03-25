@@ -1,0 +1,45 @@
+[project]
+name = "kittybot"
+version = "0.1.0"
+description = "A bot for the CS@unimelb Discord server."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "beautifulsoup4>=4.13.3",
+    "cowsay==6.1",
+    "dotenv==0.9.9",
+    "emoji==2.11.1",
+    "fortune==1.1.1",
+    "hikari==2.1.0",
+    "hikari-lightbulb==2.3.5.post1",
+    "hikari-toolbox==0.1.7",
+    "humanize==4.12.1",
+    "imagehash==4.3.2",
+    "langcodes==3.5.0",
+    "languagemodels==0.24.0",
+    "matplotlib==3.10.0",
+    "numpy==2.2.4",
+    "pandas==2.2.3",
+    "pillow==11.1.0",
+    "pilmoji==2.0.4",
+    "pydantic==2.10.6",
+    "pydantic-ai==0.0.30",
+    "uvloop==0.21.0 ; sys_platform != 'win32'",
+    "wordcloud>=1.9.4",
+]
+
+[dependency-groups]
+dev = [
+    "black>=25.1.0",
+    "pyright>=1.1.397",
+]
+
+[tool.pyright]
+typeCheckingMode = "strict"
+ignore = [
+    "commands/meme_stats.py",
+    "commands/emojicloud.py",
+    "commands/messageboard.py",
+    "commands/usermessages.py",
+    "commands/wordcloud.py",
+]
