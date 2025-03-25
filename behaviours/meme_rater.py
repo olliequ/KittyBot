@@ -246,7 +246,7 @@ async def delete_meme(event: hikari.GuildReactionAddEvent) -> None:
         channel=event.channel_id, message=event.message_id
     )
     age = datetime.now(timezone.utc) - message.timestamp
-    if age > timedelta(minutes=int(os.getenv('MEME_VOTE_DELETE_MAXAGE', 10))):
+    if age > timedelta(minutes=int(os.getenv("MEME_VOTE_DELETE_MAXAGE", 10))):
         raise behaviours.EndProcessing()
 
     # Find the "💩" reaction.
@@ -254,7 +254,11 @@ async def delete_meme(event: hikari.GuildReactionAddEvent) -> None:
         (reaction for reaction in message.reactions if reaction.emoji == "💩"), None
     )
 
-    if shit_reaction and shit_reaction.count >= int(os.getenv('MEME_VOTE_DELETE_THRESHOLD', 4)) and shit_reaction.is_me:
+    if (
+        shit_reaction
+        and shit_reaction.count >= int(os.getenv("MEME_VOTE_DELETE_THRESHOLD", 4))
+        and shit_reaction.is_me
+    ):
         await event.app.rest.delete_message(
             channel=event.channel_id, message=event.message_id
         )
