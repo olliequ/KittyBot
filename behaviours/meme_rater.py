@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
 import os
 import logging
+from commons.message_utils import get_member
 import db
 import hikari
 import requests
@@ -259,16 +260,38 @@ async def delete_meme(event: hikari.GuildReactionAddEvent) -> None:
         and shit_reaction.count >= int(os.getenv("MEME_VOTE_DELETE_THRESHOLD", 4))
         and shit_reaction.is_me
     ):
-        await event.app.rest.delete_message(
-            channel=event.channel_id, message=event.message_id
-        )
         await event.app.rest.create_message(
             user_mentions=True,
             channel=event.channel_id,
             content=(
                 f"Hey {message.author.mention}, your meme sent {humanize.naturaltime(age)} has been deemed 'too shit' "
-                "by the community. Try again with a better meme."
+                f"by {await voter_names(event, message, shit_reaction)}. Try again with a better meme."
             ),
+        )
+        await event.app.rest.delete_message(
+            channel=event.channel_id, message=event.message_id
         )
 
     raise behaviours.EndProcessing()
+
+
+async def voter_names(
+    event: hikari.GuildReactionEvent, message: hikari.Message, reaction: hikari.Reaction
+) -> str:
+    user_it = message.app.rest.fetch_reactions_for_emoji(
+        message.channel_id, message, reaction.emoji
+    )
+    names = [
+        get_member(event, user.id).display_name
+        async for user in user_it
+        if not user.is_bot
+    ]
+    match len(names):
+        case 0:
+            return ""
+        case 1:
+            return names[0]
+        case 2:
+            return " and ".join(names)
+        case _:
+            return ", ".join(names[:-1]) + ", and " + names[-1]
