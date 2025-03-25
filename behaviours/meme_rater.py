@@ -1,9 +1,11 @@
+from datetime import datetime, timedelta, timezone
 import os
 import logging
 import db
 import hikari
 import requests
 import asyncio
+import humanize
 import behaviours
 
 from commons import agents
@@ -210,7 +212,8 @@ async def respond_to_question_mark(event: hikari.GuildReactionAddEvent) -> None:
             event.message_id,
         )
         if response_to_msg_id in explained:
-            return
+            raise behaviours.EndProcessing()
+
         cursor.execute(
             """
         SELECT meme_reasoning
@@ -230,9 +233,8 @@ async def respond_to_question_mark(event: hikari.GuildReactionAddEvent) -> None:
         raise behaviours.EndProcessing()
 
 
-# Deletes a meme if 4 or more entities (including Kitti if she reacted) react to a meme with the shit emoji.
+# Deletes a meme if 4 or more entities (including Kitti) react to a meme with the shit emoji.
 async def delete_meme(event: hikari.GuildReactionAddEvent) -> None:
-    # Return early if not in the correct channel, wrong emoji, or if the member is a bot.
     if (
         event.channel_id != MEME_CHANNEL_ID
         or event.emoji_name != "💩"
@@ -240,17 +242,23 @@ async def delete_meme(event: hikari.GuildReactionAddEvent) -> None:
     ):
         return
 
-    # Fetch message object
     message = await event.app.rest.fetch_message(
         channel=event.channel_id, message=event.message_id
     )
+    age = datetime.now(timezone.utc) - message.timestamp
+    if age > timedelta(minutes=int(os.getenv("MEME_VOTE_DELETE_MAXAGE", 10))):
+        raise behaviours.EndProcessing()
 
     # Find the "💩" reaction.
     shit_reaction = next(
         (reaction for reaction in message.reactions if reaction.emoji == "💩"), None
     )
 
-    if shit_reaction and shit_reaction.count >= 4:
+    if (
+        shit_reaction
+        and shit_reaction.count >= int(os.getenv("MEME_VOTE_DELETE_THRESHOLD", 4))
+        and shit_reaction.is_me
+    ):
         await event.app.rest.delete_message(
             channel=event.channel_id, message=event.message_id
         )
@@ -258,7 +266,7 @@ async def delete_meme(event: hikari.GuildReactionAddEvent) -> None:
             user_mentions=True,
             channel=event.channel_id,
             content=(
-                f"Hey {message.author.mention}, your meme has been deemed as 'too shit' "
+                f"Hey {message.author.mention}, your meme sent {humanize.naturaltime(age)} has been deemed 'too shit' "
                 "by the community. Try again with a better meme."
             ),
         )

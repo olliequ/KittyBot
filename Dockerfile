@@ -6,7 +6,7 @@ RUN apt update -y && apt upgrade -y \
     && pip install uv
 
 WORKDIR /home
-COPY uv.lock pyproject.toml init-lm.py .
+COPY uv.lock pyproject.toml init-lm.py ./
 RUN uv sync --compile-bytecode --locked --no-dev \
     && uv run --no-sync init-lm.py \
     && mkdir /data /home/.cache /home/.config \
