@@ -1,7 +1,6 @@
 import os
 import logging
 
-import hikari.users
 import db
 import hikari
 import requests
