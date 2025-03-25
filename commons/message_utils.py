@@ -1,6 +1,7 @@
 import hikari
-from typing import Optional, Protocol, Any
-
+import hikari.traits
+import lightbulb
+from typing import Protocol, Any
 
 DISCORD_MESSAGE_LIMIT = 2000
 
@@ -9,11 +10,16 @@ class NoEntityError(Exception):
     pass
 
 
-class _GuildProvider(Protocol):
-    def get_guild(self) -> Optional[hikari.Guild]: ...
+class _GuildIdProvider(Protocol):
+    @property
+    def guild_id(self) -> hikari.Snowflake: ...
+    @property
+    def app(self) -> hikari.traits.RESTAware: ...
 
 
-def get_member(ctx: _GuildProvider, user_id: hikari.Snowflakeish) -> hikari.Member:
+def get_member(
+    ctx: lightbulb.Context | _GuildIdProvider, user_id: hikari.Snowflakeish
+) -> hikari.Member:
     """
     Wrapper function for getting a discord member. For fullest
     correctness this should make a rest query when the entity is not
@@ -21,7 +27,12 @@ def get_member(ctx: _GuildProvider, user_id: hikari.Snowflakeish) -> hikari.Memb
     populated for guilds & members unless something goes wrong or
     there are > 75k members. So we ignore that possibility.
     """
-    guild = ctx.get_guild()
+    if isinstance(ctx, lightbulb.Context):
+        guild = ctx.get_guild()
+    elif isinstance(ctx.app, hikari.traits.CacheAware):
+        guild = ctx.app.cache.get_guild(ctx.guild_id)
+    else:
+        guild = None
     if guild is None:
         raise NoEntityError("Cannot get context guild")
     member = guild.get_member(user_id)
