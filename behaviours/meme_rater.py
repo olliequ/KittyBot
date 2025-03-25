@@ -294,4 +294,4 @@ async def voter_names(
         case 2:
             return " and ".join(names)
         case _:
-            return ", ".join(names[:-1]) + " and " + names[-1]
+            return ", ".join(names[:-1]) + ", and " + names[-1]
