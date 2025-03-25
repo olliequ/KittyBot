@@ -8,11 +8,14 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          version: "0.6.9"
+          enable-cache: true
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-          cache: 'pip'
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: uv sync
       - name: Type check
-        uses: jakebailey/pyright-action@v2
+        run: uv run pyright
