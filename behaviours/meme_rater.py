@@ -1,12 +1,13 @@
 import os
 import logging
-
 import db
 import hikari
 import requests
+import asyncio
+import behaviours
+
 from commons import agents
 from typing import Final
-import asyncio
 
 RATER_LOCK = asyncio.Lock()
 
@@ -27,6 +28,8 @@ MINIMUM_MEME_RATING_TO_NOT_DELETE: Final[int] = int(
 )
 DELETE_SHIT: Final[bool] = False
 IMG_FILE_EXTENSIONS: Final = {"jpg", "jpeg", "png", "webp"}
+
+explained = set[hikari.Snowflake]()
 
 
 async def get_meme_rating(image_url: str, user: str | None) -> agents.MemeAnswer | None:
@@ -200,11 +203,14 @@ async def respond_to_question_mark(event: hikari.GuildReactionAddEvent) -> None:
         and event.emoji_name == "❓"
         and not event.member.is_bot
     ):
-        channel_id, _requester_id, response_to_msg_id = (
+        channel_id, requester_name, _requester_id, response_to_msg_id = (
             event.channel_id,
+            event.member.display_name,
             event.user_id,
             event.message_id,
         )
+        if response_to_msg_id in explained:
+            return
         cursor.execute(
             """
         SELECT meme_reasoning
@@ -217,5 +223,44 @@ async def respond_to_question_mark(event: hikari.GuildReactionAddEvent) -> None:
             await event.app.rest.create_message(
                 channel=channel_id,
                 reply=response_to_msg_id,
-                content=f"{row[0]}",  # Idk how to tag people
+                content=f"Requested by: {requester_name} - {row[0]}",  # Idk how to tag people
             )
+            explained.add(response_to_msg_id)
+
+        raise behaviours.EndProcessing()
+
+
+# Deletes a meme if 4 or more entities (including Kitti if she reacted) react to a meme with the shit emoji.
+async def delete_meme(event: hikari.GuildReactionAddEvent) -> None:
+    # Return early if not in the correct channel, wrong emoji, or if the member is a bot.
+    if (
+        event.channel_id != MEME_CHANNEL_ID
+        or event.emoji_name != "💩"
+        or event.member.is_bot
+    ):
+        return
+
+    # Fetch message object
+    message = await event.app.rest.fetch_message(
+        channel=event.channel_id, message=event.message_id
+    )
+
+    # Find the "💩" reaction.
+    shit_reaction = next(
+        (reaction for reaction in message.reactions if reaction.emoji == "💩"), None
+    )
+
+    if shit_reaction and shit_reaction.count >= 4:
+        await event.app.rest.delete_message(
+            channel=event.channel_id, message=event.message_id
+        )
+        await event.app.rest.create_message(
+            user_mentions=True,
+            channel=event.channel_id,
+            content=(
+                f"Hey {message.author.mention}, your meme has been deemed as 'too shit' "
+                "by the community. Try again with a better meme."
+            ),
+        )
+
+    raise behaviours.EndProcessing()
