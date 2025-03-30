@@ -40,7 +40,7 @@ async def main(ctx: lightbulb.Context) -> None:
     # Need some Initial response to safely defer so why not show whose emojicloud it is
 
     await ctx.respond(
-        f"*Generating EmojiCloud for **{ctx.options.target.display_name if ctx.options.target else 'server'}**, gimme a couple seconds:*"
+        f"*Generating EmojiCloud for **{ctx.options.target.display_name if ctx.options.target else 'server'}**, give me a couple seconds:*"
     )
     cursor = db.cursor()
     max_emojis = ctx.options.max_emojis
