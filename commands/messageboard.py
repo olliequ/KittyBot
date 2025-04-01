@@ -60,8 +60,8 @@ async def show_message_stats(ctx: lightbulb.Context, plot_type, set_num) -> None
             ghost_count += 1
         else:
             display_name = replace_emoji(user.display_name, "")
-            if len(display_name) >= 11:
-                display_name = display_name[:8] + "..."
+            if len(display_name) > 11:
+                display_name = display_name[:10] + "…"
             # Toolbox contains the utility function to get color
             color = toolbox.members.get_member_color(user).hex_code
             if not color:
