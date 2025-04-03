@@ -15,46 +15,73 @@ plugin = lightbulb.Plugin("MemeStats")
 
 @plugin.command
 @lightbulb.add_cooldown(10, 1, lightbulb.UserBucket)
-@lightbulb.option(
-    "target", "The member to roast (or not?).", hikari.User, required=True
-)
 # todo: expand this
+
+
 @lightbulb.option(
     "period", "time period.", choices=["month", "year"], default="month", required=False
 )
-@lightbulb.command("memestats", "See someone's average meme rating over time")
+@lightbulb.option(
+    "target", "The member to roast (or not?).", hikari.User, required=False
+)
+@lightbulb.command(
+    "memestats", "See the aggregated server or someone's average meme rating over time"
+)
 @lightbulb.implements(lightbulb.PrefixCommand, lightbulb.SlashCommand)
-async def main(ctx: lightbulb.Context) -> None:
+async def main(ctx: lightbulb.Context):
     guild = ctx.get_guild()
     cursor = db.cursor()
-    user_id = ctx.options.target.id
-    user = guild.get_member(user_id)
-    time_period = ctx.options.period
+    calculate_for_server = True
 
+    target = ctx.options.target
+    if target and guild:
+        user = guild.get_member(target.id)
+        calculate_for_server = False
+
+    time_period = ctx.options.period
     time_period_param = "month" if time_period == "month" else "year"
     # server time UTC offset
     utcoffset_seconds = int(
         datetime.datetime.now().astimezone().tzinfo.utcoffset(None).total_seconds()
     )
-    data = cursor.execute(
-        f"""
-        select 
-            strftime('%Y-%m-%d', datetime(time_sent, '{utcoffset_seconds} seconds')) as time_period,
-            avg(meme_score) as avg_meme_score
-        from
-            meme_stats
-        where 
-            user = ? and time_sent >= date('now', '{-1*utcoffset_seconds} seconds', '-1 {time_period_param}')
-        group by
-            time_period
-    """,
-        (user_id,),
-    ).fetchall()
+
+    if not calculate_for_server:
+
+        data = cursor.execute(
+            f"""
+            select 
+                strftime('%Y-%m-%d', datetime(time_sent, '{utcoffset_seconds} seconds')) as time_period,
+                avg(meme_score) as avg_meme_score
+            from
+                meme_stats
+            where 
+                user = ? and time_sent >= date('now', '{-1*utcoffset_seconds} seconds', '-1 {time_period_param}')
+            group by
+                time_period
+        """,
+            (target.id,),
+        ).fetchall()
+    else:
+        data = cursor.execute(
+            f"""
+            select 
+                strftime('%Y-%m-%d', datetime(time_sent, '{utcoffset_seconds} seconds')) as time_period,
+                avg(meme_score) as avg_meme_score
+            from
+                meme_stats
+            where 
+                time_sent >= date('now', '{-1*utcoffset_seconds} seconds', '-1 {time_period_param}')
+            group by
+                time_period
+        """,
+            (),
+        ).fetchall()
 
     if not data:
-        return await ctx.respond(
-            f"Looks like {user.display_name} hasn't had any of their memes rated yet. 10/10 for them!"
+        await ctx.respond(
+            f"Looks like {(user.display_name or 'User') if not calculate_for_server else 'the server'} hasn't had any of their memes rated yet. 10/10 for them!"
         )
+        return
 
     df = pd.DataFrame(data, columns=["time_period", "avg_meme_score"])
     df["time_period"] = pd.to_datetime(df["time_period"])
@@ -89,8 +116,11 @@ async def main(ctx: lightbulb.Context) -> None:
     plt.plot
     plt.xlabel("Days", fontsize=12)
     plt.ylabel("Average Meme Score", fontsize=12)
+    display_name = (
+        "server" if calculate_for_server else user.display_name if user else None
+    )
     plt.title(
-        f"Meme Scores Over Time ({time_period_param}) for {user.display_name}",
+        f"Meme Scores Over Time ({time_period_param}) for {display_name}",
         fontsize=16,
     )
     plt.xticks(fontsize=8)
@@ -102,7 +132,7 @@ async def main(ctx: lightbulb.Context) -> None:
     plt.tight_layout()
     plt.savefig(buffer, format="png", dpi=300)
     plt.close()
-    return await ctx.respond(hikari.Bytes(buffer.getvalue(), "meme_score_results.png"))
+    await ctx.respond(hikari.Bytes(buffer.getvalue(), "meme_score_results.png"))
 
 
 def load(bot: lightbulb.BotApp) -> None:
