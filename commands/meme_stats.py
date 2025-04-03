@@ -33,9 +33,9 @@ async def main(ctx: lightbulb.Context):
     cursor = db.cursor()
     calculate_for_server = True
 
-    user_id = ctx.options.target
-    if user_id and guild:
-        user = guild.get_member(user_id.id)
+    target = ctx.options.target
+    if target and guild:
+        user = guild.get_member(target.id)
         calculate_for_server = False
 
     time_period = ctx.options.period
@@ -59,7 +59,7 @@ async def main(ctx: lightbulb.Context):
             group by
                 time_period
         """,
-            (user_id.id,),
+            (target.id,),
         ).fetchall()
     else:
         data = cursor.execute(
@@ -79,7 +79,7 @@ async def main(ctx: lightbulb.Context):
 
     if not data:
         await ctx.respond(
-            f"Looks like the user or server hasn't had any of their memes rated yet. 10/10 for them!"
+            f"Looks like {(user.display_name or 'User') if not calculate_for_server else 'the server'} hasn't had any of their memes rated yet. 10/10 for them!"
         )
         return
 
