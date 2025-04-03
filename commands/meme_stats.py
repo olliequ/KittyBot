@@ -9,7 +9,6 @@ import matplotlib.pyplot as plt
 from io import BytesIO
 import pandas as pd
 import datetime
-from typing import Optional
 
 plugin = lightbulb.Plugin("MemeStats")
 
