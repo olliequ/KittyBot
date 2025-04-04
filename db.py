@@ -42,6 +42,10 @@ def start():
     c.execute(
         "CREATE TABLE IF NOT EXISTS meme_stats (user TEXT, message_id TEXT, meme_score INTEGER, time_sent TEXT)"
     )
+    c.execute("CREATE TABLE IF NOT EXISTS shit_meme_deletes (user TEXT, count INTEGER)")
+    c.execute(
+        "CREATE UNIQUE INDEX IF NOT EXISTS shit_meme_deletes_idx ON shit_meme_deletes (user)"
+    )
 
     try:
         c.execute("ALTER TABLE image_hashes ADD hash_color TEXT NOT NULL")
