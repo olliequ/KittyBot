@@ -29,7 +29,6 @@ MEME_RATE_PROMPT: Final[str] = os.environ.get(
 MINIMUM_MEME_RATING_TO_NOT_DELETE: Final[int] = int(
     os.environ.get("MEME_QUALITY_THRESHOLD", "6")
 )
-DELETE_SHIT: Final[bool] = False
 IMG_FILE_EXTENSIONS: Final = {"jpg", "jpeg", "png", "webp"}
 
 explained = set[hikari.Snowflake]()
@@ -153,11 +152,6 @@ async def rate_meme(
 
         if avg_rating >= MINIMUM_MEME_RATING_TO_NOT_DELETE:
             await message.add_reaction(emoji="👍")
-        elif DELETE_SHIT:
-            await message.delete()
-            await message.respond(
-                f"That meme was garbage 💩💩💩. I rated it {avg_rating}/10. Send something better."
-            )
         else:
             await message.add_reaction(emoji="💩")
         await message.add_reaction(emoji="❓")
