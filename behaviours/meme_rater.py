@@ -98,7 +98,7 @@ async def msg_create(event: hikari.GuildMessageCreateEvent) -> None:
     explanations = list[str]()
 
     for attachment in event.message.attachments:
-        att_ext = attachment.extension
+        att_ext = (attachment.extension or '').lower()
         logging.info(f"Attachment extension: {att_ext}")
         if att_ext not in IMG_FILE_EXTENSIONS:
             continue
