@@ -15,8 +15,7 @@ import toolbox
 plugin = lightbulb.Plugin("MessageBoard.")
 
 
-async def show_message_stats(ctx: lightbulb.Context, plot_type, set_num) -> None:
-    guild = ctx.get_guild()
+def get_message_data(set_num):
     cursor = db.cursor()
     cursor.execute(
         """
@@ -27,6 +26,11 @@ async def show_message_stats(ctx: lightbulb.Context, plot_type, set_num) -> None
         )
     )
     data = cursor.fetchall()
+    return data
+
+
+async def graph_shit(ctx: lightbulb.Context, plot_type, set_num, data):
+    guild = ctx.get_guild()
     if len(data) == 0:
         await ctx.respond(
             "The set you have requested is out of bounds <:catthink:985820328603299871>"
@@ -210,6 +214,11 @@ async def show_message_stats(ctx: lightbulb.Context, plot_type, set_num) -> None
         plt.savefig(buffer, format="png")
         await ctx.respond(hikari.Bytes(buffer.getvalue(), "leaderboard.png"))
         plt.close()
+
+
+async def show_message_stats(ctx: lightbulb.Context, plot_type, set_num) -> None:
+    data = get_message_data(set_num)
+    await graph_shit(ctx, plot_type, set_num, data)
 
 
 @plugin.command

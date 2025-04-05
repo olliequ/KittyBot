@@ -197,6 +197,17 @@ async def rate_meme(
         db.commit()
 
 
+def shit_meme_delete_add_count(cursor: db.Cursor, user_id: str):
+    cursor.execute(
+        """
+        INSERT INTO shit_meme_deletes (user, count)
+        VALUES (?, 1)
+        ON CONFLICT (user) DO UPDATE
+        SET count = shit_meme_deletes.count + 1""",
+        (user_id,),
+    )
+
+
 async def respond_to_question_mark(event: hikari.GuildReactionAddEvent) -> None:
     # In memes only?
     channel_id = event.channel_id
@@ -242,7 +253,7 @@ async def delete_meme(event: hikari.GuildReactionAddEvent) -> None:
         or event.member.is_bot
     ):
         return
-
+    cursor = db.cursor()
     message = await event.app.rest.fetch_message(
         channel=event.channel_id, message=event.message_id
     )
@@ -271,6 +282,7 @@ async def delete_meme(event: hikari.GuildReactionAddEvent) -> None:
         await event.app.rest.delete_message(
             channel=event.channel_id, message=event.message_id
         )
+        shit_meme_delete_add_count(cursor, message.author.id)  # type: ignore
 
     raise behaviours.EndProcessing()
 
