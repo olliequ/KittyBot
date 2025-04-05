@@ -97,7 +97,7 @@ async def msg_create(event: hikari.GuildMessageCreateEvent) -> None:
     explanations = list[str]()
 
     for attachment in event.message.attachments:
-        att_ext = (attachment.extension or '').lower()
+        att_ext = (attachment.extension or "").lower()
         logging.info(f"Attachment extension: {att_ext}")
         if att_ext not in IMG_FILE_EXTENSIONS:
             continue
@@ -238,13 +238,17 @@ async def respond_to_question_mark(event: hikari.GuildReactionAddEvent) -> None:
 
         raise behaviours.EndProcessing()
 
+
 def is_message_rated_shit(message_id: hikari.Snowflake) -> bool:
     cursor = db.cursor()
-    score = cursor.execute('''
+    score = cursor.execute(
+        """
         select meme_score from meme_stats
-        where message_id = ?''',
-        (message_id,)).fetchone()
+        where message_id = ?""",
+        (message_id,),
+    ).fetchone()
     return score[0] < MINIMUM_MEME_RATING_TO_NOT_DELETE
+
 
 # Deletes a meme if 4 or more entities (including Kitti) react to a meme with the shit emoji.
 async def delete_meme(event: hikari.GuildReactionAddEvent) -> None:
