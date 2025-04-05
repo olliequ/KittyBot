@@ -1,4 +1,4 @@
-import db
+import commons.db as db
 import lightbulb
 
 plugin = lightbulb.Plugin("messagecount")

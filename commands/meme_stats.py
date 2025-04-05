@@ -2,7 +2,7 @@
 Displays a graph of meme ratings for a user, grouped by day.
 """
 
-import db
+import commons.db as db
 import hikari
 import lightbulb
 import matplotlib.pyplot as plt

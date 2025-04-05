@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone
 import os
 import logging
 from commons.message_utils import get_member
-import db
+import commons.db as db
 import hikari
 import requests
 import asyncio

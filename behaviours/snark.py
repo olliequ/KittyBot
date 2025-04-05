@@ -3,7 +3,7 @@ import concurrent.futures
 import asyncio
 import hikari
 import behaviours
-import db
+import commons.db as db
 import commons.agents
 import logging as log
 import languagemodels as lm

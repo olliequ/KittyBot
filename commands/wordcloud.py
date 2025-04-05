@@ -9,7 +9,7 @@ import matplotlib.font_manager as fm
 import matplotlib.pyplot as plt
 import os
 from wordcloud import WordCloud
-import db
+import commons.db as db
 import io
 import warnings
 from io import BytesIO
