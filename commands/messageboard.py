@@ -3,7 +3,7 @@ from datetime import datetime
 from itertools import chain
 from emoji import replace_emoji
 import hikari, lightbulb
-import db
+import commons.db as db
 import numpy as np
 import matplotlib.font_manager as fm
 import matplotlib.image as image

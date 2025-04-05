@@ -4,7 +4,7 @@ from itertools import chain
 from typing import Sequence
 from emoji import emoji_list
 import hikari
-import db
+import commons.db as db
 
 
 def get_count_and_rank(cursor: db.Cursor, user_id: str):

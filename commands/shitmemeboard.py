@@ -1,6 +1,6 @@
 from emoji import replace_emoji
 import hikari, lightbulb
-import db
+import commons.db as db
 import matplotlib.font_manager as fm
 import matplotlib.image as image
 import matplotlib.pyplot as plt

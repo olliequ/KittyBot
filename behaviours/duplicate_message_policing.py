@@ -12,7 +12,7 @@ import hashlib
 import hikari
 import behaviours
 from commons.message_utils import get_member
-import db
+import commons.db as db
 import sqlite3
 import humanize
 from datetime import datetime, timezone

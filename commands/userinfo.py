@@ -1,7 +1,7 @@
 from datetime import datetime
 import hikari, lightbulb
 from commons.message_utils import NoEntityError, get_member
-import db
+import commons.db as db
 
 plugin = lightbulb.Plugin("userstats")
 

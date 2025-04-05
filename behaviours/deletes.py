@@ -3,7 +3,7 @@ from itertools import chain
 from typing import Sequence
 from emoji import emoji_list
 import hikari
-import db
+import commons.db as db
 
 
 def decrement_emoji_count(cursor: db.Cursor, usages: Sequence[tuple[str, str]]):

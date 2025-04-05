@@ -1,6 +1,6 @@
 from datetime import datetime
 import hikari, lightbulb
-import db
+import commons.db as db
 
 plugin = lightbulb.Plugin("Emoji stats.")
 
