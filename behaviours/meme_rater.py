@@ -166,7 +166,7 @@ async def rate_meme(
         # avg rating row inserted is just for this set of memes. Another query elsewhere aggregates.
         if entry_exists:
             cursor.execute(
-                "update meme_stats set meme_rating = ?, rating_count = ?, meme_score = ?, meme_reasoning=?, WHERE message_id = ?",
+                "update meme_stats set meme_rating = ?, rating_count = ?, meme_score = ?, meme_reasoning=? WHERE message_id = ?",
                 (
                     sum(ratings) + curr_ratings[0],
                     len(ratings) + curr_ratings[1],
