@@ -70,9 +70,10 @@ async def msg_update(event: hikari.GuildMessageUpdateEvent) -> None:
     explanations = list[str]()
 
     for embed in event.message.embeds:
-        if not embed.thumbnail:
-            continue
-        image_url = embed.thumbnail.proxy_url
+        if embed.thumbnail:
+            image_url = embed.thumbnail.proxy_url
+        elif embed.video and embed.video.proxy_url:
+            image_url = f"{embed.video.proxy_url}?format=webp&width={embed.video.width}&height={embed.video.height}"
         if not image_url:
             continue
 
