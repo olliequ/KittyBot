@@ -96,43 +96,43 @@ async def main(ctx: lightbulb.Context):
 
     # graphic plot thingy
     buffer = BytesIO()
-    plt.style.use("fivethirtyeight")
-    plt.figure(figsize=(10, 6))
-    plt.plot(
-        df.index,
-        df["avg_meme_score"],
-        marker="o",
-        color="#FF6F61",
-        linewidth=1,
-        markersize=8,
-    )
-    plt.plot(
-        df.index,
-        df["rolling_avg_meme_score"],
-        linestyle="--",
-        color="#cccccc",
-        linewidth=1,
-    )
-    plt.plot
-    plt.xlabel("Days", fontsize=12)
-    plt.ylabel("Average Meme Score", fontsize=12)
-    display_name = (
-        "server" if calculate_for_server else user.display_name if user else None
-    )
-    plt.title(
-        f"Meme Scores Over Time ({time_period_param}) for {display_name}",
-        fontsize=16,
-    )
-    plt.xticks(fontsize=8)
-    plt.yticks(fontsize=12)
-    plt.ylim(
-        bottom=-0.5, top=max(10, df["avg_meme_score"].max()) + 0.5
-    )  # Start y-axis at 0
-    plt.grid(False)
-    plt.tight_layout()
-    plt.savefig(buffer, format="png", dpi=300)
-    plt.close()
-    await ctx.respond(hikari.Bytes(buffer.getvalue(), "meme_score_results.png"))
+    with plt.style.context("fivethirtyeight"):
+        plt.figure(figsize=(10, 6))
+        plt.plot(
+            df.index,
+            df["avg_meme_score"],
+            marker="o",
+            color="#FF6F61",
+            linewidth=1,
+            markersize=8,
+        )
+        plt.plot(
+            df.index,
+            df["rolling_avg_meme_score"],
+            linestyle="--",
+            color="#cccccc",
+            linewidth=1,
+        )
+        plt.plot
+        plt.xlabel("Days", fontsize=12)
+        plt.ylabel("Average Meme Score", fontsize=12)
+        display_name = (
+            "server" if calculate_for_server else user.display_name if user else None
+        )
+        plt.title(
+            f"Meme Scores Over Time ({time_period_param}) for {display_name}",
+            fontsize=16,
+        )
+        plt.xticks(fontsize=8)
+        plt.yticks(fontsize=12)
+        plt.ylim(
+            bottom=-0.5, top=max(10, df["avg_meme_score"].max()) + 0.5
+        )  # Start y-axis at 0
+        plt.grid(False)
+        plt.tight_layout()
+        plt.savefig(buffer, format="png", dpi=300)
+        plt.close()
+        await ctx.respond(hikari.Bytes(buffer.getvalue(), "meme_score_results.png"))
 
 
 def load(bot: lightbulb.BotApp) -> None:
