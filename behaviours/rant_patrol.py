@@ -4,8 +4,12 @@ import os
 
 import behaviours
 
-RANT_REGEX = re.compile("^[^ ]*(rant|vent) *:", flags=re.IGNORECASE)
-FORMAT_REGEX = re.compile("^(anti-|co-)*(rant|vent): ", flags=re.IGNORECASE)
+ALLOWED_STEMS = "|".join(["rant", "vent"])
+ALLOWED_PREFIXES = "|".join(["anti-", "co-"])
+
+RANT_REGEX = re.compile(f"^[^ ]*({ALLOWED_STEMS}) *:", flags=re.IGNORECASE)
+VALID_RANT_REGEX = re.compile(f"^({ALLOWED_PREFIXES})*({ALLOWED_STEMS}): ", flags=re.IGNORECASE)
+VALID_CONTENTLESS_RANT_REGEX = re.compile(f"^({ALLOWED_PREFIXES})*({ALLOWED_STEMS}):$", flags=re.IGNORECASE)
 
 
 async def main(event: hikari.GuildMessageCreateEvent):
@@ -16,7 +20,8 @@ async def main(event: hikari.GuildMessageCreateEvent):
     in_channel = event.channel_id == int(rant_channel_id)
     content = event.content
     is_a_rant = RANT_REGEX.match(content)
-    is_valid = FORMAT_REGEX.match(content)
+    is_valid = VALID_RANT_REGEX.match(content) or \
+        VALID_CONTENTLESS_RANT_REGEX.match(content) and (event.embeds or event.message.attachments)
 
     response = None
     if is_a_rant and not in_channel:
