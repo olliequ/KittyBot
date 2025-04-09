@@ -52,6 +52,8 @@ async def delete_duplicate(event: hikari.GuildMessageCreateEvent) -> None:
         or re.fullmatch(
             r"<a?:[A-Za-z]+:\d+>", event.content
         )  # allow custom Discord 'emoji' in the format <:catswag:989147563854823444>
+        or event.message.embeds
+        or event.message.attachments
     ):
         # force the bot to not interact with this message at all
         return
