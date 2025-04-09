@@ -9,7 +9,7 @@ import asyncio
 import humanize
 import behaviours
 
-from commons import agents
+from commons import agents, message_utils
 from typing import Final
 
 RATER_LOCK = asyncio.Lock()
@@ -307,12 +307,4 @@ async def voter_names(
         async for user in user_it
         if not user.is_bot
     ]
-    match len(names):
-        case 0:
-            return ""
-        case 1:
-            return names[0]
-        case 2:
-            return " and ".join(names)
-        case _:
-            return ", ".join(names[:-1]) + ", and " + names[-1]
+    return message_utils.humanize_list(names, "and")

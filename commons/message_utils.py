@@ -120,3 +120,15 @@ async def send_long_message(ctx: hikari.Message, content: str, **kwargs: Any) ->
 
     for part in message_parts[1:]:
         await ctx.respond(part, **remaining_kwargs)
+
+
+def humanize_list(words: list[str], conjunction: str) -> str:
+    match len(words):
+        case 0:
+            return ""
+        case 1:
+            return words[0]
+        case 2:
+            return f" {conjunction} ".join(words)
+        case _:
+            return ", ".join(words[:-1]) + f", {conjunction} " + words[-1]
