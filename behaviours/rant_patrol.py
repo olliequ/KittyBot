@@ -4,16 +4,21 @@ import os
 
 import behaviours
 
-ALLOWED_STEMS = "|".join(["rant", "vent"])
-ALLOWED_PREFIXES = "|".join(["anti-", "co-"])
 
-RANT_REGEX = re.compile(f"^[^ ]*({ALLOWED_STEMS}) *:", flags=re.IGNORECASE)
+ALLOWED_STEMS = ["rant", "vent"]
+ALLOWED_PREFIXES = ["anti-", "co-"]
+ALLOWED_STEMS_PIPED = "|".join(ALLOWED_STEMS)
+ALLOWED_PREFIXES_PIPED = "|".join(ALLOWED_PREFIXES)
+
+RANT_REGEX = re.compile(f"^[^ ]*({ALLOWED_STEMS_PIPED}) *:", flags=re.IGNORECASE)
 VALID_RANT_REGEX = re.compile(
-    f"^({ALLOWED_PREFIXES})*({ALLOWED_STEMS}): ", flags=re.IGNORECASE
+    f"^({ALLOWED_PREFIXES_PIPED})*({ALLOWED_STEMS_PIPED}): ", flags=re.IGNORECASE
 )
 VALID_CONTENTLESS_RANT_REGEX = re.compile(
-    f"^({ALLOWED_PREFIXES})*({ALLOWED_STEMS}):$", flags=re.IGNORECASE
+    f"^({ALLOWED_PREFIXES_PIPED})*({ALLOWED_STEMS_PIPED}):$", flags=re.IGNORECASE
 )
+
+FORMATTED_STEMS = ", ".join((f"'{stem}: '" for stem in ALLOWED_STEMS))
 
 
 async def main(event: hikari.GuildMessageCreateEvent):
@@ -34,7 +39,7 @@ async def main(event: hikari.GuildMessageCreateEvent):
             f"You appear to be ranting or venting, please move to <#{rant_channel_id}>"
         )
     elif is_a_rant and not is_valid:
-        response = "Your message must start with 'rant: ' or 'vent: ', with an optional pre-approved prefix. Try again or keep your complaints to yourself."
+        response = f"Your message must start with {FORMATTED_STEMS}, and may be preceded by pre-approved prefixes. Try again or keep your complaints to yourself."
     if response:
         await event.message.respond(response, reply=True, user_mentions=True)
         raise behaviours.EndProcessing()
