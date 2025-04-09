@@ -3,6 +3,7 @@ import hikari
 import os
 
 import behaviours
+from commons import message_utils
 
 
 ALLOWED_STEMS = ["rant", "vent"]
@@ -18,7 +19,9 @@ VALID_CONTENTLESS_RANT_REGEX = re.compile(
     f"^({ALLOWED_PREFIXES_PIPED})*({ALLOWED_STEMS_PIPED}):$", flags=re.IGNORECASE
 )
 
-FORMATTED_STEMS = ", ".join((f"'{stem}: '" for stem in ALLOWED_STEMS))
+FORMATTED_STEMS = message_utils.humanize_list(
+    [f"'{stem}: '" for stem in ALLOWED_STEMS], "or"
+)
 
 
 async def main(event: hikari.GuildMessageCreateEvent):
