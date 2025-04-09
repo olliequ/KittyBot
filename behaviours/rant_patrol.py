@@ -19,7 +19,7 @@ VALID_CONTENTLESS_RANT_REGEX = re.compile(
     f"^({ALLOWED_PREFIXES_PIPED})*({ALLOWED_STEMS_PIPED}):$", flags=re.IGNORECASE
 )
 
-FORMATTED_STEMS = message_utils.humanise_list(
+FORMATTED_STEMS = message_utils.humanize_list(
     [f"'{stem}: '" for stem in ALLOWED_STEMS], "or"
 )
 
