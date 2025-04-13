@@ -3,7 +3,7 @@ import hikari
 import behaviours
 
 
-CISSA_REGEX = re.compile(r"\bCISSA\b")
+CISSA_REGEX = re.compile(r"\bCISSA\b", re.IGNORECASE)
 
 
 async def main(event: hikari.GuildMessageCreateEvent) -> None:
