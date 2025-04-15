@@ -43,4 +43,5 @@ ignore = [
     "commands/shitmemeboard.py",
     "commands/usermessages.py",
     "commands/wordcloud.py",
+    "behaviours/ban_french.py"
 ]
