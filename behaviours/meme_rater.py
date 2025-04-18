@@ -283,10 +283,14 @@ async def delete_meme(event: hikari.GuildReactionAddEvent) -> None:
     )
 
     # Convert to int var
-    ten_reaction_count = ten_reaction.count if isinstance(ten_reaction, hikari.messages.Reaction) else 0
+    ten_reaction_count = (
+        ten_reaction.count if isinstance(ten_reaction, hikari.messages.Reaction) else 0
+    )
 
-    count = shit_reaction.count - ten_reaction_count # Final count of shit emojis offset by 10s.
-    if not shit_reaction.is_me: 
+    count = (
+        shit_reaction.count - ten_reaction_count
+    )  # Final count of shit emojis offset by 10s.
+    if not shit_reaction.is_me:
         count += 1
 
     if count >= int(os.getenv("MEME_VOTE_DELETE_THRESHOLD", 4)):
