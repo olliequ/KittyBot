@@ -1,5 +1,5 @@
 import hikari
-import db
+import commons.db as db
 import os
 
 """

@@ -1,7 +1,7 @@
 from datetime import datetime
 import hikari, lightbulb
 from commons.message_utils import get_member
-import db
+import commons.db as db
 
 plugin = lightbulb.Plugin("deletesinquiry")
 
@@ -20,7 +20,8 @@ async def show_deletes(ctx: lightbulb.Context) -> None:
     top_deleter = get_member(ctx, deletes[0][0])
     delete_list = list[str]()
     for rank in range(len(deletes)):
-        rank_str = f"`#{rank + 1}` {get_member(ctx, deletes[rank][0]).display_name} has `{deletes[rank][1]}` message(s) deleted!"
+        num_msgs_deleted = deletes[rank][1]
+        rank_str = f"`#{rank + 1}` {get_member(ctx, deletes[rank][0]).display_name} has had `{num_msgs_deleted}` {'message' if num_msgs_deleted == 1 else 'messages'} deleted!"
         delete_list.append(rank_str)
 
     embed = (

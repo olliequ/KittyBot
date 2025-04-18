@@ -12,26 +12,28 @@ import hashlib
 import hikari
 import behaviours
 from commons.message_utils import get_member
-import db
+import commons.db as db
 import sqlite3
 import humanize
 from datetime import datetime, timezone
 import asyncio
+import unicodedata
 
 
 async def delete_duplicate(event: hikari.GuildMessageCreateEvent) -> None:
     """
     Deletes duplicate messages (excepting some). A duplicate message is simply a matching string
-    that has been seen before in the server (and not deleted).
+    that has been seen before in the server (and not subsequently deleted).
     """
 
     DELETION_NOTIFICATION_LONGEVITY = 15
     match (
-        event.channel_id == int(os.environ.get("ORIGINALITY_CHANNEL_ID", "0")),
+        event.channel_id
+        in [int(id) for id in os.environ.get("ORIGINALITY_CHANNEL_ID", "0").split(",")],
         os.environ.get("DEBUG", "false") in ("true", "1"),
     ):
         case (True, _):
-            # handle all messages in originality channel
+            # handle all messages in defined channels
             pass
         case (_, True):
             # handle all messages when debug flag is set to True
@@ -40,35 +42,43 @@ async def delete_duplicate(event: hikari.GuildMessageCreateEvent) -> None:
             # don't handle any messages that are not in the originality channel when debug flag is not set
             return
 
-    # random rules. Probably worth thinking about this some more, if this bot function doesn't get deleted.
+    # allow these messages by default
     if (
         not event.content
         or event.is_webhook
         or event.is_bot
-        or len(event.content) <= 2  # allow short messages
-        or "http" in event.content  # allow links
+        or event.content.startswith("http")  # allow links
         or re.match(r"<@\d+>", event.content)  # allow mentions
         or re.fullmatch(
             r"<a?:[A-Za-z]+:\d+>", event.content
         )  # allow custom Discord 'emoji' in the format <:catswag:989147563854823444>
+        or event.message.embeds
+        or event.message.attachments
     ):
         # force the bot to not interact with this message at all
         return
 
     cursor = db.cursor()
+    normalised_message_content = (
+        unicodedata.normalize("NFKD", event.content).casefold().replace(" ", "")
+    )
 
-    # todo: insert message exceptions such as emoji which are allowed to be duplicated
     try:
         cursor.execute(
             "insert into message_hashes values(?, ?, md5(?), ?)",
-            (event.author_id, event.message_id, event.content, event.message.timestamp),
+            (
+                event.author_id,
+                event.message_id,
+                normalised_message_content,
+                event.message.timestamp,
+            ),
         )
         db.commit()
     except sqlite3.IntegrityError:
         await event.message.delete()
         previous = cursor.execute(
             "select user, message_id, time_sent from message_hashes where message_hash = md5(?)",
-            (event.content,),
+            (normalised_message_content,),
         ).fetchone()
 
         original_time_sent = datetime.fromisoformat(previous[2])

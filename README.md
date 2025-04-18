@@ -94,6 +94,10 @@ docker compose up -d
 - Implement some sort of natural language processing thing (neural network?) that does something to do with text analysis (e.g. off a message that someone sends). This is some next level stuff, but hey, if there's an interest then why not? 😃
 - Implement a creative command you have of your own!
 
+## Org Structure
+
+![org chart](./docs/images/Org%20Chart.png)
+
 ## Legal
 
 This software distributes the Noto Emoji font, under the terms of the SIL Open Font License. See `fonts/OFL.txt` for details.

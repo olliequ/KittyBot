@@ -6,7 +6,7 @@ import hikari.errors
 from PIL import Image
 import imagehash
 import behaviours
-import db
+import commons.db as db
 import re
 import requests
 import io

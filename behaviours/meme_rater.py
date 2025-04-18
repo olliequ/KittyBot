@@ -3,14 +3,14 @@ import os
 import logging
 import hikari.messages
 from commons.message_utils import get_member
-import db
+import commons.db as db
 import hikari
 import requests
 import asyncio
 import humanize
 import behaviours
 
-from commons import agents
+from commons import agents, message_utils
 from typing import Final
 
 RATER_LOCK = asyncio.Lock()
@@ -30,7 +30,6 @@ MEME_RATE_PROMPT: Final[str] = os.environ.get(
 MINIMUM_MEME_RATING_TO_NOT_DELETE: Final[int] = int(
     os.environ.get("MEME_QUALITY_THRESHOLD", "6")
 )
-DELETE_SHIT: Final[bool] = False
 IMG_FILE_EXTENSIONS: Final = {"jpg", "jpeg", "png", "webp"}
 
 explained = set[hikari.Snowflake]()
@@ -72,9 +71,11 @@ async def msg_update(event: hikari.GuildMessageUpdateEvent) -> None:
     explanations = list[str]()
 
     for embed in event.message.embeds:
-        if not embed.thumbnail:
-            continue
-        image_url = embed.thumbnail.proxy_url
+        image_url = None
+        if embed.thumbnail:
+            image_url = embed.thumbnail.proxy_url
+        elif embed.video and embed.video.proxy_url:
+            image_url = f"{embed.video.proxy_url}?format=webp&width={embed.video.width}&height={embed.video.height}"
         if not image_url:
             continue
 
@@ -99,7 +100,7 @@ async def msg_create(event: hikari.GuildMessageCreateEvent) -> None:
     explanations = list[str]()
 
     for attachment in event.message.attachments:
-        att_ext = attachment.extension
+        att_ext = (attachment.extension or "").lower()
         logging.info(f"Attachment extension: {att_ext}")
         if att_ext not in IMG_FILE_EXTENSIONS:
             continue
@@ -154,11 +155,6 @@ async def rate_meme(
 
         if avg_rating >= MINIMUM_MEME_RATING_TO_NOT_DELETE:
             await message.add_reaction(emoji="👍")
-        elif DELETE_SHIT:
-            await message.delete()
-            await message.respond(
-                f"That meme was garbage 💩💩💩. I rated it {avg_rating}/10. Send something better."
-            )
         else:
             await message.add_reaction(emoji="💩")
         await message.add_reaction(emoji="❓")
@@ -167,7 +163,7 @@ async def rate_meme(
         # avg rating row inserted is just for this set of memes. Another query elsewhere aggregates.
         if entry_exists:
             cursor.execute(
-                "update meme_stats set meme_rating = ?, rating_count = ?, meme_score = ?, meme_reasoning=?, WHERE message_id = ?",
+                "update meme_stats set meme_rating = ?, rating_count = ?, meme_score = ?, meme_reasoning=? WHERE message_id = ?",
                 (
                     sum(ratings) + curr_ratings[0],
                     len(ratings) + curr_ratings[1],
@@ -246,12 +242,24 @@ async def respond_to_question_mark(event: hikari.GuildReactionAddEvent) -> None:
         raise behaviours.EndProcessing()
 
 
+def is_message_rated_shit(message_id: hikari.Snowflake) -> bool:
+    cursor = db.cursor()
+    score = cursor.execute(
+        """
+        select meme_score from meme_stats
+        where message_id = ?""",
+        (message_id,),
+    ).fetchone()
+    return score[0] < MINIMUM_MEME_RATING_TO_NOT_DELETE
+
+
 # Deletes a meme if 4 or more entities (including Kitti) react to a meme with the shit emoji. Offset by 10's.
 async def delete_meme(event: hikari.GuildReactionAddEvent) -> None:
     if (
         event.channel_id != MEME_CHANNEL_ID
         or event.emoji_name != "💩"
         or event.member.is_bot
+        or not is_message_rated_shit(event.message_id)
     ):
         return
     cursor = db.cursor()
@@ -266,20 +274,22 @@ async def delete_meme(event: hikari.GuildReactionAddEvent) -> None:
     shit_reaction = next(
         (reaction for reaction in message.reactions if reaction.emoji == "💩"), None
     )
+    if not shit_reaction:
+        return
 
     # Find the "🔟" reaction; if not found then return 0.
     ten_reaction = next(
         (reaction for reaction in message.reactions if reaction.emoji == "🔟"), 0
     )
 
-    # Make int variable so we can use directly in the if statement below.
+    # Convert to int var
     ten_reaction_count = ten_reaction.count if isinstance(ten_reaction, hikari.messages.Reaction) else 0
 
-    if (
-        shit_reaction
-        and (shit_reaction.count - ten_reaction_count) >= int(os.getenv("MEME_VOTE_DELETE_THRESHOLD", 4))
-        and shit_reaction.is_me
-    ):
+    count = shit_reaction.count - ten_reaction_count # Final count of shit emojis offset by 10s.
+    if not shit_reaction.is_me: 
+        count += 1
+
+    if count >= int(os.getenv("MEME_VOTE_DELETE_THRESHOLD", 4)):
         await event.app.rest.create_message(
             user_mentions=True,
             channel=event.channel_id,
@@ -307,12 +317,4 @@ async def voter_names(
         async for user in user_it
         if not user.is_bot
     ]
-    match len(names):
-        case 0:
-            return ""
-        case 1:
-            return names[0]
-        case 2:
-            return " and ".join(names)
-        case _:
-            return ", ".join(names[:-1]) + ", and " + names[-1]
+    return message_utils.humanize_list(names, "and")
