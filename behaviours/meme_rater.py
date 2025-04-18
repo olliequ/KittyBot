@@ -275,7 +275,7 @@ async def delete_meme(event: hikari.GuildReactionAddEvent) -> None:
     )
     if not shit_reaction:
         return
-    
+
     shit_reaction_count = shit_reaction.count
 
     # Find the "🔟" reaction; if not found then return 0.
