@@ -252,7 +252,7 @@ def is_message_rated_shit(message_id: hikari.Snowflake) -> bool:
     return score[0] < MINIMUM_MEME_RATING_TO_NOT_DELETE
 
 
-# Deletes a meme if 4 or more entities (including Kitti) react to a meme with the shit emoji.
+# Deletes a meme if (specified amount) or more entities (including Kitti) react to a meme with the shit emoji. Offset by 10's.
 async def delete_meme(event: hikari.GuildReactionAddEvent) -> None:
     if (
         event.channel_id != MEME_CHANNEL_ID
@@ -276,10 +276,24 @@ async def delete_meme(event: hikari.GuildReactionAddEvent) -> None:
     if not shit_reaction:
         return
 
-    count = shit_reaction.count
+    shit_reaction_count = shit_reaction.count
+
+    # Find the "🔟" reaction; if not found then return 0.
+    ten_reaction = next(
+        (reaction for reaction in message.reactions if reaction.emoji == "🔟"), None
+    )
+
+    # Convert to int var
+    ten_reaction_count = ten_reaction.count if ten_reaction else 0
+
+    net_shit_count = (
+        shit_reaction_count - ten_reaction_count
+    )  # Final count of shit emojis offset by 10s.
+
     if not shit_reaction.is_me:
-        count += 1
-    if count >= int(os.getenv("MEME_VOTE_DELETE_THRESHOLD", 4)):
+        net_shit_count += 1
+
+    if net_shit_count >= int(os.getenv("MEME_VOTE_DELETE_THRESHOLD", 4)):
         await event.app.rest.create_message(
             user_mentions=True,
             channel=event.channel_id,
