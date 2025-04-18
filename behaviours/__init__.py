@@ -4,7 +4,7 @@ import asyncio
 import hikari
 import lightbulb
 
-from behaviours import notalurker, jimmy_nerfer, messageparty
+from behaviours import notalurker, jimmy_nerfer, messageparty, ban_french
 from behaviours import userinfo
 from behaviours import meme_repost_blocker, meme_rater, rant_patrol, paidnotpayed
 from behaviours import snark, deletes, duplicate_message_policing, fight_club
@@ -15,6 +15,7 @@ _Chain = Sequence[Sequence[Callable[[_Evt], Coroutine[None, None, None]]]]
 _message_create_chain: _Chain[hikari.GuildMessageCreateEvent] = [
     # Message filtering & deletion
     [
+        ban_french.main,
         notalurker.main,
         jimmy_nerfer.delete_duplicate,
         duplicate_message_policing.delete_duplicate,
