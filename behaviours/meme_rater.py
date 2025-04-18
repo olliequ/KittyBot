@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
 import os
 import logging
+import hikari.messages
 from commons.message_utils import get_member
 import db
 import hikari
@@ -245,7 +246,7 @@ async def respond_to_question_mark(event: hikari.GuildReactionAddEvent) -> None:
         raise behaviours.EndProcessing()
 
 
-# Deletes a meme if 4 or more entities (including Kitti) react to a meme with the shit emoji.
+# Deletes a meme if 4 or more entities (including Kitti) react to a meme with the shit emoji. Offset by 10's.
 async def delete_meme(event: hikari.GuildReactionAddEvent) -> None:
     if (
         event.channel_id != MEME_CHANNEL_ID
@@ -266,9 +267,17 @@ async def delete_meme(event: hikari.GuildReactionAddEvent) -> None:
         (reaction for reaction in message.reactions if reaction.emoji == "💩"), None
     )
 
+    # Find the "🔟" reaction; if not found then return 0.
+    ten_reaction = next(
+        (reaction for reaction in message.reactions if reaction.emoji == "🔟"), 0
+    )
+
+    # Make int variable so we can use directly in the if statement below.
+    ten_reaction_count = ten_reaction.count if isinstance(ten_reaction, hikari.messages.Reaction) else 0
+
     if (
         shit_reaction
-        and shit_reaction.count >= int(os.getenv("MEME_VOTE_DELETE_THRESHOLD", 4))
+        and (shit_reaction.count - ten_reaction_count) >= int(os.getenv("MEME_VOTE_DELETE_THRESHOLD", 4))
         and shit_reaction.is_me
     ):
         await event.app.rest.create_message(
