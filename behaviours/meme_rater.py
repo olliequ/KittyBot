@@ -27,7 +27,7 @@ MEME_RATE_PROMPT: Final[str] = os.environ.get(
     """,
 )
 MINIMUM_MEME_RATING_TO_NOT_DELETE: Final[int] = int(
-    os.environ.get("MEME_QUALITY_THRESHOLD", "6")
+    os.environ.get("MEME_QUALITY_THRESHOLD", "1")
 )
 IMG_FILE_EXTENSIONS: Final = {"jpg", "jpeg", "png", "webp"}
 
@@ -299,7 +299,7 @@ async def delete_meme(event: hikari.GuildReactionAddEvent) -> None:
             channel=event.channel_id,
             content=(
                 f"Hey {message.author.mention}, your meme sent {humanize.naturaltime(age)} has been deemed 'too shit' "
-                f"by {await voter_names(event, message, shit_reaction)}. Try again with a better meme."
+                f"by {await voter_names(event, message, shit_reaction)}. { 'It was liked by: ' + await voter_names(event, message, ten_reaction)+'.'  if ten_reaction else 'No one liked it.'} Try again with a better meme."
             ),
         )
         await event.app.rest.delete_message(
