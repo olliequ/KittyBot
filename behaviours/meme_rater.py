@@ -27,7 +27,7 @@ MEME_RATE_PROMPT: Final[str] = os.environ.get(
     """,
 )
 MINIMUM_MEME_RATING_TO_NOT_DELETE: Final[int] = int(
-    os.environ.get("MEME_QUALITY_THRESHOLD", "1")
+    os.environ.get("MEME_QUALITY_THRESHOLD", "6")
 )
 IMG_FILE_EXTENSIONS: Final = {"jpg", "jpeg", "png", "webp"}
 
