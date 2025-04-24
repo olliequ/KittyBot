@@ -20,7 +20,7 @@ async def main(event: hikari.GuildMessageCreateEvent) -> None:
         "text-classification", model=model, tokenizer=tokenizer
     )
     predictions = language_detection(text)
-    if predictions[0].get("label", "") == "fra_Latn":  # any probability
+    if any(prediction.get("label", "") == "fra_Latn" for prediction in predictions): # bro the language classifier is dogshit
         response = await event.message.respond(
             f"Hey {event.author.mention}! Unfortunately, French is banned here. Oh non!",
             user_mentions=True,
