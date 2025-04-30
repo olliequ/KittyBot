@@ -279,6 +279,10 @@ async def delete_meme(event: hikari.GuildReactionAddEvent) -> None:
     shit_reaction_count = shit_reaction.count
 
     # Find the "🔟" reaction; if not found then return 0.
+    ten_reaction = next(
+        (reaction for reaction in message.reactions if reaction.emoji == "🔟"), None
+    )
+
     users_who_ten_reacted = await message.app.rest.fetch_reactions_for_emoji(
         message.channel_id, message, "🔟"
     )
