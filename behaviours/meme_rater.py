@@ -280,7 +280,12 @@ async def delete_meme(event: hikari.GuildReactionAddEvent) -> None:
 
     # Find the "🔟" reaction; if not found then return 0.
     ten_reaction = next(
-        (reaction for reaction in message.reactions if reaction.emoji == "🔟"), None
+        (
+            reaction
+            for reaction in message.reactions
+            if reaction.emoji == "🔟" and message.author.id is not event.member.id
+        ),
+        None,
     )
 
     # Convert to int var
