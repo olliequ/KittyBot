@@ -279,17 +279,15 @@ async def delete_meme(event: hikari.GuildReactionAddEvent) -> None:
     shit_reaction_count = shit_reaction.count
 
     # Find the "🔟" reaction; if not found then return 0.
-    ten_reaction = next(
-        (
-            reaction
-            for reaction in message.reactions
-            if reaction.emoji == "🔟" and message.author.id is not event.member.id
-        ),
-        None,
+    users_who_ten_reacted = await message.app.rest.fetch_reactions_for_emoji(
+        message.channel_id, message, "🔟"
     )
+    ten_reactors = [
+        user for user in users_who_ten_reacted if user.id != message.author.id
+    ]
 
     # Convert to int var
-    ten_reaction_count = ten_reaction.count if ten_reaction else 0
+    ten_reaction_count = len(ten_reactors)
 
     net_shit_count = (
         shit_reaction_count - ten_reaction_count
