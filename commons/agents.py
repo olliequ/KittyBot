@@ -89,7 +89,7 @@ class KittyAgent:
             deps_type=KittyState,
         )
 
-        @self.agent.system_prompt
+        @self.agent.system_prompt(dynamic=True)
         def system_prompt(  # pyright: ignore [reportUnusedFunction]
             state: RunContext[KittyState],
         ):
@@ -137,13 +137,13 @@ class ReasonerMemeRater:
             self.reasoner_model, deps_type=MemeDescription, result_type=MemeAnswer
         )
 
-        @self.eyes.system_prompt
+        @self.eyes.system_prompt(dynamic=True)
         def system_prompt_eye(  # pyright: ignore [reportUnusedFunction]
             state: RunContext[MemeState],
         ):
             return self.eye_prompt.format_map(state.deps.model_dump())
 
-        @self.reasoner.system_prompt
+        @self.reasoner.system_prompt(dynamic=True)
         def system_prompt_reasoner(  # pyright: ignore [reportUnusedFunction]
             state: RunContext[MemeDescription],
         ):
