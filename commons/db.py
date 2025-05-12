@@ -67,6 +67,9 @@ def start():
     # EmojiCache Table Removed
     c.execute("CREATE TABLE IF NOT EXISTS options (name TEXT, value TEXT)")
     c.execute("CREATE UNIQUE INDEX IF NOT EXISTS options_idx ON options (name)")
+    c.execute(
+        "CREATE TABLE IF NOT EXISTS scheduled_actions (time INTEGER, action TEXT, arguments TEXT)"
+    )
 
 
 @overload

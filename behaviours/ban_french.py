@@ -1,5 +1,5 @@
-import asyncio
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, pipeline
+import commons.scheduler
 
 import hikari
 
@@ -27,6 +27,7 @@ async def main(event: hikari.GuildMessageCreateEvent) -> None:
             f"Hey {event.author.mention}! Unfortunately, French is banned here. Oh non!",
             user_mentions=True,
         )
-        await asyncio.sleep(DELETION_NOTIFICATION_LONGEVITY)
-        await response.delete()
+        await commons.scheduler.delay_delete(
+            response.channel_id, response.id, seconds=DELETION_NOTIFICATION_LONGEVITY
+        )
         raise behaviours.EndProcessing()
