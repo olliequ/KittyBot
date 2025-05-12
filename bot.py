@@ -25,6 +25,7 @@ dotenv.load_dotenv()
 
 import behaviours
 import commons.agents
+import commons.scheduler
 
 
 bot = lightbulb.BotApp(
@@ -40,7 +41,7 @@ bot = lightbulb.BotApp(
 
 @bot.listen(hikari.StartedEvent)
 async def botStartup(event: hikari.StartedEvent):
-    print("Bot has started up!")
+    await commons.scheduler.start(event.app)
 
 
 @bot.listen(lightbulb.CommandErrorEvent)

@@ -16,8 +16,8 @@ import commons.db as db
 import sqlite3
 import humanize
 from datetime import datetime, timezone
-import asyncio
 import unicodedata
+import commons.scheduler
 
 
 async def delete_duplicate(event: hikari.GuildMessageCreateEvent) -> None:
@@ -91,8 +91,9 @@ async def delete_duplicate(event: hikari.GuildMessageCreateEvent) -> None:
             user_mentions=True,
         )
         # delete deletion message after defined number of seconds (second best, due to inability to send ephemeral message directly)
-        await asyncio.sleep(DELETION_NOTIFICATION_LONGEVITY)
-        await response.delete()
+        await commons.scheduler.delay_delete(
+            response.channel_id, response.id, seconds=DELETION_NOTIFICATION_LONGEVITY
+        )
         raise behaviours.EndProcessing()
 
 

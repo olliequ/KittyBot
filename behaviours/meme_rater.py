@@ -8,11 +8,15 @@ import requests
 import asyncio
 import humanize
 import behaviours
+import commons.scheduler
 
 from commons import agents, message_utils
 from typing import Final
 
 RATER_LOCK = asyncio.Lock()
+
+DELETION_NOTIFICATION_LONGEVITY = 60 * 3
+EXPLANATION_LONGEVITY = 60
 
 MEME_CHANNEL_ID = int(os.environ.get("MEME_CHANNEL_ID", 0))
 MEME_RATE_PROMPT: Final[str] = os.environ.get(
@@ -231,12 +235,16 @@ async def respond_to_question_mark(event: hikari.GuildReactionAddEvent) -> None:
         )
         row = cursor.fetchone()
         if row is not None:
-            await event.app.rest.create_message(
+            response = await event.app.rest.create_message(
                 channel=channel_id,
                 reply=response_to_msg_id,
-                content=f"Requested by: {requester_name} - {row[0]}",  # Idk how to tag people
+                content=f"Requested by: {requester_name} - {row[0]}",
             )
             explained.add(response_to_msg_id)
+            await commons.scheduler.delay_delete(
+                response.channel_id, response.id, seconds=EXPLANATION_LONGEVITY
+            )
+            explained.remove(response_to_msg_id)
 
         raise behaviours.EndProcessing()
 
@@ -301,7 +309,7 @@ async def delete_meme(event: hikari.GuildReactionAddEvent) -> None:
         net_shit_count += 1
 
     if net_shit_count >= int(os.getenv("MEME_VOTE_DELETE_THRESHOLD", 4)):
-        await event.app.rest.create_message(
+        response = await event.app.rest.create_message(
             user_mentions=True,
             channel=event.channel_id,
             content=(
@@ -313,6 +321,9 @@ async def delete_meme(event: hikari.GuildReactionAddEvent) -> None:
             channel=event.channel_id, message=event.message_id
         )
         shit_meme_delete_add_count(cursor, message.author.id)  # type: ignore
+        await commons.scheduler.delay_delete(
+            response.channel_id, response.id, seconds=DELETION_NOTIFICATION_LONGEVITY
+        )
 
     raise behaviours.EndProcessing()
 
