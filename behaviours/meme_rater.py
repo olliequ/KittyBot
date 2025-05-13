@@ -16,10 +16,10 @@ from typing import Final
 
 RATER_LOCK = asyncio.Lock()
 
-DELETION_NOTIFICATION_LONGEVITY = 60 * 3
 EXPLANATION_LONGEVITY = 60
 
 MEME_CHANNEL_ID = int(os.environ.get("MEME_CHANNEL_ID", 0))
+MEME_DELETE_LOG_CHANNEL_ID = int(os.environ.get("MEME_DELETE_LOG_CHANNEL_ID", 0))
 MEME_RATE_PROMPT: Final[str] = os.environ.get(
     "MEME_RATING_PROMPT",
     """
@@ -198,8 +198,8 @@ async def rate_meme(
         db.commit()
 
 
-def shit_meme_delete_add_count(cursor: db.Cursor, user_id: str):
-    cursor.execute(
+def shit_meme_delete_add_count(user_id: hikari.Snowflake):
+    db.cursor().execute(
         """
         INSERT INTO shit_meme_deletes (user, count)
         VALUES (?, 1)
@@ -207,6 +207,7 @@ def shit_meme_delete_add_count(cursor: db.Cursor, user_id: str):
         SET count = shit_meme_deletes.count + 1""",
         (user_id,),
     )
+    db.commit()
 
 
 async def respond_to_question_mark(event: hikari.GuildReactionAddEvent) -> None:
@@ -263,7 +264,7 @@ def is_message_rated_shit(message_id: hikari.Snowflake) -> bool:
 
 
 # Deletes a meme if (specified amount) or more entities (including Kitti) react to a meme with the shit emoji. Offset by 10's.
-async def delete_meme(event: hikari.GuildReactionAddEvent) -> None:
+async def meme_reaction(event: hikari.GuildReactionAddEvent) -> None:
     if (
         event.channel_id != MEME_CHANNEL_ID
         or event.emoji_name != "💩"
@@ -271,7 +272,6 @@ async def delete_meme(event: hikari.GuildReactionAddEvent) -> None:
         or not is_message_rated_shit(event.message_id)
     ):
         return
-    cursor = db.cursor()
     message = await event.app.rest.fetch_message(
         channel=event.channel_id, message=event.message_id
     )
@@ -311,23 +311,46 @@ async def delete_meme(event: hikari.GuildReactionAddEvent) -> None:
         net_shit_count += 1
 
     if net_shit_count >= int(os.getenv("MEME_VOTE_DELETE_THRESHOLD", 4)):
-        response = await event.app.rest.create_message(
-            user_mentions=True,
-            channel=event.channel_id,
-            content=(
-                f"Hey {message.author.mention}, your meme sent {humanize.naturaltime(age)} has been deemed 'too shit' "
-                f"by {await voter_names(event, message, shit_reaction)}. { 'It was liked by: ' + await voter_names(event, message, ten_reaction)+'.'  if ten_reaction else 'No one liked it.'} Try again with a better meme."
-            ),
-        )
-        await event.app.rest.delete_message(
-            channel=event.channel_id, message=event.message_id
-        )
-        shit_meme_delete_add_count(cursor, message.author.id)  # type: ignore
-        await commons.scheduler.delay_delete(
-            response.channel_id, response.id, seconds=DELETION_NOTIFICATION_LONGEVITY
-        )
+        await delete_meme(event, message, age, shit_reaction, ten_reaction)
 
     raise behaviours.EndProcessing()
+
+
+async def delete_meme(
+    event: hikari.GuildReactionEvent,
+    message: hikari.Message,
+    age: timedelta,
+    shit_reaction: hikari.Reaction,
+    ten_reaction: hikari.Reaction | None,
+):
+    if MEME_DELETE_LOG_CHANNEL_ID:
+        dislikers = await voter_names(event, message, shit_reaction)
+        likers = (
+            await voter_names(event, message, ten_reaction)
+            if ten_reaction
+            else "No one"
+        )
+        await event.app.rest.create_message(
+            user_mentions=True,
+            channel=MEME_DELETE_LOG_CHANNEL_ID or event.channel_id,
+            embed=(
+                hikari.Embed(
+                    colour=0xDDDDDD,
+                    timestamp=datetime.now().astimezone(),
+                    title="Yet another shit meme purged",
+                )
+                .add_field("Meme sent", humanize.naturaltime(age))
+                .add_field("Sent by", message.author.mention)
+                .add_field("Deemed shit by", dislikers)
+                .add_field("Liked by", likers)
+                # .set_image() This is hard, leave for someone else to do
+                .set_footer("Try again with a better meme")
+            ),
+        )
+    await event.app.rest.delete_message(
+        channel=event.channel_id, message=event.message_id
+    )
+    shit_meme_delete_add_count(message.author.id)
 
 
 async def voter_names(
