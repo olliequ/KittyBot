@@ -4,6 +4,7 @@ import logging
 from commons.message_utils import get_member
 import commons.db as db
 import hikari
+import hikari.messages
 import requests
 import asyncio
 import humanize
@@ -239,6 +240,7 @@ async def respond_to_question_mark(event: hikari.GuildReactionAddEvent) -> None:
                 channel=channel_id,
                 reply=response_to_msg_id,
                 content=f"Requested by: {requester_name} - {row[0]}",
+                flags=hikari.messages.MessageFlag.SUPPRESS_NOTIFICATIONS,
             )
             explained.add(response_to_msg_id)
             await commons.scheduler.delay_delete(
