@@ -213,7 +213,6 @@ def shit_meme_delete_add_count(user_id: hikari.Snowflake):
 async def respond_to_question_mark(event: hikari.GuildReactionAddEvent) -> None:
     # In memes only?
     channel_id = event.channel_id
-    cursor = db.cursor()
     if (
         channel_id == MEME_CHANNEL_ID
         and event.emoji_name == "❓"
@@ -228,19 +227,12 @@ async def respond_to_question_mark(event: hikari.GuildReactionAddEvent) -> None:
         if response_to_msg_id in explained:
             raise behaviours.EndProcessing()
 
-        cursor.execute(
-            """
-        SELECT meme_reasoning
-        FROM meme_stats
-        WHERE message_id = ?""",
-            (response_to_msg_id,),
-        )
-        row = cursor.fetchone()
-        if row is not None:
+        explanation = get_explanation(response_to_msg_id)
+        if explanation is not None:
             response = await event.app.rest.create_message(
                 channel=channel_id,
                 reply=response_to_msg_id,
-                content=f"Requested by: {requester_name} - {row[0]}",
+                content=f"Requested by: {requester_name} - {explanation}",
                 flags=hikari.messages.MessageFlag.SUPPRESS_NOTIFICATIONS,
             )
             explained.add(response_to_msg_id)
@@ -251,6 +243,19 @@ async def respond_to_question_mark(event: hikari.GuildReactionAddEvent) -> None:
 
         raise behaviours.EndProcessing()
 
+def get_explanation(message_id: hikari.Snowflake):
+    cursor = db.cursor()
+    cursor.execute(
+            """
+        SELECT meme_reasoning
+        FROM meme_stats
+        WHERE message_id = ?""",
+            (str(message_id),),
+        )
+    row = cursor.fetchone()
+    if row is None:
+        return None
+    return row[0]
 
 def is_message_rated_shit(message_id: hikari.Snowflake) -> bool:
     cursor = db.cursor()
@@ -343,6 +348,7 @@ async def delete_meme(
                 .add_field("Sent by", message.author.mention)
                 .add_field("Deemed shit by", dislikers)
                 .add_field("Liked by", likers)
+                .add_field("Our justification", get_explanation(message.id) or 'It was shit')
                 # .set_image() This is hard, leave for someone else to do
                 .set_footer("Try again with a better meme")
             ),
