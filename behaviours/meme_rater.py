@@ -150,7 +150,7 @@ async def msg_update(event: hikari.GuildMessageUpdateEvent) -> None:
 
 async def rate_meme(
     message: hikari.PartialMessage, ratings: list[int], explanations: list[str]
-) -> None:
+) -> dict[str, str | hikari.UnicodeEmoji] | None:
     async with RATER_LOCK:
         if not ratings or not explanations:
             return
@@ -166,7 +166,7 @@ async def rate_meme(
             curr_ratings = (0, 0)
             entry_exists = False
 
-        avg_rating = min(
+        avg_rating: int = min(
             max(
                 0, (sum(ratings) + curr_ratings[0]) // (len(ratings) + curr_ratings[1])
             ),
@@ -181,13 +181,17 @@ async def rate_meme(
         if entry_exists:
             await message.remove_all_reactions()
 
+        final_emoji = "🐱"
+
         await message.add_reaction(emoji=number_emoji(avg_rating))
         await message.add_reaction(emoji="🐱")
 
         if avg_rating >= MINIMUM_MEME_RATING_TO_NOT_DELETE:
             await message.add_reaction(emoji="👍")
+            final_emoji = "👍"
         else:
             await message.add_reaction(emoji="💩")
+            final_emoji = "💩"
         await message.add_reaction(emoji="❓")
 
         # add some basic meme stats to the db so we can track who is improving, rotting, or standing still
@@ -223,6 +227,12 @@ async def rate_meme(
             )
 
         db.commit()
+
+        return {
+            "explanation": str_explanations,
+            "rating": number_emoji(avg_rating),
+            "emoji": final_emoji,
+        }
 
 
 def shit_meme_delete_add_count(user_id: hikari.Snowflake):
