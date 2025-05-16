@@ -10,7 +10,7 @@ import asyncio
 import humanize
 import behaviours
 import commons.scheduler
-
+from commons.meme_stat import MemeStat
 from commons import agents, message_utils
 from typing import Final
 
@@ -216,11 +216,18 @@ async def rate_meme(
 
         db.commit()
 
-        return {
-            "explanation": str_explanations,
-            "rating": number_emoji(avg_rating),
-            "emoji": final_emoji,
-        }
+        meme_stat = MemeStat(
+            author_id=message.author.id,
+            emoji=final_emoji,
+            meme_rating=avg_rating,
+            meme_reasoning=str_explanations,
+            meme_score=avg_rating,
+            message_id=message.id,
+            rating_count=len(ratings),
+            timestamp=message.timestamp,
+        )
+
+        return meme_stat
 
 
 def shit_meme_delete_add_count(user_id: hikari.Snowflake):
