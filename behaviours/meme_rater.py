@@ -36,18 +36,41 @@ MINIMUM_MEME_RATING_TO_NOT_DELETE: Final[int] = int(
 )
 IMG_FILE_EXTENSIONS: Final = {"jpg", "jpeg", "png", "webp"}
 
+STRICT_MEME_PENALTY = int(os.environ.get("STRICT_MEME_RATING_PENALTY", 3))
+DISCORD_IDS_STRICT_RATING_APPLIES = [
+    int(discord_id.strip())
+    for discord_id in os.environ.get("STRICT_MEME_STANDARDS_FOR", "").split(",")
+    if discord_id.strip().isdigit()
+]
+
 explained = set[hikari.Snowflake]()
 
 
-async def get_meme_rating(image_url: str, user: str | None) -> agents.MemeAnswer | None:
+async def get_meme_rating(
+    image_url: str, user: str | None, discord_author_id: int | None
+) -> agents.MemeAnswer | None:
     image = requests.get(image_url, stream=True)
+    does_penalty_apply = (
+        True if discord_author_id in DISCORD_IDS_STRICT_RATING_APPLIES else False
+    )
     if not image.raw:
         logging.info("Not image")
         return None
     try:
         response = await agents.meme_rater_agent().run(web_image=image, user=user)
+
         return agents.MemeAnswer(
-            rate=min(max(0, int(response.rate)), 10), explanation=response.explanation
+            rate=min(
+                max(
+                    0,
+                    (
+                        int(response.rate)
+                        - (STRICT_MEME_PENALTY if does_penalty_apply else 0)
+                    ),
+                ),
+                10,
+            ),
+            explanation=response.explanation,
         )
     except Exception as e:
         logging.info(f"Error running reasoner meme rater: {e}")
@@ -63,6 +86,7 @@ def number_emoji(number: int):
 
 
 async def msg_update(event: hikari.GuildMessageUpdateEvent) -> None:
+
     if event.channel_id != MEME_CHANNEL_ID or not event.message.embeds:
         return
 
@@ -87,7 +111,8 @@ async def msg_update(event: hikari.GuildMessageUpdateEvent) -> None:
             username = None
             if event.author:
                 username = event.author.username
-            res = await get_meme_rating(image_url, username)
+            res = await get_meme_rating(image_url, username, event.message.author.id)  # type: ignore
+
             if not res:
                 continue
             ratings.append(res.rate)
@@ -110,7 +135,9 @@ async def msg_create(event: hikari.GuildMessageCreateEvent) -> None:
             continue
         image_url = attachment.url
         try:
-            res = await get_meme_rating(image_url, event.author.username)
+            res = await get_meme_rating(
+                image_url, event.author.username, event.author.id
+            )
             if not res:
                 continue
             ratings.append(res.rate)
