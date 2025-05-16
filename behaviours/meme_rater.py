@@ -12,7 +12,7 @@ import behaviours
 import commons.scheduler
 from commons.meme_stat import MemeStat
 from commons import agents, message_utils
-from typing import Final, Sequence
+from typing import Final
 
 RATER_LOCK = asyncio.Lock()
 
@@ -86,23 +86,6 @@ async def _process_embed(
     return await get_meme_rating(image_url, username)
 
 
-async def _process_media(
-    Sequence: Sequence[hikari.Attachment | hikari.Embed], username: str | None
-) -> tuple[list[int], list[str]]:
-    ratings: list[int] = []
-    explanations: list[str] = []
-
-    for media in Sequence:
-        if isinstance(media, hikari.Attachment):
-            rating = await _process_attachment(media, username)
-        else:
-            rating = await _process_embed(media, username)
-        if rating:
-            ratings.append(rating.rate)
-            explanations.append(rating.explanation)
-    return ratings, explanations
-
-
 async def process_message_content(
     message: hikari.PartialMessage,
 ) -> tuple[list[int], list[str]]:
@@ -114,19 +97,23 @@ async def process_message_content(
     ratings: list[int] = []
     explanations: list[str] = []
 
-    a_ratings, a_explanations = await _process_media(
-        message.attachments,
-        message.author.username,
-    )
-    ratings.extend(a_ratings)
-    explanations.extend(a_explanations)
+    [
+        (ratings.append(er.rate), explanations.append(er.explanation))
+        for er in [
+            await _process_embed(embed, message.author.username)
+            for embed in message.embeds
+        ]
+        if er
+    ]
 
-    e_ratings, e_explanations = await _process_media(
-        message.embeds,
-        message.author.username,
-    )
-    ratings.extend(e_ratings)
-    explanations.extend(e_explanations)
+    [
+        (ratings.append(er.rate), explanations.append(er.explanation))
+        for er in [
+            await _process_attachment(attachment, message.author.username)
+            for attachment in message.attachments
+        ]
+        if er
+    ]
 
     return ratings, explanations
 
