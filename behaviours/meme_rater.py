@@ -62,62 +62,89 @@ def number_emoji(number: int):
     return hikari.UnicodeEmoji.parse(unicode)
 
 
-async def msg_update(event: hikari.GuildMessageUpdateEvent) -> None:
-    if event.channel_id != MEME_CHANNEL_ID or not event.message.embeds:
-        return
+async def _process_attachment(
+    attachment: hikari.Attachment, username: str | None
+) -> tuple[int | None, str | None]:
+    """Process a single attachment and return rating and explanation."""
+    att_ext = (attachment.extension or "").lower()
+    if att_ext not in IMG_FILE_EXTENSIONS:
+        return None, None
+    try:
+        res = await get_meme_rating(attachment.url, username)
+        if not res:
+            return None, None
+        return res.rate, res.explanation
+    except Exception:
+        return None, None
 
-    # We only want to rate the meme if it was not edited after the initial post
-    # Discord does not add an edited timestamp when embedding an image
-    if event.message.edited_timestamp:
-        return
 
-    ratings = list[int]()
-    explanations = list[str]()
+async def _process_embed(
+    embed: hikari.Embed, username: str | None
+) -> tuple[int | None, str | None]:
+    """Process a single embed and return rating and explanation."""
+    image_url = None
+    if embed.thumbnail:
+        image_url = embed.thumbnail.proxy_url
+    elif embed.video and embed.video.proxy_url:
+        image_url = f"{embed.video.proxy_url}?format=webp&width={embed.video.width}&height={embed.video.height}"
+    if not image_url:
+        return None, None
+    try:
+        res = await get_meme_rating(image_url, username)
+        if not res:
+            return None, None
+        return res.rate, res.explanation
+    except Exception:
+        return None, None
 
-    for embed in event.message.embeds:
-        image_url = None
-        if embed.thumbnail:
-            image_url = embed.thumbnail.proxy_url
-        elif embed.video and embed.video.proxy_url:
-            image_url = f"{embed.video.proxy_url}?format=webp&width={embed.video.width}&height={embed.video.height}"
-        if not image_url:
-            continue
 
-        try:
-            username = None
-            if event.author:
-                username = event.author.username
-            res = await get_meme_rating(image_url, username)
-            if not res:
-                continue
-            ratings.append(res.rate)
-            explanations.append(res.explanation)
-        except Exception:
-            continue
-    await rate_meme(event.message, ratings, explanations)
+async def process_message_content(
+    message: hikari.PartialMessage,
+) -> tuple[list[int], list[str]]:
+    """Process all meme content in a message and return ratings and explanations."""
+    # Ensure we have the full message
+    if not isinstance(message, hikari.Message):
+        message = await message.app.rest.fetch_message(message.channel_id, message.id)
+
+    ratings: list[int] = []
+    explanations: list[str] = []
+
+    # Process attachments
+    for attachment in message.attachments or []:
+        rate, explanation = await _process_attachment(
+            attachment,
+            message.author.username if hasattr(message.author, "username") else None,
+        )
+        if rate is not None and explanation is not None:
+            ratings.append(rate)
+            explanations.append(explanation)
+
+    # Process embeds
+    for embed in message.embeds:
+        rate, explanation = await _process_embed(
+            embed,
+            message.author.username if hasattr(message.author, "username") else None,
+        )
+        if rate is not None and explanation is not None:
+            ratings.append(rate)
+            explanations.append(explanation)
+
+    return ratings, explanations
 
 
 async def msg_create(event: hikari.GuildMessageCreateEvent) -> None:
     if event.channel_id != MEME_CHANNEL_ID:
         return
-    ratings = list[int]()
-    explanations = list[str]()
+    ratings, explanations = await process_message_content(event.message)
+    await rate_meme(event.message, ratings, explanations)
 
-    for attachment in event.message.attachments:
-        att_ext = (attachment.extension or "").lower()
-        logging.info(f"Attachment extension: {att_ext}")
-        if att_ext not in IMG_FILE_EXTENSIONS:
-            continue
-        image_url = attachment.url
-        try:
-            res = await get_meme_rating(image_url, event.author.username)
-            if not res:
-                continue
-            ratings.append(res.rate)
-            explanations.append(res.explanation)
-        except Exception:
-            continue
 
+async def msg_update(event: hikari.GuildMessageUpdateEvent) -> None:
+    if event.channel_id != MEME_CHANNEL_ID or not event.message.embeds:
+        return
+    if event.message.edited_timestamp:
+        return
+    ratings, explanations = await process_message_content(event.message)
     await rate_meme(event.message, ratings, explanations)
 
 
