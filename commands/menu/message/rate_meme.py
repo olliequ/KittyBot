@@ -40,10 +40,15 @@ async def rate_meme_command(ctx: lightbulb.MessageContext) -> None:
 
     await ctx.respond(loading_message, flags=hikari.MessageFlag.EPHEMERAL)
 
-    ratings, explanations = await meme_rater.process_message_content(message)
-    if not ratings:
-        await ctx.edit_last_response("Failed to rate the meme...")
+    existing_results = meme_rater.get_meme_stats(message.id)
+
+    if existing_results:
+        await ctx.edit_last_response(
+            f"Rating: {existing_results.meme_score}\nEvaluation: {existing_results.get_emoji()}\nExplanation: {existing_results.meme_reasoning}",
+        )
         return
+
+    ratings, explanations = await meme_rater.process_message_content(message)
 
     results = await meme_rater.rate_meme(message, ratings, explanations)
     if not results:
@@ -51,7 +56,7 @@ async def rate_meme_command(ctx: lightbulb.MessageContext) -> None:
         return
 
     await ctx.edit_last_response(
-        f"Rating: {results['rating']}\nEvaluation: {results['emoji']}\nExplanation: {results['explanation']}",
+        f"Rating: {results.meme_score}\nEvaluation: {results.get_emoji()}\nExplanation: {results.meme_reasoning}",
     )
 
 
