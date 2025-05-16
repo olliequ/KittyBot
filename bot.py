@@ -74,8 +74,7 @@ async def on_stopping(event: hikari.StoppingEvent) -> None:
 
 
 commons.agents.load()
-bot.load_extensions_from("./commands/", must_exist=True)
-bot.load_extensions_from("./commands/menu/message/", must_exist=True)
+bot.load_extensions_from("./commands/", "./commands/menu/message/", must_exist=True)
 behaviours.register(bot)
 
 if __name__ == "__main__":
