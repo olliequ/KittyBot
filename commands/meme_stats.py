@@ -27,18 +27,22 @@ plugin = lightbulb.Plugin("MemeStats")
 @lightbulb.command(
     "memestats", "See the aggregated server or someone's average meme rating over time"
 )
-@lightbulb.implements(lightbulb.PrefixCommand, lightbulb.SlashCommand)
-async def main(ctx: lightbulb.Context):
+@lightbulb.implements(
+    lightbulb.PrefixCommand, lightbulb.SlashCommand, lightbulb.UserCommand
+)
+async def main(ctx: lightbulb.Context | lightbulb.UserContext):
     guild = ctx.get_guild()
     cursor = db.cursor()
     calculate_for_server = True
 
-    target = ctx.options.target
-    if target and guild:
-        user = guild.get_member(target.id)
+    target_user = getattr(ctx.options, "target", ctx.author)
+
+    if target_user and guild:
+        user = guild.get_member(target_user.id)
         calculate_for_server = False
 
-    time_period = ctx.options.period
+    time_period = getattr(ctx.options, "period", "month")
+
     time_period_param = "month" if time_period == "month" else "year"
     # server time UTC offset
     utcoffset_seconds = int(
@@ -46,7 +50,6 @@ async def main(ctx: lightbulb.Context):
     )
 
     if not calculate_for_server:
-
         data = cursor.execute(
             f"""
             select 
@@ -55,11 +58,11 @@ async def main(ctx: lightbulb.Context):
             from
                 meme_stats
             where 
-                user = ? and time_sent >= date('now', '{-1*utcoffset_seconds} seconds', '-1 {time_period_param}')
+                user = ? and time_sent >= date('now', '{-1 * utcoffset_seconds} seconds', '-1 {time_period_param}')
             group by
                 time_period
         """,
-            (target.id,),
+            (target_user.id,),
         ).fetchall()
     else:
         data = cursor.execute(
@@ -70,7 +73,7 @@ async def main(ctx: lightbulb.Context):
             from
                 meme_stats
             where 
-                time_sent >= date('now', '{-1*utcoffset_seconds} seconds', '-1 {time_period_param}')
+                time_sent >= date('now', '{-1 * utcoffset_seconds} seconds', '-1 {time_period_param}')
             group by
                 time_period
         """,
