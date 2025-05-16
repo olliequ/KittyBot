@@ -35,7 +35,7 @@ async def main(ctx: lightbulb.Context | lightbulb.UserContext):
     cursor = db.cursor()
     calculate_for_server = True
 
-    target_user = getattr(ctx.options, "target", ctx.author)
+    target_user = ctx.options.target
 
     if target_user and guild:
         user = guild.get_member(target_user.id)
