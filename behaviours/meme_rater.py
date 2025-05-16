@@ -12,7 +12,7 @@ import behaviours
 import commons.scheduler
 from commons.meme_stat import MemeStat
 from commons import agents, message_utils
-from typing import Final
+from typing import Final, Sequence
 
 RATER_LOCK = asyncio.Lock()
 
@@ -86,6 +86,23 @@ async def _process_embed(
     return await get_meme_rating(image_url, username)
 
 
+async def _process_media(
+    Sequence: Sequence[hikari.Attachment | hikari.Embed], username: str | None
+) -> tuple[list[int], list[str]]:
+    ratings: list[int] = []
+    explanations: list[str] = []
+
+    for media in Sequence:
+        if isinstance(media, hikari.Attachment):
+            rating = await _process_attachment(media, username)
+        else:
+            rating = await _process_embed(media, username)
+        if rating:
+            ratings.append(rating.rate)
+            explanations.append(rating.explanation)
+    return ratings, explanations
+
+
 async def process_message_content(
     message: hikari.PartialMessage,
 ) -> tuple[list[int], list[str]]:
@@ -97,25 +114,19 @@ async def process_message_content(
     ratings: list[int] = []
     explanations: list[str] = []
 
-    # Process attachments
-    for attachment in message.attachments:
-        attachment_rating = await _process_attachment(
-            attachment,
-            message.author.username,
-        )
-        if attachment_rating:
-            ratings.append(attachment_rating.rate)
-            explanations.append(attachment_rating.explanation)
+    a_ratings, a_explanations = await _process_media(
+        message.attachments,
+        message.author.username,
+    )
+    ratings.extend(a_ratings)
+    explanations.extend(a_explanations)
 
-    # Process embeds
-    for embed in message.embeds:
-        embed_rating = await _process_embed(
-            embed,
-            message.author.username,
-        )
-        if embed_rating:
-            ratings.append(embed_rating.rate)
-            explanations.append(embed_rating.explanation)
+    e_ratings, e_explanations = await _process_media(
+        message.embeds,
+        message.author.username,
+    )
+    ratings.extend(e_ratings)
+    explanations.extend(e_explanations)
 
     return ratings, explanations
 
