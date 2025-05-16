@@ -1,7 +1,7 @@
 import hikari
 import lightbulb
 from behaviours import meme_rater
-from random import randint
+from random import choice
 
 plugin = lightbulb.Plugin("meme_context_commands")
 
@@ -36,7 +36,7 @@ async def rate_meme_command(ctx: lightbulb.MessageContext) -> None:
         )
         return
 
-    loading_message = loading_messages[randint(0, len(loading_messages) - 1)]
+    loading_message = choice(loading_messages)
 
     await ctx.respond(loading_message, flags=hikari.MessageFlag.EPHEMERAL)
 
