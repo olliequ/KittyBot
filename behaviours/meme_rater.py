@@ -136,14 +136,53 @@ async def msg_update(event: hikari.GuildMessageUpdateEvent) -> None:
     await rate_meme(event.message, ratings, explanations)
 
 
+possible_emojis: list[hikari.UnicodeEmoji | hikari.CustomEmoji] = [
+    number_emoji(i) for i in range(11)
+]
+possible_emojis.append(hikari.Emoji.parse("🐱"))
+possible_emojis.append(hikari.Emoji.parse("👍"))
+possible_emojis.append(hikari.Emoji.parse("💩"))
+possible_emojis.append(hikari.Emoji.parse("❓"))
+
+
+def get_meme_stats(
+    message_id: hikari.Snowflake,
+) -> MemeStat | None:
+    cursor = db.cursor()
+    stats = cursor.execute(
+        "SELECT * FROM meme_stats WHERE message_id = ?",
+        (message_id,),
+    ).fetchone()
+    if not stats:
+        return None
+    db_meme_stats = MemeStat(
+        author_id=stats[0],
+        message_id=stats[1],
+        meme_score=stats[2],
+        timestamp=stats[3],
+        meme_rating=stats[4],
+        rating_count=stats[5],
+        meme_reasoning=stats[6],
+        emoji="",
+    )
+    return db_meme_stats
+
+
 async def rate_meme(
     message: hikari.PartialMessage, ratings: list[int], explanations: list[str]
-) -> dict[str, str | hikari.UnicodeEmoji] | None:
+) -> MemeStat | None:
+    message = await message.app.rest.fetch_message(message.channel_id, message.id)
+    cursor = db.cursor()
+
+    is_already_rated = any(
+        reaction.emoji in possible_emojis for reaction in message.reactions
+    )
+    if is_already_rated:
+        return get_meme_stats(message.id)
+
     async with RATER_LOCK:
         if not ratings or not explanations:
             return
-
-        cursor = db.cursor()
 
         curr_ratings = cursor.execute(
             "select meme_rating, rating_count from meme_stats where message_id = ?",
