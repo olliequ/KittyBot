@@ -16,8 +16,10 @@
 
 
 import os
-import dotenv, aiohttp
-import hikari, lightbulb
+import dotenv
+import aiohttp
+import hikari
+import lightbulb
 
 # Some modules are naughty and expect to load things from the environment
 # immediately on import.
