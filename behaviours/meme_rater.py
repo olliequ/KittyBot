@@ -64,23 +64,17 @@ def number_emoji(number: int):
 
 async def _process_attachment(
     attachment: hikari.Attachment, username: str | None
-) -> tuple[int | None, str | None]:
+) -> agents.MemeAnswer | None:
     """Process a single attachment and return rating and explanation."""
     att_ext = (attachment.extension or "").lower()
     if att_ext not in IMG_FILE_EXTENSIONS:
-        return None, None
-    try:
-        res = await get_meme_rating(attachment.url, username)
-        if not res:
-            return None, None
-        return res.rate, res.explanation
-    except Exception:
-        return None, None
+        return None
+    return await get_meme_rating(attachment.url, username)
 
 
 async def _process_embed(
     embed: hikari.Embed, username: str | None
-) -> tuple[int | None, str | None]:
+) -> agents.MemeAnswer | None:
     """Process a single embed and return rating and explanation."""
     image_url = None
     if embed.thumbnail:
@@ -88,14 +82,8 @@ async def _process_embed(
     elif embed.video and embed.video.proxy_url:
         image_url = f"{embed.video.proxy_url}?format=webp&width={embed.video.width}&height={embed.video.height}"
     if not image_url:
-        return None, None
-    try:
-        res = await get_meme_rating(image_url, username)
-        if not res:
-            return None, None
-        return res.rate, res.explanation
-    except Exception:
-        return None, None
+        return None
+    return await get_meme_rating(image_url, username)
 
 
 async def process_message_content(
@@ -111,23 +99,23 @@ async def process_message_content(
 
     # Process attachments
     for attachment in message.attachments:
-        rate, explanation = await _process_attachment(
+        attachment_rating = await _process_attachment(
             attachment,
             message.author.username,
         )
-        if rate is not None and explanation is not None:
-            ratings.append(rate)
-            explanations.append(explanation)
+        if attachment_rating:
+            ratings.append(attachment_rating.rate)
+            explanations.append(attachment_rating.explanation)
 
     # Process embeds
     for embed in message.embeds:
-        rate, explanation = await _process_embed(
+        embed_rating = await _process_embed(
             embed,
             message.author.username,
         )
-        if rate is not None and explanation is not None:
-            ratings.append(rate)
-            explanations.append(explanation)
+        if embed_rating:
+            ratings.append(embed_rating.rate)
+            explanations.append(embed_rating.explanation)
 
     return ratings, explanations
 
