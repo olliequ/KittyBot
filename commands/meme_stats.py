@@ -135,7 +135,13 @@ async def main(ctx: lightbulb.Context | lightbulb.UserContext):
         plt.tight_layout()
         plt.savefig(buffer, format="png", dpi=300)
         plt.close()
-        await ctx.respond(hikari.Bytes(buffer.getvalue(), "meme_score_results.png"))
+
+        flags = hikari.UNDEFINED
+        if isinstance(ctx, lightbulb.UserContext):
+            flags = hikari.MessageFlag.EPHEMERAL
+        await ctx.respond(
+            hikari.Bytes(buffer.getvalue(), "meme_score_results.png"), flags=flags
+        )
 
 
 def load(bot: lightbulb.BotApp) -> None:
