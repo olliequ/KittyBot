@@ -235,11 +235,6 @@ async def rate_meme(
                 ),
             )
         else:
-            if not isinstance(message, hikari.Message):
-                # This should be rare, only happening if we dropped message creation events
-                message = await message.app.rest.fetch_message(
-                    message.channel_id, message
-                )
             cursor.execute(
                 "insert into meme_stats values(?, ?, ?, ?, ?, ?, ?)",
                 (
