@@ -1,8 +1,25 @@
 import hikari
 import lightbulb
 from behaviours import meme_rater
+from random import randint
 
 plugin = lightbulb.Plugin("meme_context_commands")
+
+loading_messages = [
+    "Rating meme...",
+    "Processing meme...",
+    "Analyzing meme...",
+    "Evaluating meme...",
+    "Assessing meme...",
+    "Grading meme...",
+    "Reviewing meme...",
+    "Examining meme...",
+    "Judging meme...",
+    "Scoring meme...",
+    "Stand back, meme rating in progress...",
+    "Hold tight, meme rating underway...",
+    "Just a moment, meme rating in progress...",
+]
 
 
 @plugin.command
@@ -19,7 +36,9 @@ async def rate_meme_command(ctx: lightbulb.MessageContext) -> None:
         )
         return
 
-    await ctx.respond("Rating meme...", flags=hikari.MessageFlag.EPHEMERAL)
+    loading_message = loading_messages[randint(0, len(loading_messages) - 1)]
+
+    await ctx.respond(loading_message, flags=hikari.MessageFlag.EPHEMERAL)
 
     ratings, explanations = await meme_rater.process_message_content(message)
     if not ratings:
