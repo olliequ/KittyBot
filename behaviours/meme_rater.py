@@ -110,10 +110,10 @@ async def process_message_content(
     explanations: list[str] = []
 
     # Process attachments
-    for attachment in message.attachments or []:
+    for attachment in message.attachments:
         rate, explanation = await _process_attachment(
             attachment,
-            message.author.username if hasattr(message.author, "username") else None,
+            message.author.username,
         )
         if rate is not None and explanation is not None:
             ratings.append(rate)
@@ -123,7 +123,7 @@ async def process_message_content(
     for embed in message.embeds:
         rate, explanation = await _process_embed(
             embed,
-            message.author.username if hasattr(message.author, "username") else None,
+            message.author.username,
         )
         if rate is not None and explanation is not None:
             ratings.append(rate)
