@@ -49,14 +49,11 @@ async def rate_meme_command(ctx: lightbulb.MessageContext) -> None:
 
     results = await meme_rater.rate_meme(message, ratings, explanations)
     if not results:
-        await ctx.edit_last_response(
-            "Failed to rate the meme...", flags=hikari.MessageFlag.EPHEMERAL
-        )
+        await ctx.edit_last_response("Failed to rate the meme...")
         return
 
     await ctx.edit_last_response(
         f"Rating: {results['rating']}\nEvaluation: {results['emoji']}\nExplanation: {results['explanation']}",
-        flags=hikari.MessageFlag.EPHEMERAL,
     )
 
 
