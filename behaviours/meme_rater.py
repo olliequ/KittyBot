@@ -177,7 +177,7 @@ async def rate_meme(
         return db_meme_stats
 
     async with RATER_LOCK:
-        if (not rating_results) or (len(rating_results) == 0):
+        if len(rating_results) == 0:
             return
 
         curr_ratings = cursor.execute(
