@@ -131,15 +131,6 @@ async def msg_update(event: hikari.GuildMessageUpdateEvent) -> None:
     await rate_meme(event.message, results)
 
 
-possible_emojis: list[hikari.UnicodeEmoji | hikari.CustomEmoji] = [
-    number_emoji(i) for i in range(11)
-]
-possible_emojis.append(hikari.Emoji.parse("🐱"))
-possible_emojis.append(hikari.Emoji.parse("👍"))
-possible_emojis.append(hikari.Emoji.parse("💩"))
-possible_emojis.append(hikari.Emoji.parse("❓"))
-
-
 def get_meme_stats(
     message_id: hikari.Snowflake,
 ) -> MemeStat | None:
