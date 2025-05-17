@@ -154,7 +154,9 @@ def get_meme_stats(
 
 
 async def rate_meme(
-    message: hikari.PartialMessage, rating_results: list[agents.MemeAnswer]
+    message: hikari.PartialMessage,
+    rating_results: list[agents.MemeAnswer],
+    is_command: bool = False,
 ) -> MemeStat | None:
     message = await message.app.rest.fetch_message(message.channel_id, message.id)
 
@@ -204,7 +206,9 @@ async def rate_meme(
             emoji_to_add.append("👍")
         else:
             emoji_to_add.append("💩")
-        emoji_to_add.append("❓")
+
+        if message.channel_id == MEME_CHANNEL_ID:
+            emoji_to_add.append("❓")
 
         for emoji in emoji_to_add:
             await message.add_reaction(emoji=emoji)
