@@ -169,11 +169,12 @@ async def rate_meme(
     message = await message.app.rest.fetch_message(message.channel_id, message.id)
     cursor = db.cursor()
 
-    is_already_rated = any(
-        reaction.emoji in possible_emojis for reaction in message.reactions
-    )
-    if is_already_rated:
-        return get_meme_stats(message.id)
+    # Check if the message is already rated
+    db_meme_stats = get_meme_stats(message.id)
+
+    # If the message is already rated, return the existing rating
+    if db_meme_stats is not None:
+        return db_meme_stats
 
     async with RATER_LOCK:
         if (not rating_results) or (len(rating_results) == 0):
