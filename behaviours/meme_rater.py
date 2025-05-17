@@ -207,14 +207,16 @@ async def rate_meme(
         if entry_exists:
             await message.remove_all_reactions()
 
-        await message.add_reaction(emoji=number_emoji(avg_rating))
-        await message.add_reaction(emoji="🐱")
+        emoji_to_add = [number_emoji(avg_rating), "🐱"]
 
         if avg_rating >= MINIMUM_MEME_RATING_TO_NOT_DELETE:
-            await message.add_reaction(emoji="👍")
+            emoji_to_add.append("👍")
         else:
-            await message.add_reaction(emoji="💩")
-        await message.add_reaction(emoji="❓")
+            emoji_to_add.append("💩")
+        emoji_to_add.append("❓")
+
+        for emoji in emoji_to_add:
+            await message.add_reaction(emoji=emoji)
 
         # add some basic meme stats to the db so we can track who is improving, rotting, or standing still
         # avg rating row inserted is just for this set of memes. Another query elsewhere aggregates.
