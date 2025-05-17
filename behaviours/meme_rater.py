@@ -158,7 +158,6 @@ def get_meme_stats(
         meme_rating=stats[4],
         rating_count=stats[5],
         meme_reasoning=stats[6],
-        emoji="",
     )
     return db_meme_stats
 
@@ -167,7 +166,6 @@ async def rate_meme(
     message: hikari.PartialMessage, rating_results: list[agents.MemeAnswer]
 ) -> MemeStat | None:
     message = await message.app.rest.fetch_message(message.channel_id, message.id)
-    cursor = db.cursor()
 
     # Check if the message is already rated
     db_meme_stats = get_meme_stats(message.id)
@@ -180,6 +178,7 @@ async def rate_meme(
         if len(rating_results) == 0:
             return
 
+        cursor = db.cursor()
         curr_ratings = cursor.execute(
             "select meme_rating, rating_count from meme_stats where message_id = ?",
             (message.id,),
