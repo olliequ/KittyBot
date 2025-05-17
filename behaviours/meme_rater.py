@@ -207,17 +207,13 @@ async def rate_meme(
         if entry_exists:
             await message.remove_all_reactions()
 
-        final_emoji = "🐱"
-
         await message.add_reaction(emoji=number_emoji(avg_rating))
-        await message.add_reaction(emoji=final_emoji)
+        await message.add_reaction(emoji="🐱")
 
         if avg_rating >= MINIMUM_MEME_RATING_TO_NOT_DELETE:
-            final_emoji = "👍"
-            await message.add_reaction(emoji=final_emoji)
+            await message.add_reaction(emoji="👍")
         else:
-            final_emoji = "💩"
-            await message.add_reaction(emoji=final_emoji)
+            await message.add_reaction(emoji="💩")
         await message.add_reaction(emoji="❓")
 
         # add some basic meme stats to the db so we can track who is improving, rotting, or standing still
@@ -251,7 +247,6 @@ async def rate_meme(
 
         meme_stat = MemeStat(
             author_id=message.author.id,
-            emoji=final_emoji,
             meme_rating=avg_rating,
             meme_reasoning=str_explanations,
             meme_score=avg_rating,

@@ -44,7 +44,7 @@ async def rate_meme_command(ctx: lightbulb.MessageContext) -> None:
 
     if existing_results:
         await ctx.edit_last_response(
-            f"Rating: {existing_results.meme_score}\nEvaluation: {existing_results.get_emoji()}\nExplanation: {existing_results.meme_reasoning}",
+            f"Rating: {existing_results.meme_score}\nEvaluation: {existing_results.emoji()}\nExplanation: {existing_results.meme_reasoning}",
         )
         return
 
@@ -56,7 +56,7 @@ async def rate_meme_command(ctx: lightbulb.MessageContext) -> None:
         return
 
     await ctx.edit_last_response(
-        f"Rating: {results.meme_score}\nEvaluation: {results.get_emoji()}\nExplanation: {results.meme_reasoning}",
+        f"Rating: {results.meme_score}\nEvaluation: {results.emoji()}\nExplanation: {results.meme_reasoning}",
     )
 
 

@@ -13,7 +13,6 @@ MINIMUM_MEME_RATING_TO_NOT_DELETE: Final[int] = int(
 @dataclass
 class MemeStat:
     author_id: Optional[hikari.Snowflake]
-    emoji: Optional[str | hikari.Emoji | hikari.UnicodeEmoji | hikari.CustomEmoji]
     meme_rating: Optional[int]
     meme_reasoning: str
     meme_score: int
@@ -21,8 +20,7 @@ class MemeStat:
     rating_count: Optional[int]
     timestamp: Optional[datetime]
 
-    def get_emoji(self) -> hikari.Emoji:
+    def emoji(self) -> hikari.Emoji:
         if self.meme_score >= MINIMUM_MEME_RATING_TO_NOT_DELETE:
-            self.emoji = hikari.Emoji.parse("👍")
-        self.emoji = hikari.Emoji.parse("💩")
-        return self.emoji
+            return hikari.Emoji.parse("👍")
+        return hikari.Emoji.parse("💩")
