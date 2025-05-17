@@ -48,9 +48,9 @@ async def rate_meme_command(ctx: lightbulb.MessageContext) -> None:
         )
         return
 
-    ratings, explanations = await meme_rater.process_message_content(message)
+    ratings = await meme_rater.process_message_content(message)
 
-    results = await meme_rater.rate_meme(message, ratings, explanations)
+    results = await meme_rater.rate_meme(message, ratings)
     if not results:
         await ctx.edit_last_response("Failed to rate the meme...")
         return
