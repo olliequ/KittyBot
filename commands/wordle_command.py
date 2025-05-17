@@ -83,7 +83,7 @@ async def main(ctx: lightbulb.Context) -> None:
     await ctx.respond(embed)
 
     # todo: remove this after testing
-    if current_game.over:
+    if current_game.over and os.environ.get("DEBUG", "false") in ("true", "1"):
         WORDLE_CACHE.clear()
 
 
