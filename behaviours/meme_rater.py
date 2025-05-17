@@ -54,6 +54,14 @@ async def get_meme_rating(image_url: str, user: str | None) -> agents.MemeAnswer
         return None
 
 
+async def get_meme_ratings(
+    image_urls: list[str], user: str | None
+) -> list[agents.MemeAnswer | None]:
+    """Get meme ratings for a list of image URLs."""
+    tasks = [get_meme_rating(url, user) for url in image_urls]
+    return await asyncio.gather(*tasks)
+
+
 def number_emoji(number: int):
     if number == 10:
         unicode = "\N{KEYCAP TEN}"
@@ -62,19 +70,15 @@ def number_emoji(number: int):
     return hikari.UnicodeEmoji.parse(unicode)
 
 
-async def _process_attachment(
-    attachment: hikari.Attachment, username: str | None
-) -> agents.MemeAnswer | None:
+def _extract_attachment_url(attachment: hikari.Attachment) -> str | None:
     """Process a single attachment and return rating and explanation."""
     att_ext = (attachment.extension or "").lower()
     if att_ext not in IMG_FILE_EXTENSIONS:
         return None
-    return await get_meme_rating(attachment.url, username)
+    return attachment.url
 
 
-async def _process_embed(
-    embed: hikari.Embed, username: str | None
-) -> agents.MemeAnswer | None:
+def _extract_urls_in_embed(embed: hikari.Embed) -> str | None:
     """Process a single embed and return rating and explanation."""
     image_url = None
     if embed.thumbnail:
@@ -83,46 +87,35 @@ async def _process_embed(
         image_url = f"{embed.video.proxy_url}?format=webp&width={embed.video.width}&height={embed.video.height}"
     if not image_url:
         return None
-    return await get_meme_rating(image_url, username)
+    return image_url
 
 
 async def process_message_content(
     message: hikari.PartialMessage,
-) -> tuple[list[int], list[str]]:
+) -> list[agents.MemeAnswer]:
     """Process all meme content in a message and return ratings and explanations."""
     # Ensure we have the full message
     if not isinstance(message, hikari.Message):
         message = await message.app.rest.fetch_message(message.channel_id, message.id)
 
-    ratings: list[int] = []
-    explanations: list[str] = []
+    # Extract URLs from embeds and attachments
 
-    [
-        (ratings.append(er.rate), explanations.append(er.explanation))
-        for er in [
-            await _process_embed(embed, message.author.username)
-            for embed in message.embeds
-        ]
-        if er
-    ]
+    media_urls = [
+        _extract_attachment_url(attachment) for attachment in message.attachments
+    ] + [_extract_urls_in_embed(embed) for embed in message.embeds]
+    valid_urls = [url for url in media_urls if url]
 
-    [
-        (ratings.append(er.rate), explanations.append(er.explanation))
-        for er in [
-            await _process_attachment(attachment, message.author.username)
-            for attachment in message.attachments
-        ]
-        if er
-    ]
+    rating_results = await get_meme_ratings(valid_urls, message.author.username)
+    valid_results = [result for result in rating_results if result is not None]
 
-    return ratings, explanations
+    return valid_results
 
 
 async def msg_create(event: hikari.GuildMessageCreateEvent) -> None:
     if event.channel_id != MEME_CHANNEL_ID:
         return
-    ratings, explanations = await process_message_content(event.message)
-    await rate_meme(event.message, ratings, explanations)
+    results = await process_message_content(event.message)
+    await rate_meme(event.message, results)
 
 
 async def msg_update(event: hikari.GuildMessageUpdateEvent) -> None:
@@ -130,8 +123,8 @@ async def msg_update(event: hikari.GuildMessageUpdateEvent) -> None:
         return
     if event.message.edited_timestamp:
         return
-    ratings, explanations = await process_message_content(event.message)
-    await rate_meme(event.message, ratings, explanations)
+    results = await process_message_content(event.message)
+    await rate_meme(event.message, results)
 
 
 possible_emojis: list[hikari.UnicodeEmoji | hikari.CustomEmoji] = [
@@ -167,7 +160,7 @@ def get_meme_stats(
 
 
 async def rate_meme(
-    message: hikari.PartialMessage, ratings: list[int], explanations: list[str]
+    message: hikari.PartialMessage, rating_results: list[agents.MemeAnswer]
 ) -> MemeStat | None:
     message = await message.app.rest.fetch_message(message.channel_id, message.id)
     cursor = db.cursor()
@@ -179,7 +172,7 @@ async def rate_meme(
         return get_meme_stats(message.id)
 
     async with RATER_LOCK:
-        if not ratings or not explanations:
+        if (not rating_results) or (len(rating_results) == 0):
             return
 
         curr_ratings = cursor.execute(
@@ -191,17 +184,21 @@ async def rate_meme(
             curr_ratings = (0, 0)
             entry_exists = False
 
+        ratings_sum = sum([result.rate for result in rating_results])
+        ratings_count = len(rating_results)
+
+        new_rating_sum = ratings_sum + curr_ratings[0]
+        new_rating_count = ratings_count + curr_ratings[1]
+
         avg_rating: int = min(
-            max(
-                0, (sum(ratings) + curr_ratings[0]) // (len(ratings) + curr_ratings[1])
-            ),
+            max(0, new_rating_sum // new_rating_count),
             10,
         )
 
-        if len(explanations) > 1:
-            str_explanations = "\n".join(["* " + s for s in explanations])
+        if ratings_count > 1:
+            str_explanations = "\n".join(["* " + s.explanation for s in rating_results])
         else:
-            str_explanations = explanations[0]
+            str_explanations = rating_results[0].explanation
 
         if entry_exists:
             await message.remove_all_reactions()
@@ -225,8 +222,8 @@ async def rate_meme(
             cursor.execute(
                 "update meme_stats set meme_rating = ?, rating_count = ?, meme_score = ?, meme_reasoning=? WHERE message_id = ?",
                 (
-                    sum(ratings) + curr_ratings[0],
-                    len(ratings) + curr_ratings[1],
+                    new_rating_sum,
+                    new_rating_count,
                     avg_rating,
                     str_explanations,
                     message.id,
@@ -240,8 +237,8 @@ async def rate_meme(
                     message.id,
                     avg_rating,
                     message.timestamp,
-                    sum(ratings),
-                    len(ratings),
+                    ratings_sum,
+                    ratings_count,
                     str_explanations,
                 ),
             )
@@ -255,7 +252,7 @@ async def rate_meme(
             meme_reasoning=str_explanations,
             meme_score=avg_rating,
             message_id=message.id,
-            rating_count=len(ratings),
+            rating_count=ratings_count,
             timestamp=message.timestamp,
         )
 
