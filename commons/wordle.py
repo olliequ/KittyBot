@@ -1,3 +1,4 @@
+import sqlite3
 from collections import defaultdict, Counter
 import re
 import json
@@ -5,20 +6,20 @@ from pathlib import Path
 from typing import Callable, TypedDict
 from enum import Enum
 import commons.db as db
+import logging
 
 ASSETS = Path(__file__).resolve().parent.parent / "assets"  # one level up
 EMOJI_MAP_PATH = ASSETS / "wordle_emoji_map.json"  # load file at start-up
-
-with open(EMOJI_MAP_PATH, encoding="utf8") as f:
-    """
-    Expecting a JSON file of format...
-    emoji_map = {
-        "orange t": "<:orange_t:1372526615484960818>",
-        "black h": "<:black_h:1372526617414467705>"
-    }
-    and so on for orange, black, grey, green.
-    """
-    EMOJI_MAP = json.load(f)
+emoji_map: dict[str, str] = {}
+try:
+    with open(EMOJI_MAP_PATH, encoding="utf8") as f:
+        emoji_map = json.load(f)
+except FileNotFoundError:
+    logging.warning(
+        "Emoji map not found, using empty map which will use letters instead of proper emoji :)"
+    )
+except json.JSONDecodeError as err:
+    raise ValueError(f"Malformed emoji map: {err}") from err
 
 
 def load_words():
@@ -153,7 +154,7 @@ class BasicWordle:
             # start next round
             self.start_round()
         # do some DB stuff for stats or whatever
-        cursor = db.cursor()
+        cursor: sqlite3.Cursor = db.cursor()
         cursor.execute(
             """insert into
                         wordle_stats
@@ -245,7 +246,7 @@ class BasicWordle:
         for idx, (row, user_id) in enumerate(self.past_guesses):
             emojis = (
                 " ".join(
-                    EMOJI_MAP.get(f"{guess[2].value} {guess[1]}", guess[1])
+                    emoji_map.get(f"{guess[2].value} {guess[1]}", guess[1])
                     for guess in row
                 )
                 + " "
@@ -265,7 +266,7 @@ class BasicWordle:
 
         keyboard = "\n".join(
             "".join(
-                EMOJI_MAP.get(
+                emoji_map.get(
                     (
                         f"grey {ch}"
                         if not self.keyboard[ch]
