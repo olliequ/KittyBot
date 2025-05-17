@@ -32,9 +32,11 @@ WORDLE_SOLUTION_WORD_LENGTH = 6
     type="string",
 )
 @lightbulb.command("wordle", "Co-op wordle.")
-@lightbulb.implements(lightbulb.SlashCommand)
+@lightbulb.implements(lightbulb.SlashCommand, lightbulb.PrefixCommand)
 async def main(ctx: lightbulb.Context) -> None:
     guess = ctx.options.attempt.lower()
+    if len(guess) != WORDLE_SOLUTION_WORD_LENGTH:
+        await ctx.respond(f"Guess needs to be {WORDLE_SOLUTION_WORD_LENGTH} chars long")
     day = datetime.today().strftime("%Y-%m-%d")
     # init game...
     # todo: more principled solution than global state
