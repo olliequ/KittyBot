@@ -103,10 +103,14 @@ async def process_message_content(
     media_urls = [
         _extract_attachment_url(attachment) for attachment in message.attachments
     ] + [_extract_urls_in_embed(embed) for embed in message.embeds]
+
+    # Filter out None values
     valid_urls = [url for url in media_urls if url]
 
     rating_results = await get_meme_ratings(valid_urls, message.author.username)
-    valid_results = [result for result in rating_results if result is not None]
+
+    # Filter out None values
+    valid_results = [result for result in rating_results if result]
 
     return valid_results
 
