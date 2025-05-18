@@ -3,6 +3,7 @@ import hikari, lightbulb
 from commons.wordle import BasicWordle, load_words
 import random
 import os
+import logging
 
 
 plugin = lightbulb.Plugin("Kitti Co-op Wordle")
@@ -50,7 +51,7 @@ async def main(ctx: lightbulb.Context) -> None:
     except KeyError:
         WORDLE_CACHE.clear()
         current_target_word = random.choice(VALID_SOLUTION_WORDS)
-        print(current_target_word)
+        logging.info(f"{day}'s wordle word is: {current_target_word}")
         WORDLE_CACHE[day] = BasicWordle(
             rounds=9, target_word=current_target_word, day=day
         )

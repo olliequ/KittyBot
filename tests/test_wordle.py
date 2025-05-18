@@ -129,6 +129,69 @@ class TestBasicWordleRepeatGuessSameScore(unittest.TestCase):
         self.assertEqual(self.game.score_board[self.uid], 4)
 
 
+class TestBasicWordleOrangeGreenFlips(unittest.TestCase):
+    def setUp(self):
+        self.uid = 1
+        self.game = BasicWordle(day="t", target_word="tartan")
+
+    def test_scores(self):
+        """Checking that flipping oranges to greens as singles or multiples scores correctly"""
+        # first orange a
+        self.game.guess("axxxxx", self.uid)
+        self.assertFalse(self.game.won)
+        self.assertFalse(self.game.over)
+        self.assertEqual(len(self.game.past_guesses), 1)
+        self.assertEqual(self.game.score_board[self.uid], 1)
+        # flip first orange a to green
+        self.game.guess("xaxxxx", self.uid)
+        self.assertFalse(self.game.won)
+        self.assertFalse(self.game.over)
+        self.assertEqual(len(self.game.past_guesses), 2)
+        self.assertEqual(self.game.score_board[self.uid], 2)
+        # second orange a
+        self.game.guess("axxxxx", self.uid)
+        self.assertFalse(self.game.won)
+        self.assertFalse(self.game.over)
+        self.assertEqual(len(self.game.past_guesses), 3)
+        self.assertEqual(self.game.score_board[self.uid], 3)
+        # don't flip second orange a
+        self.game.guess("xaxxxx", self.uid)
+        self.assertFalse(self.game.won)
+        self.assertFalse(self.game.over)
+        self.assertEqual(len(self.game.past_guesses), 4)
+        self.assertEqual(self.game.score_board[self.uid], 3)
+        # flip second orange a
+        self.game.guess("xaxxax", self.uid)
+        self.assertFalse(self.game.won)
+        self.assertFalse(self.game.over)
+        self.assertEqual(len(self.game.past_guesses), 5)
+        self.assertEqual(self.game.score_board[self.uid], 4)
+        # flip both t's to orange
+        self.game.guess("xatxat", self.uid)
+        self.assertFalse(self.game.won)
+        self.assertFalse(self.game.over)
+        self.assertEqual(len(self.game.past_guesses), 6)
+        self.assertEqual(self.game.score_board[self.uid], 6)
+        # flip both t's to green
+        self.game.guess("taxtax", self.uid)
+        self.assertFalse(self.game.won)
+        self.assertFalse(self.game.over)
+        self.assertEqual(len(self.game.past_guesses), 7)
+        self.assertEqual(self.game.score_board[self.uid], 8)
+        # flip r and n to orange
+        self.game.guess("tantar", self.uid)
+        self.assertFalse(self.game.won)
+        self.assertFalse(self.game.over)
+        self.assertEqual(len(self.game.past_guesses), 8)
+        self.assertEqual(self.game.score_board[self.uid], 10)
+        # flip r and n to green
+        self.game.guess("tartan", self.uid)
+        self.assertTrue(self.game.won)
+        self.assertTrue(self.game.over)
+        self.assertEqual(len(self.game.past_guesses), 9)
+        self.assertEqual(self.game.score_board[self.uid], 12)
+
+
 class TestBasicWordleScoreLoss(unittest.TestCase):
     def setUp(self):
         self.uid = 1

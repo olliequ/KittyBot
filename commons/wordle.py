@@ -99,7 +99,7 @@ class BasicWordle:
         self.start_round(is_first_round=True)
 
     def _track_flips_score(
-        self, ch: str, is_exact: bool, remaining: Counter[str], idx: int
+        self, *, ch: str, is_exact: bool, remaining: Counter[str], idx: int
     ) -> int:
         """
         Update flips + remaining and return score for this tile.
@@ -167,6 +167,7 @@ class BasicWordle:
                 values (?, ?, ?, ?, ?)""",
             (id_user, self.day, self.round, self.score_board[id_user], guess_word),
         )
+        db.commit()
 
         if self._is_solved():
             self.won = self.over = True
@@ -226,7 +227,9 @@ class BasicWordle:
                     idx,
                     ch,
                     Tile.CORRECT,
-                    self._track_flips_score(ch, True, remaining, idx),
+                    self._track_flips_score(
+                        ch=ch, is_exact=True, remaining=remaining, idx=idx
+                    ),
                 )
                 self._update_keyboard(ch, True, remaining)
         # 2. orange / absent (orange / grey)
@@ -241,7 +244,9 @@ class BasicWordle:
                     (
                         0  # fewer of this specific misplaced char in guess than have been revealed, so don't bother trying to score
                         if guess.count(ch) <= self.flips[ch]["counts"]["orange"]
-                        else self._track_flips_score(ch, False, remaining, idx)
+                        else self._track_flips_score(
+                            ch=ch, is_exact=False, remaining=remaining, idx=idx
+                        )
                     ),
                 )
                 remaining[ch] -= 1
@@ -249,7 +254,6 @@ class BasicWordle:
             else:
                 current_guess[idx] = (idx, ch, Tile.NOT_PRESENT, 0)
                 self._update_keyboard(ch, False, remaining)
-
         self.current_guess = current_guess[:]
         self.finish_round(id_user, guess)
 

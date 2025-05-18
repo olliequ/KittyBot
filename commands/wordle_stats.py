@@ -51,7 +51,7 @@ async def main(ctx: lightbulb.Context) -> None:
         """
         SELECT guess, COUNT(*) AS cnt
         FROM   wordle_stats
-        WHERE  user = ? AND round = 1
+        WHERE  user = ? AND round = 0
         GROUP  BY guess
         ORDER  BY cnt DESC
         LIMIT  1
