@@ -39,6 +39,10 @@ async def main(ctx: lightbulb.Context) -> None:
         await ctx.respond(f"Guess needs to be {WORDLE_SOLUTION_WORD_LENGTH} chars long")
         return
     day = datetime.today().strftime("%Y-%m-%d")
+    user = ctx.member
+    if user is None:
+        await ctx.respond("No user ID for some reason!")
+        return
     # init game...
     # todo: more principled solution than global state
     try:
@@ -60,16 +64,12 @@ async def main(ctx: lightbulb.Context) -> None:
     if guess not in VALID_GUESS_WORDS:
         await ctx.respond("Not a valid word for a guess!")
         return
-    user = ctx.member
-    if user is None:
-        await ctx.respond("No user ID for some reason!")
-        return
-    # play
     if current_game.over:
         # game is either won or failed, render the state that it ended at
         # split up the two game string outputs to reduce risk of Discord embed field char limit error
         game_render, keyboard_render = current_game.render()
     else:
+        # play
         current_game.guess(guess, user.id)
         game_render, keyboard_render = current_game.render()
 
@@ -85,7 +85,7 @@ async def main(ctx: lightbulb.Context) -> None:
     )
     await ctx.respond(embed)
 
-    # todo: remove this after testing
+    # clear wordle game in debug condition
     if current_game.over and os.environ.get("DEBUG", "false") in ("true", "1"):
         WORDLE_CACHE.clear()
 

@@ -10,7 +10,7 @@ def _bar(val: float, scale: float) -> str:
 
 @plugin.command
 @lightbulb.command(
-    "wordle_stats", "Show your last 10 Kitti Wordle scores as an ASCII graph."
+    "wordle_stats", "Shows assorted stats from your Kitti co-ordle guess history."
 )
 @lightbulb.implements(lightbulb.SlashCommand)
 async def main(ctx: lightbulb.Context) -> None:

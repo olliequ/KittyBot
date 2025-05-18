@@ -33,7 +33,7 @@ class TestBasicWordleScoreWin(unittest.TestCase):
         self.game = BasicWordle(day="t", target_word="pepper")
 
     def test_scores(self):
-        """Guessing the solution in round 1 sets won/over and scores correctly"""
+        """Guessing the solution over 4 rounds sets won/over and scores correctly"""
         self.game.guess("couple", self.uid)
         self.assertFalse(self.game.won)
         self.assertFalse(self.game.over)
@@ -103,7 +103,7 @@ class TestBasicWordleRepeatGuessSameScore(unittest.TestCase):
         self.game = BasicWordle(day="t", target_word="tartan")
 
     def test_scores(self):
-        """Guessing the solution and scores correctly"""
+        """Checking that repeated words do not alter the score"""
         self.game.guess("estate", self.uid)
         self.assertFalse(self.game.won)
         self.assertFalse(self.game.over)
@@ -135,7 +135,7 @@ class TestBasicWordleScoreLoss(unittest.TestCase):
         self.game = BasicWordle(day="t", target_word="pepper", rounds=4)
 
     def test_scores(self):
-        """Guessing the solution in round 1 sets won/over and scores correctly"""
+        """Failing to guess the solution over 4 rounds sets won/over and scores correctly"""
         self.game.guess("couple", self.uid)
         self.assertFalse(self.game.won)
         self.assertFalse(self.game.over)

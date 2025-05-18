@@ -52,8 +52,8 @@ class Tile(Enum):
     NOT_PRESENT = "black"
 
 
-# map each colour to a wrapper for the letter
-# let's you play a version of this in a terminal for debugging
+# map each colour to a wrapper for the letter if the emoji map is not present
+# let's you also play a version of this in a terminal for debugging
 wrap: dict[str, Callable[[str], str]] = {
     "orange": lambda c: f"{{{c}}}",  # {t}
     "green": lambda c: f"[{c}]",  # [r]
@@ -75,7 +75,6 @@ class BasicWordle:
         rounds: int = 9,
     ):
         self.max_rounds = rounds
-        # used for DB lookup of game state
         self.day = day
         # store the solution for convenience
         self.target_word = target_word
@@ -83,13 +82,14 @@ class BasicWordle:
         self.score_board: defaultdict[int, int] = defaultdict(int)
         # list of all the past guesses
         self.past_guesses: list[tuple[list[tuple[int, str, Tile, int]], int]] = []
-        # used to display
+        # wordle keyboard
         self.keyboard: defaultdict[str, Tile] = defaultdict(lambda: Tile.DEFAULT)
-        # used for scoring bookkeeping
+        # scoring bookkeeping
         self.flips: defaultdict[str, FlipInfo] = defaultdict(_template)
         # initial letter flip possibilities
         for letter in self.target_word:
             self.flips[letter]["counts"]["grey"] += 1
+        # initial current guess with placeholder data
         self.current_guess: list[tuple[int, str, Tile, int]] = [
             (0, "", Tile.DEFAULT, 0)
         ] * len(self.target_word)
@@ -175,6 +175,9 @@ class BasicWordle:
             self.start_round()
 
     def calculate_round_scores(self, guess: list[tuple[int, str, Tile, int]]) -> int:
+        """
+        Calculates scores for a single list of guesses
+        """
         return sum([item[3] for item in guess])
 
     def _is_solved(self):
@@ -322,6 +325,9 @@ class BasicWordle:
 
 
 if __name__ == "__main__":
+    """
+    Basic terminal version for debugging
+    """
     pat = re.compile(r"<:(orange|green|black|grey)_([a-z]):\d+>")
 
     def replace(m: re.Match[str]) -> str:
