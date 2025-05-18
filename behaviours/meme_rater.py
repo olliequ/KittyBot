@@ -10,7 +10,7 @@ import asyncio
 import humanize
 import behaviours
 import commons.scheduler
-
+from commons.meme_stat import MemeStat
 from commons import agents, message_utils
 from typing import Final
 
@@ -54,6 +54,14 @@ async def get_meme_rating(image_url: str, user: str | None) -> agents.MemeAnswer
         return None
 
 
+async def get_meme_ratings(
+    image_urls: list[str], user: str | None
+) -> list[agents.MemeAnswer | None]:
+    """Get meme ratings for a list of image URLs."""
+    tasks = [get_meme_rating(url, user) for url in image_urls]
+    return await asyncio.gather(*tasks)
+
+
 def number_emoji(number: int):
     if number == 10:
         unicode = "\N{KEYCAP TEN}"
@@ -62,74 +70,108 @@ def number_emoji(number: int):
     return hikari.UnicodeEmoji.parse(unicode)
 
 
-async def msg_update(event: hikari.GuildMessageUpdateEvent) -> None:
-    if event.channel_id != MEME_CHANNEL_ID or not event.message.embeds:
-        return
+def _extract_attachment_url(attachment: hikari.Attachment) -> str | None:
+    """Process a single attachment and return rating and explanation."""
+    att_ext = (attachment.extension or "").lower()
+    if att_ext not in IMG_FILE_EXTENSIONS:
+        return None
+    return attachment.url
 
-    # We only want to rate the meme if it was not edited after the initial post
-    # Discord does not add an edited timestamp when embedding an image
-    if event.message.edited_timestamp:
-        return
 
-    ratings = list[int]()
-    explanations = list[str]()
+def _extract_urls_in_embed(embed: hikari.Embed) -> str | None:
+    """Process a single embed and return rating and explanation."""
+    image_url = None
+    if embed.thumbnail:
+        image_url = embed.thumbnail.proxy_url
+    elif embed.video and embed.video.proxy_url:
+        image_url = f"{embed.video.proxy_url}?format=webp&width={embed.video.width}&height={embed.video.height}"
+    if not image_url:
+        return None
+    return image_url
 
-    for embed in event.message.embeds:
-        image_url = None
-        if embed.thumbnail:
-            image_url = embed.thumbnail.proxy_url
-        elif embed.video and embed.video.proxy_url:
-            image_url = f"{embed.video.proxy_url}?format=webp&width={embed.video.width}&height={embed.video.height}"
-        if not image_url:
-            continue
 
-        try:
-            username = None
-            if event.author:
-                username = event.author.username
-            res = await get_meme_rating(image_url, username)
-            if not res:
-                continue
-            ratings.append(res.rate)
-            explanations.append(res.explanation)
-        except Exception:
-            continue
-    await rate_meme(event.message, ratings, explanations)
+async def process_message_content(
+    message: hikari.PartialMessage,
+) -> list[agents.MemeAnswer]:
+    """Process all meme content in a message and return ratings and explanations."""
+    # Ensure we have the full message
+    if not isinstance(message, hikari.Message):
+        message = await message.app.rest.fetch_message(message.channel_id, message.id)
+
+    # Extract URLs from embeds and attachments
+
+    media_urls = [
+        _extract_attachment_url(attachment) for attachment in message.attachments
+    ] + [_extract_urls_in_embed(embed) for embed in message.embeds]
+
+    # Filter out None values
+    valid_urls = [url for url in media_urls if url]
+
+    rating_results = await get_meme_ratings(valid_urls, message.author.username)
+
+    # Filter out None values
+    valid_results = [result for result in rating_results if result]
+
+    return valid_results
 
 
 async def msg_create(event: hikari.GuildMessageCreateEvent) -> None:
     if event.channel_id != MEME_CHANNEL_ID:
         return
-    ratings = list[int]()
-    explanations = list[str]()
+    results = await process_message_content(event.message)
+    await rate_meme(event.message, results)
 
-    for attachment in event.message.attachments:
-        att_ext = (attachment.extension or "").lower()
-        logging.info(f"Attachment extension: {att_ext}")
-        if att_ext not in IMG_FILE_EXTENSIONS:
-            continue
-        image_url = attachment.url
-        try:
-            res = await get_meme_rating(image_url, event.author.username)
-            if not res:
-                continue
-            ratings.append(res.rate)
-            explanations.append(res.explanation)
-        except Exception:
-            continue
 
-    await rate_meme(event.message, ratings, explanations)
+async def msg_update(event: hikari.GuildMessageUpdateEvent) -> None:
+    if event.channel_id != MEME_CHANNEL_ID or not event.message.embeds:
+        return
+    if event.message.edited_timestamp:
+        return
+    results = await process_message_content(event.message)
+    await rate_meme(event.message, results)
+
+
+def get_meme_stats(
+    message_id: hikari.Snowflake,
+) -> MemeStat | None:
+    cursor = db.cursor()
+    stats = cursor.execute(
+        "SELECT * FROM meme_stats WHERE message_id = ?",
+        (message_id,),
+    ).fetchone()
+    if not stats:
+        return None
+    db_meme_stats = MemeStat(
+        author_id=stats[0],
+        message_id=stats[1],
+        meme_score=stats[2],
+        timestamp=stats[3],
+        meme_rating=stats[4],
+        rating_count=stats[5],
+        meme_reasoning=stats[6],
+    )
+    return db_meme_stats
 
 
 async def rate_meme(
-    message: hikari.PartialMessage, ratings: list[int], explanations: list[str]
-) -> None:
+    message: hikari.PartialMessage,
+    rating_results: list[agents.MemeAnswer],
+    is_command: bool = False,
+) -> MemeStat | None:
+    message = await message.app.rest.fetch_message(message.channel_id, message.id)
+
+    # Check if the message is already rated
+    db_meme_stats = get_meme_stats(message.id)
+
+    # If the message is already rated, return the existing rating
+    if db_meme_stats is not None:
+        return db_meme_stats
+
     async with RATER_LOCK:
-        if not ratings or not explanations:
+        if len(rating_results) == 0:
             return
 
         cursor = db.cursor()
-
         curr_ratings = cursor.execute(
             "select meme_rating, rating_count from meme_stats where message_id = ?",
             (message.id,),
@@ -139,29 +181,37 @@ async def rate_meme(
             curr_ratings = (0, 0)
             entry_exists = False
 
-        avg_rating = min(
-            max(
-                0, (sum(ratings) + curr_ratings[0]) // (len(ratings) + curr_ratings[1])
-            ),
+        ratings_sum = sum([result.rate for result in rating_results])
+        ratings_count = len(rating_results)
+
+        new_rating_sum = ratings_sum + curr_ratings[0]
+        new_rating_count = ratings_count + curr_ratings[1]
+
+        avg_rating: int = min(
+            max(0, new_rating_sum // new_rating_count),
             10,
         )
 
-        if len(explanations) > 1:
-            str_explanations = "\n".join(["* " + s for s in explanations])
+        if ratings_count > 1:
+            str_explanations = "\n".join(["* " + s.explanation for s in rating_results])
         else:
-            str_explanations = explanations[0]
+            str_explanations = rating_results[0].explanation
 
         if entry_exists:
             await message.remove_all_reactions()
 
-        await message.add_reaction(emoji=number_emoji(avg_rating))
-        await message.add_reaction(emoji="🐱")
+        emoji_to_add = [number_emoji(avg_rating), "🐱"]
 
         if avg_rating >= MINIMUM_MEME_RATING_TO_NOT_DELETE:
-            await message.add_reaction(emoji="👍")
+            emoji_to_add.append("👍")
         else:
-            await message.add_reaction(emoji="💩")
-        await message.add_reaction(emoji="❓")
+            emoji_to_add.append("💩")
+
+        if message.channel_id == MEME_CHANNEL_ID:
+            emoji_to_add.append("❓")
+
+        for emoji in emoji_to_add:
+            await message.add_reaction(emoji=emoji)
 
         # add some basic meme stats to the db so we can track who is improving, rotting, or standing still
         # avg rating row inserted is just for this set of memes. Another query elsewhere aggregates.
@@ -169,19 +219,14 @@ async def rate_meme(
             cursor.execute(
                 "update meme_stats set meme_rating = ?, rating_count = ?, meme_score = ?, meme_reasoning=? WHERE message_id = ?",
                 (
-                    sum(ratings) + curr_ratings[0],
-                    len(ratings) + curr_ratings[1],
+                    new_rating_sum,
+                    new_rating_count,
                     avg_rating,
                     str_explanations,
                     message.id,
                 ),
             )
         else:
-            if not isinstance(message, hikari.Message):
-                # This should be rare, only happening if we dropped message creation events
-                message = await message.app.rest.fetch_message(
-                    message.channel_id, message
-                )
             cursor.execute(
                 "insert into meme_stats values(?, ?, ?, ?, ?, ?, ?)",
                 (
@@ -189,13 +234,25 @@ async def rate_meme(
                     message.id,
                     avg_rating,
                     message.timestamp,
-                    sum(ratings),
-                    len(ratings),
+                    ratings_sum,
+                    ratings_count,
                     str_explanations,
                 ),
             )
 
         db.commit()
+
+        meme_stat = MemeStat(
+            author_id=message.author.id,
+            meme_rating=avg_rating,
+            meme_reasoning=str_explanations,
+            meme_score=avg_rating,
+            message_id=message.id,
+            rating_count=ratings_count,
+            timestamp=message.timestamp,
+        )
+
+        return meme_stat
 
 
 def shit_meme_delete_add_count(user_id: hikari.Snowflake):

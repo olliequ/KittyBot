@@ -16,8 +16,10 @@
 
 
 import os
-import dotenv, aiohttp
-import hikari, lightbulb
+import dotenv
+import aiohttp
+import hikari
+import lightbulb
 
 # Some modules are naughty and expect to load things from the environment
 # immediately on import.
@@ -72,7 +74,7 @@ async def on_stopping(event: hikari.StoppingEvent) -> None:
 
 
 commons.agents.load()
-bot.load_extensions_from("./commands/", must_exist=True)
+bot.load_extensions_from("./commands/", "./commands/menu/message/", must_exist=True)
 behaviours.register(bot)
 
 if __name__ == "__main__":

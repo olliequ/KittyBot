@@ -46,12 +46,12 @@ See the `docs` folder to see how to quickly spin up a local test Kitti developme
 - After cloning the repo, you can install the required dependencies (listed in `requirements.txt`) using the command `pip install -r requirements.txt`.
 - **The bot is then made alive by simply running:** `python bot.py`
 - For readability purposes, if you want to add a function/command, **please write it in a new python file placed in the** `extensions` **folder** -- just like the `userinfo` and `fortune` commands are.
-- **Important**: If you want to develop/contribute/test/play-around, you will need to create a `.env` file and inside it add your bot token (as explained in the guide), and the '_default guild_' IDs. It will need to be like: `BOT_TOKEN = 123456` and `DEFAULT_GUILDS = 123456,56789` (comma-seperated list). Specifying guild IDs in `.env` is **not** neccessary, and actually the act of specifying certain IDs to it (can be many guilds) means that slash commands will only be available in those guilds. The benefit of specifying default guilds is that the slash commands become available **instantly** in those servers, which is good for testing purposes. Note: 'guild' means Discord server.
+- **Important**: If you want to develop/contribute/test/play-around, you will need to create a `.env` file and inside it add your bot token (as explained in the guide), and the '_default guild_' IDs. It will need to be like: `BOT_TOKEN = 123456` and `DEFAULT_GUILDS = 123456,56789` (comma-seperated list). Specifying guild IDs in `.env` is **not** necessary, and actually the act of specifying certain IDs to it (can be many guilds) means that slash commands will only be available in those guilds. The benefit of specifying default guilds is that the slash commands become available **instantly** in those servers, which is good for testing purposes. Note: 'guild' means Discord server.
 - So, to be clear, your `.env` file should be located in the top layer of the repository (same level as `bot.py` and `requirements.txt`) and could look like this:
 
-```
+```env
 BOT_TOKEN = 123456 # Your bot’s token from the Discord Developer Portal.
-DEFAULT_GUILDS = 123456,56789 # The 'default guilds' -- these instantly load slash comamands. Can be empty.
+DEFAULT_GUILDS = 123456,56789 # The 'default guilds' -- these instantly load slash commands. Can be empty.
 FORTUNE_DIRECTORY=/usr/share/games/fortunes # Location of where fortunes is installed on your machine.
 NOTALURKER_ROLE=11111111111111111 # The role ID for the notAlurker role.
 ORIGINALITY_CHANNEL_ID=11111111111111111 # The channel you want the originality feature to operate in.
