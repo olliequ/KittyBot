@@ -74,7 +74,7 @@ async def main(ctx: lightbulb.Context) -> None:
         game_render, keyboard_render = current_game.render()
 
     embed = hikari.Embed(
-        title=f"{day}'s Kitti Co-ordle",
+        title=f"<t:{int(datetime.strptime(day, '%Y-%m-%d').timestamp())}:D>'s Kitti Co-ordle",
         colour=0x3B9DFF if not current_game.won else 0x36D40F,
         timestamp=datetime.now().astimezone(),
         description=game_render,
