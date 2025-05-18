@@ -18,6 +18,7 @@ async def main(ctx: lightbulb.Context) -> None:
         return
 
     cur = db.cursor()
+    # last 10 days graph
     cur.execute(
         """
         SELECT day, AVG(round_score) AS avg_score
@@ -36,21 +37,51 @@ async def main(ctx: lightbulb.Context) -> None:
 
     max_avg = max(r[1] for r in rows)
     scale = 20 / max_avg if max_avg else 1
-
-    lines = [
-        f"{day[-5:]} │ {_bar(avg, scale)} {avg:.1f}"  # show last 5 chars of ISO date (-MM-DD)
-        for day, avg in rows
-    ]
-
+    lines = [f"{day[-5:]} │ {_bar(avg, scale)} {avg:.1f}" for day, avg in rows]
     overall = sum(avg for _, avg in rows) / len(rows)
-
     graph = (
         "```\n"
-        + "Average daily Kitti Co-ordle score per day"
+        "Average daily Kitti Co-ordle score per day\n"
         + "\n".join(lines)
         + f"\n──────┴───────────────────\n mean │ {overall:.2f}\n```"
     )
-    await ctx.respond(graph, user_mentions=True)
+
+    # most used starting word
+    cur.execute(
+        """
+        SELECT guess, COUNT(*) AS cnt
+        FROM   wordle_stats
+        WHERE  user = ? AND round = 1
+        GROUP  BY guess
+        ORDER  BY cnt DESC
+        LIMIT  1
+        """,
+        (ctx.member.id,),
+    )
+    first = cur.fetchone()
+    start_word, start_count = first if first else ("—", 0)
+
+    # top 5 guesses overall
+    cur.execute(
+        """
+        SELECT guess, COUNT(*) AS cnt
+        FROM   wordle_stats
+        WHERE  user = ?
+        GROUP  BY guess
+        ORDER  BY cnt DESC
+        LIMIT  5
+        """,
+        (ctx.member.id,),
+    )
+    top = cur.fetchall()
+    top_list = "\n".join(f"{i+1}. {w} ({c})" for i, (w, c) in enumerate(top))
+
+    stats = (
+        f"Most used starting word: **{start_word}** ({start_count} times)\n"
+        f"Top 5 guesses:\n{top_list}"
+    )
+
+    await ctx.respond(f"{graph}\n{stats}", user_mentions=True)
 
 
 def load(bot: lightbulb.BotApp):

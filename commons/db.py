@@ -18,7 +18,7 @@ def start():
     c = cursor()
     c.execute("CREATE TABLE IF NOT EXISTS wordle (id_game TEXT, target_word TEXT)")
     c.execute(
-        "CREATE TABLE IF NOT EXISTS wordle_stats (user TEXT, day TEXT, round INTEGER, round_score INTEGER)"
+        "CREATE TABLE IF NOT EXISTS wordle_stats (user TEXT, day TEXT, round INTEGER, round_score INTEGER, guess TEXT)"
     )
     c.execute(
         "CREATE TABLE IF NOT EXISTS emoji_counts (user TEXT, emoji TEXT, count INTEGER)"

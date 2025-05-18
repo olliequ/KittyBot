@@ -142,7 +142,7 @@ class BasicWordle:
         if self.round >= self.max_rounds:
             self.over = True
 
-    def finish_round(self, id_user: int):
+    def finish_round(self, id_user: int, guess_word: str):
         """
         Runs at the end of every round after a guess.
         """
@@ -158,8 +158,8 @@ class BasicWordle:
         cursor.execute(
             """insert into
                         wordle_stats
-                values (?, ?, ?, ?)""",
-            (id_user, self.day, self.round, self.score_board[id_user]),
+                values (?, ?, ?, ?, ?)""",
+            (id_user, self.day, self.round, self.score_board[id_user], guess_word),
         )
 
     def calculate_round_scores(self, guess: list[tuple[int, str, Tile, int]]) -> int:
@@ -198,7 +198,7 @@ class BasicWordle:
         keyboard used to display possibilities and not present letters etc.
         """
         if self.over:
-            self.finish_round(id_user)
+            self.finish_round(id_user, guess)
         # initialise with some junk data that will be overwritten
         # todo: make this all better
         current_guess = [(-1, "", Tile.DEFAULT, 0)] * len(self.target_word)
@@ -234,7 +234,7 @@ class BasicWordle:
                 self._update_keyboard(ch, False, remaining)
 
         self.current_guess = current_guess[:]
-        self.finish_round(id_user)
+        self.finish_round(id_user, guess)
 
     def render(self) -> tuple[str, str]:
         """
