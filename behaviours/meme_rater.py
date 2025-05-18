@@ -330,8 +330,7 @@ def is_message_rated_shit(message_id: hikari.Snowflake) -> bool:
 # Deletes a meme if (specified amount) or more entities (including Kitti) react to a meme with the shit emoji. Offset by 10's.
 async def meme_reaction(event: hikari.GuildReactionAddEvent) -> None:
     if (
-        event.channel_id != MEME_CHANNEL_ID
-        or event.emoji_name != "💩"
+        event.emoji_name != "💩"
         or event.member.is_bot
         or not is_message_rated_shit(event.message_id)
     ):
