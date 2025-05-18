@@ -26,6 +26,7 @@ dotenv.load_dotenv()
 import behaviours
 import commons.agents
 import commons.scheduler
+import commons.appemoji
 
 
 bot = lightbulb.BotApp(
@@ -41,6 +42,7 @@ bot = lightbulb.BotApp(
 
 @bot.listen(hikari.StartedEvent)
 async def botStartup(event: hikari.StartedEvent):
+    await commons.appemoji.sync(bot)
     await commons.scheduler.start(event.app)
 
 

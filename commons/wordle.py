@@ -1,25 +1,16 @@
+TESTMODE = __name__ == "__main__"
+
 import sqlite3
 from collections import defaultdict, Counter
-import re
-import json
 from pathlib import Path
 from typing import Callable, TypedDict
 from enum import Enum
 import commons.db as db
-import logging
+
+if not TESTMODE:
+    import commons.appemoji as appemoji
 
 ASSETS = Path(__file__).resolve().parent.parent / "assets"  # one level up
-EMOJI_MAP_PATH = ASSETS / "wordle_emoji_map.json"  # load file at start-up
-emoji_map: dict[str, str] = {}
-try:
-    with open(EMOJI_MAP_PATH, encoding="utf8") as f:
-        emoji_map = json.load(f)
-except FileNotFoundError:
-    logging.warning(
-        "Emoji map not found, using empty map which will use letters instead of proper emoji :)"
-    )
-except json.JSONDecodeError as err:
-    raise ValueError(f"Malformed emoji map: {err}") from err
 
 
 def load_words():
@@ -54,12 +45,22 @@ class Tile(Enum):
 
 # map each colour to a wrapper for the letter if the emoji map is not present
 # let's you also play a version of this in a terminal for debugging
-wrap: dict[str, Callable[[str], str]] = {
-    "orange": lambda c: f"{{{c}}}",  # {t}
-    "green": lambda c: f"[{c}]",  # [r]
-    "black": lambda c: f"#{c}#",  # #n#
-    "grey": lambda c: f"({c})",  # (e)
+text_annotations: dict[Tile, Callable[[str], str]] = {
+    Tile.MISPLACED: lambda c: f"{{{c}}}",  # {t}
+    Tile.CORRECT: lambda c: f"[{c}]",  # [r]
+    Tile.NOT_PRESENT: lambda c: f"#{c}#",  # #n#
+    Tile.DEFAULT: lambda c: f"({c})",  # (e)
 }
+
+
+def letter_repr(letter: str, kind: Tile):
+    if TESTMODE:
+        return text_annotations[kind](letter)
+    if letter == " ":
+        letter = "sp"
+    return appemoji.get(  # pyright: ignore [reportPossiblyUnboundVariable]
+        f"{kind.value}_{letter}"
+    ).mention
 
 
 class BasicWordle:
@@ -96,6 +97,7 @@ class BasicWordle:
         self.round = 0
         self.won = False
         self.over = False
+        self.keyboard[" "] = Tile.NOT_PRESENT
         self.start_round(is_first_round=True)
 
     def _track_flips_score(
@@ -265,39 +267,19 @@ class BasicWordle:
         out_lines: list[str] = []
         total_score_user: defaultdict[int, int] = defaultdict(int)
         for idx, (row, user_id) in enumerate(self.past_guesses):
-            emojis = (
-                " ".join(
-                    emoji_map.get(
-                        f"{guess[2].value} {guess[1]}", wrap[guess[2].value](guess[1])
-                    )
-                    for guess in row
-                )
-                + " "
-            )
+            emojis = " ".join((letter_repr(guess[1], guess[2])) for guess in row) + " "
             delta = self.calculate_round_scores(row)
             total_score_user[user_id] += delta
             out_lines.append(
                 f"{idx}. {emojis} <@{user_id}> - {total_score_user[user_id]} points"
             )
 
-        # empty, future rows
-        for i in range(len(self.past_guesses) + 1, self.max_rounds + 1):
-            out_lines.append(f"{i}. " + "⬛ " * len(self.target_word))
-
         # render keyboard
-        rows = ["qwertyuiop", "  asdfghjkl", "    zxcvbnm"]
+        rows = ["qwertyuiop", "asdfghjkl ", " zxcvbnm  "]
 
         keyboard = "\n".join(
             "".join(
-                emoji_map.get(
-                    (
-                        f"grey {ch}"
-                        if not self.keyboard[ch]
-                        else f"{self.keyboard[ch].value} {ch}"
-                    ),
-                    ch,
-                )
-                for ch in row
+                (letter_repr(ch, self.keyboard.get(ch, Tile.DEFAULT)) for ch in row)
             )
             for row in rows
         )
@@ -328,16 +310,10 @@ class BasicWordle:
         return (out, keyboard)
 
 
-if __name__ == "__main__":
+if TESTMODE:
     """
     Basic terminal version for debugging
     """
-    pat = re.compile(r"<:(orange|green|black|grey)_([a-z]):\d+>")
-
-    def replace(m: re.Match[str]) -> str:
-        colour, letter = m.groups()
-        return wrap[colour](letter)
-
     target_word = "berate"
     game = BasicWordle(rounds=9, target_word=target_word, day="test")
 
@@ -348,10 +324,7 @@ if __name__ == "__main__":
             print("guess not of correct length")
             continue
         game.guess(guess, 1)
-        out = game.render()
-        # substitute out discord emoji for terminal output etc.
-        board = pat.sub(replace, out[0])
-        keys = pat.sub(replace, out[1])
+        (board, keys) = game.render()
         print(board)
         print(keys)
         if game.won:
