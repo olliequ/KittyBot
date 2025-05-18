@@ -52,6 +52,16 @@ class Tile(Enum):
     NOT_PRESENT = "black"
 
 
+# map each colour to a wrapper for the letter
+# let's you play a version of this in a terminal for debugging
+wrap: dict[str, Callable[[str], str]] = {
+    "orange": lambda c: f"{{{c}}}",  # {t}
+    "green": lambda c: f"[{c}]",  # [r]
+    "black": lambda c: f"#{c}#",  # #n#
+    "grey": lambda c: f"({c})",  # (e)
+}
+
+
 class BasicWordle:
     """
     A basic wordle game.
@@ -148,11 +158,7 @@ class BasicWordle:
         """
         self.score_board[id_user] += self.calculate_round_scores(self.current_guess)
         self.past_guesses.append((self.current_guess, id_user))
-        if self._is_solved():
-            self.won = self.over = True
-        else:
-            # start next round
-            self.start_round()
+
         # do some DB stuff for stats or whatever
         cursor: sqlite3.Cursor = db.cursor()
         cursor.execute(
@@ -161,6 +167,12 @@ class BasicWordle:
                 values (?, ?, ?, ?, ?)""",
             (id_user, self.day, self.round, self.score_board[id_user], guess_word),
         )
+
+        if self._is_solved():
+            self.won = self.over = True
+        else:
+            # start next round
+            self.start_round()
 
     def calculate_round_scores(self, guess: list[tuple[int, str, Tile, int]]) -> int:
         return sum([item[3] for item in guess])
@@ -199,6 +211,8 @@ class BasicWordle:
         """
         if self.over:
             self.finish_round(id_user, guess)
+        if len(guess) != len(self.target_word):
+            return "length of guess is not correct"
         # initialise with some junk data that will be overwritten
         # todo: make this all better
         current_guess = [(-1, "", Tile.DEFAULT, 0)] * len(self.target_word)
@@ -246,7 +260,9 @@ class BasicWordle:
         for idx, (row, user_id) in enumerate(self.past_guesses):
             emojis = (
                 " ".join(
-                    emoji_map.get(f"{guess[2].value} {guess[1]}", guess[1])
+                    emoji_map.get(
+                        f"{guess[2].value} {guess[1]}", wrap[guess[2].value](guess[1])
+                    )
                     for guess in row
                 )
                 + " "
@@ -306,15 +322,6 @@ class BasicWordle:
 
 
 if __name__ == "__main__":
-    # map each colour to a wrapper for the letter
-    # let's you play a version of this in a terminal for debugging
-    wrap: dict[str, Callable[[str], str]] = {
-        "orange": lambda c: f"{{{c}}}",  # {t}
-        "green": lambda c: f"[{c}]",  # [r]
-        "black": lambda c: f"#{c}#",  # #n#
-        "grey": lambda c: f"({c})",  # (e)
-    }
-
     pat = re.compile(r"<:(orange|green|black|grey)_([a-z]):\d+>")
 
     def replace(m: re.Match[str]) -> str:
