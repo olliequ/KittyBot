@@ -13,7 +13,6 @@ import os
 import logging as log
 from collections import deque
 from commons.memory import memory
-from pydantic_core import to_json
 import requests
 import uuid
 
