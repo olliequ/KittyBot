@@ -8,12 +8,11 @@ RUN apt update -y && apt upgrade -y \
 WORKDIR /home
 COPY uv.lock pyproject.toml init-lm.py ./
 RUN uv sync --compile-bytecode --locked --no-dev \
-    && uv run --no-sync init-lm.py \
-    && mkdir /data /home/.cache /home/.config \
-    && chown -R $UID:$GID /data /home/.cache /home/.config
-
+    && mkdir /data /home/.cache /home/.config 
 COPY --chown=$UID:$GID . /home/
 ENV HOME=/home
+RUN uv run init-lm.py
+RUN chown -R $UID:$GID /data /home/.cache /home/.config
 ENV FORTUNE_DIRECTORY=/usr/share/games/fortunes
 ENV KITTY_DB=/data/persist.sqlite
 USER $UID

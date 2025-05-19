@@ -12,12 +12,15 @@ from typing import Final
 import os
 import logging as log
 from collections import deque
-
+from commons.memory import memory
+from pydantic_core import to_json
 import requests
+import uuid
 
 
 class KittyState(BaseModel):
     query: str = Field(description="The query to answer")
+    memory: str = Field(description="The context of the conversation")
     user: str = Field(description="The user who asked the query")
 
 
@@ -50,7 +53,7 @@ safety_settings: list[GeminiSafetySettings] = [
     {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_ONLY_HIGH"},
 ]
 
-DEFAULT_PROMPT = "You are the Savage Kitti Bot on Computer Science @ UniMelb Discord. Respond Appropriately. Kitti has a God Complex and doesn't hold back. You are gen z and reply succinct. User identity is {user}"
+DEFAULT_PROMPT = "You are the Savage Kitti Bot on Computer Science @ UniMelb Discord. Respond Appropriately. Kitti has a God Complex and doesn't hold back. You are gen z and reply succinct. User identity is {user}. Context of the conversation is {memory}"
 
 
 EYE_RATE_PROMPT: Final[str] = os.environ.get(
@@ -78,7 +81,6 @@ class KittyAgent:
         self.model_settings = model_settings
         self.model = model
         self.prompt = prompt
-        self.messages: deque[ModelMessage] = deque(maxlen=10)
         self.setup_agent()
 
     def setup_agent(self):
@@ -98,15 +100,27 @@ class KittyAgent:
     async def run(self, query: str, user: str = "ANON", prompt: str | None = None):
         if prompt:
             self.prompt = prompt
-        state = KittyState(query=query, user=user)
+        user_memory = memory.query(
+            query_texts=[query], n_results=5, where={"user": user}
+        )
+        user_memory = "\n".join([document for document in user_memory["documents"][0]])
+        general_memory = memory.query(query_texts=[query], n_results=5)
+        general_memory = "\n".join(
+            [document for document in general_memory["documents"][0]]
+        )
+        context = f"User Context: {user_memory}\nGeneral Context: {general_memory}"
+        state = KittyState(query=query, user=user, memory=context)
         try:
-            response = await self.agent.run(
-                query, deps=state, message_history=list(self.messages)
-            )
+            response = await self.agent.run(query, deps=state)
         except Exception as e:
             raise Exception(f"Error running agent: {e}")
-        for messages in response.new_messages():
-            self.messages.append(messages)
+        messages = f"\nQuery: {user}: {query}\nResponse: {response.data.answer}"
+        documents = {
+            "documents": [messages],
+            "metadatas": [{"user": user}],
+            "ids": [str(uuid.uuid4())],
+        }
+        memory.add(**documents)
         return response.data.answer
 
 
