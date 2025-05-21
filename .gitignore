@@ -15,3 +15,4 @@ data.db
 /assets/*.json
 /.venv
 /.mypy_cache/
+/memory.chroma
