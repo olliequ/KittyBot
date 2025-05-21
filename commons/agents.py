@@ -6,12 +6,11 @@ from pydantic_ai.models.gemini import (
     GeminiModelSettings,
     GeminiSafetySettings,
 )
-from pydantic_ai.messages import BinaryContent, ModelMessage
+from pydantic_ai.messages import BinaryContent
 from pydantic_ai import Agent, RunContext
 from typing import Final
 import os
 import logging as log
-from collections import deque
 from commons.memory import memory
 import requests
 import uuid
@@ -102,10 +101,16 @@ class KittyAgent:
         user_memory = memory.query(
             query_texts=[query], n_results=5, where={"user": user}
         )
-        user_memory = "\n".join([document for document in user_memory["documents"][0]])
+        user_memory = "\n".join(
+            [document for document in user_memory["documents"][0]]
+            if user_memory["documents"]
+            else []
+        )
         general_memory = memory.query(query_texts=[query], n_results=5)
         general_memory = "\n".join(
             [document for document in general_memory["documents"][0]]
+            if general_memory["documents"]
+            else []
         )
         context = f"User Context: {user_memory}\nGeneral Context: {general_memory}"
         state = KittyState(query=query, user=user, memory=context)
@@ -114,12 +119,9 @@ class KittyAgent:
         except Exception as e:
             raise Exception(f"Error running agent: {e}")
         messages = f"\nQuery: {user}: {query}\nResponse: {response.data.answer}"
-        documents = {
-            "documents": [messages],
-            "metadatas": [{"user": user}],
-            "ids": [str(uuid.uuid4())],
-        }
-        memory.add(**documents)
+        memory.add(
+            ids=[str(uuid.uuid4())], metadatas=[{"user": user}], documents=[messages]
+        )
         return response.data.answer
 
 
