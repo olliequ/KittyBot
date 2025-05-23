@@ -200,7 +200,7 @@ async def rate_meme(
         if entry_exists:
             await message.remove_all_reactions()
 
-        emoji_to_add = [number_emoji(avg_rating), "🦁"]
+        emoji_to_add = [number_emoji(avg_rating), "🐱"]
 
         if avg_rating >= MINIMUM_MEME_RATING_TO_NOT_DELETE:
             emoji_to_add.append("👍")
