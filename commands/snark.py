@@ -7,7 +7,10 @@ plugin = lightbulb.Plugin("Snark")
 
 @plugin.command
 @lightbulb.option(
-    "prompt", "New prompt. {} is replaced with input.", type=str, required=True
+    "prompt",
+    "New prompt. Use {user} to pass the user's identity, and {memory} to pass the user's memory to Kitty.",
+    type=str,
+    required=True,
 )
 @lightbulb.command("setprompt", "Update LLM prompt")
 @lightbulb.implements(lightbulb.SlashCommand)
