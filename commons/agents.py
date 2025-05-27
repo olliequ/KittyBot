@@ -81,6 +81,8 @@ generation_config: ModelSettings = {
     "max_tokens": 2000,
 }
 
+local_config: ModelSettings = {**generation_config, "num_ctx": 4096}
+
 safety_settings: list[GeminiSafetySettings] = [
     {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_ONLY_HIGH"},
     {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_ONLY_HIGH"},
@@ -130,9 +132,11 @@ class KittyAgent:
             model_name="qwen3:0.6b",
             provider=OpenAIProvider(base_url="http://localhost:11434/v1"),
         )
+        aux_config = ModelSettings(**local_config)
+        aux_config["temperature"] = 0.1
         self.aux = Agent(
             ollama_model,
-            model_settings={"temperature": 0.1, "max_tokens": 2048, "num_ctx": 4096},
+            model_settings=aux_config,
             retries=2,
         )
 
@@ -267,7 +271,7 @@ _local_agent: KittyAgent
 
 
 def load():
-    global _chat_agent, _meme_rater_agent, _local_agent
+    global _chat_agent, _meme_rater_agent, _local_agent, local_config
     gemini_model_settings = GeminiModelSettings(
         **generation_config,  # general model settings can also be specified
         gemini_safety_settings=safety_settings,
@@ -285,7 +289,7 @@ def load():
         provider=OpenAIProvider(base_url="http://localhost:11434/v1"),
     )
     _local_agent = KittyAgent(
-        model_settings={"temperature": 0.7, "max_tokens": 2048, "num_ctx": 4096},
+        model_settings=local_config,
         model=ollama_model,
     )
 
