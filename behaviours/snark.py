@@ -1,6 +1,4 @@
 import os, re, datetime, hashlib
-import concurrent.futures
-import asyncio
 import hikari
 import behaviours
 import commons.db as db

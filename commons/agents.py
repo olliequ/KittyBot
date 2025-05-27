@@ -19,15 +19,12 @@ import asyncio
 import re
 import uuid
 
-SIM_THRESHOLD: float = float(os.getenv("KITTY_SIM_THRESHOLD", 0.35))  # Chroma distance
-TOP_K: int = int(os.getenv("KITTY_TOP_K", 6))  # fetch extra → filter
-MAX_TOKENS: int = int(os.getenv("KITTY_CONTEXT_TOKENS", 1024))  # model context size
-
 # Private Information Identification Regex
 PII_RE = re.compile(
     r"(?i)\b(?:\d{3}-\d{2}-\d{4}|[\w\.-]+@\w+\.\w+|"
     r"\+?\d{1,3}(?:\s|-)\d{2,4}(?:\s|-)\d{2,4}(?:\s|-)?\d{2,4})\b"
 )
+MAX_TOKENS: int = 1024  # model context size
 
 
 def pii_redact(text: str) -> str:
@@ -35,12 +32,7 @@ def pii_redact(text: str) -> str:
     return PII_RE.sub("[REDACTED]", text)
 
 
-def rough_token_count(text: str) -> int:
-    """Cheap token estimator; ~4 chars per token for English/Gemini."""
-    return len(text) // 4 + 1
-
-
-async def summarise_if_needed(text: str, agent: Agent, budget: int) -> str:
+async def summarise(text: str, agent: Agent, budget: int) -> str:
     """Summarise with the same model if the text overflows `budget` tokens."""
     prompt = f"""
     Please read the following text carefully and write a concise summary with key facts in bullet points.
@@ -49,7 +41,7 @@ async def summarise_if_needed(text: str, agent: Agent, budget: int) -> str:
     Summary:
     """
     result = await agent.run(prompt)
-    clean_result = re.sub(r"<think>.*?</think>", "", result.data, flags=re.DOTALL)  # type: ignore[attr-defined]
+    clean_result = re.sub(r"<think>.*?</think>", "", result.output, flags=re.DOTALL)  # type: ignore[attr-defined]
     return clean_result
 
 
@@ -80,8 +72,6 @@ generation_config: ModelSettings = {
     "temperature": 0.7,
     "max_tokens": 2000,
 }
-
-local_config: ModelSettings = {**generation_config, "num_ctx": 4096}
 
 safety_settings: list[GeminiSafetySettings] = [
     {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_ONLY_HIGH"},
@@ -124,7 +114,7 @@ class KittyAgent:
         self.agent = Agent(
             self.model,
             model_settings=self.model_settings,
-            result_type=KittyAnswer,
+            output_type=KittyAnswer,
             deps_type=KittyState,
             retries=2,
         )
@@ -132,7 +122,7 @@ class KittyAgent:
             model_name="qwen3:0.6b",
             provider=OpenAIProvider(base_url="http://localhost:11434/v1"),
         )
-        aux_config = ModelSettings(**local_config)
+        aux_config = ModelSettings(**generation_config)
         aux_config["temperature"] = 0.1
         self.aux = Agent(
             ollama_model,
@@ -155,7 +145,7 @@ class KittyAgent:
         async def q_user():
             return memory.query(
                 query_texts=[query],
-                n_results=TOP_K,
+                n_results=6,
                 include=["documents", "distances"],
                 where={"user": user},
             )
@@ -163,46 +153,37 @@ class KittyAgent:
         async def q_gen():
             return memory.query(
                 query_texts=[query],
-                n_results=TOP_K,
+                n_results=6,
                 include=["documents", "distances"],
             )
-
-        # -------- filter by similarity threshold --------
-        def filter_docs(res):
-            if not res["documents"]:
-                return []
-            docs = res["documents"][0]
-            dists = res["distances"][0]
-            return [d for d, dist in zip(docs, dists) if dist < SIM_THRESHOLD]
-
+            
         user_res, gen_res = await asyncio.gather(q_user(), q_gen())
         user_memory = "\n".join(
             [document for document in user_res["documents"][0]]
             if user_res["documents"]
             else []
         )
-        general_memory = memory.query(query_texts=[query], n_results=5)
         general_memory = "\n".join(
             [document for document in gen_res["documents"][0]]
             if gen_res["documents"]
             else []
         )
         raw_context = f"User Context: {user_memory}\nGeneral Context: {general_memory}"
-        context = await summarise_if_needed(raw_context, self.aux, MAX_TOKENS)
+        context = await summarise(raw_context, self.aux, MAX_TOKENS)
         log.info(f"context: {context}\n\n")
         state = KittyState(query=query, user=user, memory=context)
         try:
             response = await self.agent.run(query, deps=state)
         except Exception as e:
             raise Exception(f"Error running agent: {e}")
-        log.info(f"response: {response.data.answer}\n\n")
+        log.info(f"response: {response.output.answer}\n\n")
         messages = (
-            f"\nUser {user} query: {query}\nAssistant response: {response.data.answer}"
+            f"\nUser {user} query: {query}\nAssistant response: {response.output.answer}"
         )
         memory.add(
             ids=[str(uuid.uuid4())], metadatas=[{"user": user}], documents=[messages]
         )
-        return response.data.answer
+        return response.output.answer
 
 
 class ReasonerMemeRater:
@@ -226,10 +207,10 @@ class ReasonerMemeRater:
             self.eye_model,
             model_settings=self.eye_model_settings,
             deps_type=MemeState,
-            result_type=MemeDescription,
+            output_type=MemeDescription,
         )
         self.reasoner = Agent(
-            self.reasoner_model, deps_type=MemeDescription, result_type=MemeAnswer
+            self.reasoner_model, deps_type=MemeDescription, output_type=MemeAnswer
         )
 
         @self.eyes.system_prompt(dynamic=True)
@@ -255,14 +236,14 @@ class ReasonerMemeRater:
         )
         try:
             eyes_response = await self.eyes.run([image], deps=state)
-            log.info(f"Eyes response: {eyes_response.data.description}")
+            log.info(f"Eyes response: {eyes_response.output.description}")
             response = await self.reasoner.run(
-                eyes_response.data.description, deps=eyes_response.data
+                eyes_response.output.description, deps=eyes_response.output
             )
-            log.info(response.data)
+            log.info(response.output)
         except Exception as e:
             raise Exception(f"Error running agent: {e}")
-        return response.data
+        return response.output
 
 
 _chat_agent: KittyAgent
@@ -289,7 +270,7 @@ def load():
         provider=OpenAIProvider(base_url="http://localhost:11434/v1"),
     )
     _local_agent = KittyAgent(
-        model_settings=local_config,
+        model_settings=generation_config,
         model=ollama_model,
     )
 
