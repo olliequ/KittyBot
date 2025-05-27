@@ -6,6 +6,8 @@ from pydantic_ai.models.gemini import (
     GeminiModelSettings,
     GeminiSafetySettings,
 )
+from pydantic_ai.models.openai import OpenAIModel
+from pydantic_ai.providers.openai import OpenAIProvider
 from pydantic_ai.messages import BinaryContent
 from pydantic_ai import Agent, RunContext
 from typing import Final
@@ -13,7 +15,42 @@ import os
 import logging as log
 from commons.memory import memory
 import requests
+import asyncio
+import re
 import uuid
+
+SIM_THRESHOLD: float = float(os.getenv("KITTY_SIM_THRESHOLD", 0.35))  # Chroma distance
+TOP_K: int = int(os.getenv("KITTY_TOP_K", 6))  # fetch extra → filter
+MAX_TOKENS: int = int(os.getenv("KITTY_CONTEXT_TOKENS", 1024))  # model context size
+
+# Private Information Identification Regex
+PII_RE = re.compile(
+    r"(?i)\b(?:\d{3}-\d{2}-\d{4}|[\w\.-]+@\w+\.\w+|"
+    r"\+?\d{1,3}(?:\s|-)\d{2,4}(?:\s|-)\d{2,4}(?:\s|-)?\d{2,4})\b"
+)
+
+
+def pii_redact(text: str) -> str:
+    """Very small-footprint PII redactor; extend as needed."""
+    return PII_RE.sub("[REDACTED]", text)
+
+
+def rough_token_count(text: str) -> int:
+    """Cheap token estimator; ~4 chars per token for English/Gemini."""
+    return len(text) // 4 + 1
+
+
+async def summarise_if_needed(text: str, agent: Agent, budget: int) -> str:
+    """Summarise with the same model if the text overflows `budget` tokens."""
+    prompt = f"""
+    Please read the following text carefully and write a concise summary with key facts in bullet points.
+    The following text provides context of conversation between an ai and the user and some general conversation with other users:\n
+    {text}
+    Summary:
+    """
+    result = await agent.run(prompt)
+    clean_result = re.sub(r"<think>.*?</think>", "", result.data, flags=re.DOTALL)  # type: ignore[attr-defined]
+    return clean_result
 
 
 class KittyState(BaseModel):
@@ -40,7 +77,7 @@ class KittyAnswer(BaseModel):
 
 
 generation_config: ModelSettings = {
-    "temperature": 1,
+    "temperature": 0.7,
     "max_tokens": 2000,
 }
 
@@ -51,7 +88,7 @@ safety_settings: list[GeminiSafetySettings] = [
     {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_ONLY_HIGH"},
 ]
 
-DEFAULT_PROMPT = "You are the Savage Kitti Bot on Computer Science @ UniMelb Discord. Respond Appropriately. Kitti has a God Complex and doesn't hold back. You are gen z and reply succinct. User identity is {user}. Context of the conversation is {memory}"
+DEFAULT_PROMPT = "You are the Savage Kitti Bot on Computer Science @ UniMelb Discord. Respond Appropriately. Kitti has a God Complex and doesn't hold back. You are gen z and reply succinct. User identity is {user}. You can recall the following memory: {memory}"
 
 
 EYE_RATE_PROMPT: Final[str] = os.environ.get(
@@ -87,38 +124,77 @@ class KittyAgent:
             model_settings=self.model_settings,
             result_type=KittyAnswer,
             deps_type=KittyState,
+            retries=2,
+        )
+        ollama_model = OpenAIModel(
+            model_name="qwen3:0.6b",
+            provider=OpenAIProvider(base_url="http://localhost:11434/v1"),
+        )
+        self.aux = Agent(
+            ollama_model,
+            model_settings={"temperature": 0.1, "max_tokens": 2048, "num_ctx": 4096},
+            retries=2,
         )
 
         @self.agent.system_prompt(dynamic=True)
         def system_prompt(  # pyright: ignore [reportUnusedFunction]
             state: RunContext[KittyState],
         ):
+            log.info(self.prompt.format_map(state.deps.model_dump()))
             return self.prompt.format_map(state.deps.model_dump())
 
     async def run(self, query: str, user: str = "ANON", prompt: str | None = None):
         if prompt:
             self.prompt = prompt
-        user_memory = memory.query(
-            query_texts=[query], n_results=5, where={"user": user}
-        )
+
+        # -------- parallel Chroma queries --------
+        async def q_user():
+            return memory.query(
+                query_texts=[query],
+                n_results=TOP_K,
+                include=["documents", "distances"],
+                where={"user": user},
+            )
+
+        async def q_gen():
+            return memory.query(
+                query_texts=[query],
+                n_results=TOP_K,
+                include=["documents", "distances"],
+            )
+
+        # -------- filter by similarity threshold --------
+        def filter_docs(res):
+            if not res["documents"]:
+                return []
+            docs = res["documents"][0]
+            dists = res["distances"][0]
+            return [d for d, dist in zip(docs, dists) if dist < SIM_THRESHOLD]
+
+        user_res, gen_res = await asyncio.gather(q_user(), q_gen())
         user_memory = "\n".join(
-            [document for document in user_memory["documents"][0]]
-            if user_memory["documents"]
+            [document for document in user_res["documents"][0]]
+            if user_res["documents"]
             else []
         )
         general_memory = memory.query(query_texts=[query], n_results=5)
         general_memory = "\n".join(
-            [document for document in general_memory["documents"][0]]
-            if general_memory["documents"]
+            [document for document in gen_res["documents"][0]]
+            if gen_res["documents"]
             else []
         )
-        context = f"User Context: {user_memory}\nGeneral Context: {general_memory}"
+        raw_context = f"User Context: {user_memory}\nGeneral Context: {general_memory}"
+        context = await summarise_if_needed(raw_context, self.aux, MAX_TOKENS)
+        log.info(f"context: {context}\n\n")
         state = KittyState(query=query, user=user, memory=context)
         try:
             response = await self.agent.run(query, deps=state)
         except Exception as e:
             raise Exception(f"Error running agent: {e}")
-        messages = f"\nQuery: {user}: {query}\nResponse: {response.data.answer}"
+        log.info(f"response: {response.data.answer}\n\n")
+        messages = (
+            f"\nUser {user} query: {query}\nAssistant response: {response.data.answer}"
+        )
         memory.add(
             ids=[str(uuid.uuid4())], metadatas=[{"user": user}], documents=[messages]
         )
@@ -187,17 +263,16 @@ class ReasonerMemeRater:
 
 _chat_agent: KittyAgent
 _meme_rater_agent: ReasonerMemeRater
+_local_agent: KittyAgent
 
 
 def load():
-    global _chat_agent, _meme_rater_agent
+    global _chat_agent, _meme_rater_agent, _local_agent
     gemini_model_settings = GeminiModelSettings(
         **generation_config,  # general model settings can also be specified
         gemini_safety_settings=safety_settings,
     )
-    _chat_agent = KittyAgent(
-        gemini_model_settings, GeminiModel("gemini-2.0-flash-lite")
-    )
+    _chat_agent = KittyAgent(gemini_model_settings, GeminiModel("gemini-2.0-flash"))
     _meme_rater_agent = ReasonerMemeRater(
         gemini_model_settings,
         GeminiModel("gemini-2.0-flash-lite"),
@@ -205,10 +280,22 @@ def load():
         EYE_RATE_PROMPT,
         REASONER_MEME_PROMPT,
     )
+    ollama_model = OpenAIModel(
+        model_name="qwen3:1.7b",
+        provider=OpenAIProvider(base_url="http://localhost:11434/v1"),
+    )
+    _local_agent = KittyAgent(
+        model_settings={"temperature": 0.7, "max_tokens": 2048, "num_ctx": 4096},
+        model=ollama_model,
+    )
 
 
 def chat_agent() -> KittyAgent:
     return _chat_agent
+
+
+def local_agent() -> KittyAgent:
+    return _local_agent
 
 
 def meme_rater_agent() -> ReasonerMemeRater:
