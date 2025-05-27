@@ -156,7 +156,7 @@ class KittyAgent:
                 n_results=6,
                 include=["documents", "distances"],
             )
-            
+
         user_res, gen_res = await asyncio.gather(q_user(), q_gen())
         user_memory = "\n".join(
             [document for document in user_res["documents"][0]]
@@ -177,9 +177,7 @@ class KittyAgent:
         except Exception as e:
             raise Exception(f"Error running agent: {e}")
         log.info(f"response: {response.output.answer}\n\n")
-        messages = (
-            f"\nUser {user} query: {query}\nAssistant response: {response.output.answer}"
-        )
+        messages = f"\nUser {user} query: {query}\nAssistant response: {response.output.answer}"
         memory.add(
             ids=[str(uuid.uuid4())], metadatas=[{"user": user}], documents=[messages]
         )
