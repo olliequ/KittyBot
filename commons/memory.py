@@ -49,13 +49,12 @@ class JsonChatMemory:
 
     def _buffer(self, key: str) -> ChatMemoryBuffer:
         if key not in self._buffers:
-            self._buffers[key] = cast(
-                ChatMemoryBuffer,
+            self._buffers[key] = (
                 ChatMemoryBuffer.from_defaults(  # pyright: ignore[reportUnknownMemberType]
-                token_limit=_TOKEN_LIMIT,
-                chat_store=self._chat_store,
-                chat_store_key=key,
-                ),
+                    token_limit=_TOKEN_LIMIT,
+                    chat_store=self._chat_store,
+                    chat_store_key=key,
+                )
             )
         return self._buffers[key]
 
@@ -73,7 +72,7 @@ class JsonChatMemory:
     @staticmethod
     def _as_message_list(value: Any) -> list[Any] | None:
         if isinstance(value, list):
-            return value
+            return cast(list[Any], value)
         if isinstance(value, dict):
             value_dict = cast(dict[str, Any], value)
             for key in ("messages", "chat_history"):
