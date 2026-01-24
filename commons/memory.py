@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 import os
-from typing import Iterable
+from typing import Any, Iterable
 
 from llama_index.core.memory import ChatMemoryBuffer
 from llama_index.core.storage.chat_store import SimpleChatStore
@@ -60,7 +60,7 @@ class JsonChatMemory:
         self._chat_store.persist(str(_CHAT_STORE_PATH))
         self._enforce_size_limit()
 
-    def _store_dict(self) -> dict | None:
+    def _store_dict(self) -> dict[str, Any] | None:
         for attr in ("store", "_store", "chat_store", "_chat_store"):
             store = getattr(self._chat_store, attr, None)
             if isinstance(store, dict):
@@ -68,7 +68,7 @@ class JsonChatMemory:
         return None
 
     @staticmethod
-    def _as_message_list(value) -> list | None:
+    def _as_message_list(value: Any) -> list[Any] | None:
         if isinstance(value, list):
             return value
         if isinstance(value, dict):
@@ -92,7 +92,7 @@ class JsonChatMemory:
         if not store:
             return
 
-        message_lists: dict[str, list] = {}
+        message_lists: dict[str, list[Any]] = {}
         for key, value in store.items():
             messages = self._as_message_list(value)
             if messages is not None:

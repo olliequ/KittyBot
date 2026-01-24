@@ -1,11 +1,8 @@
 from pydantic import BaseModel, Field
 from pydantic_ai.models import Model
 from pydantic_ai.settings import ModelSettings
-from pydantic_ai.models.google import (
-    GoogleModel,
-    GoogleModelSettings,
-    SafetySettingDict,
-)
+from pydantic_ai.models.google import GoogleModel, GoogleModelSettings
+from google.genai.types import SafetySettingDict, HarmCategory, HarmBlockThreshold
 from pydantic_ai.models.fallback import FallbackModel
 from pydantic_ai.messages import BinaryContent
 from pydantic_ai import Agent, RunContext
@@ -45,10 +42,22 @@ generation_config: ModelSettings = {
 }
 
 safety_settings: list[SafetySettingDict] = [
-    {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_ONLY_HIGH"},
-    {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_ONLY_HIGH"},
-    {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_ONLY_HIGH"},
-    {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_ONLY_HIGH"},
+    {
+        "category": HarmCategory.HARM_CATEGORY_HARASSMENT,
+        "threshold": HarmBlockThreshold.BLOCK_ONLY_HIGH,
+    },
+    {
+        "category": HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+        "threshold": HarmBlockThreshold.BLOCK_ONLY_HIGH,
+    },
+    {
+        "category": HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+        "threshold": HarmBlockThreshold.BLOCK_ONLY_HIGH,
+    },
+    {
+        "category": HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+        "threshold": HarmBlockThreshold.BLOCK_ONLY_HIGH,
+    },
 ]
 
 DEFAULT_PROMPT = "You are the Savage Kitti Bot on Computer Science @ UniMelb Discord. Respond Appropriately. Kitti has a God Complex and doesn't hold back. You are gen z and reply succinct. User identity is {user}. Context of the conversation is {memory}"
