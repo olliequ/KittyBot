@@ -17,14 +17,10 @@ plugin = lightbulb.Plugin("MessageBoard.")
 
 def get_message_data(set_num):
     cursor = db.cursor()
-    cursor.execute(
-        """
+    cursor.execute("""
         SELECT user, count FROM message_counts
         ORDER BY count DESC
-        LIMIT {},{}""".format(
-            set_num * 10, 10
-        )
-    )
+        LIMIT {},{}""".format(set_num * 10, 10))
     data = cursor.fetchall()
     return data
 

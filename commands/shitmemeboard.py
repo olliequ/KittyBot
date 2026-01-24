@@ -14,14 +14,10 @@ plugin = lightbulb.Plugin("Shitmemeboard.")
 
 def get_shitmeme_data(set_num):
     cursor = db.cursor()
-    cursor.execute(
-        """
+    cursor.execute("""
         SELECT user, count FROM shit_meme_deletes
         ORDER BY count DESC
-        LIMIT {},{}""".format(
-            set_num * 10, 10
-        )
-    )
+        LIMIT {},{}""".format(set_num * 10, 10))
     data = cursor.fetchall()
     return data
 

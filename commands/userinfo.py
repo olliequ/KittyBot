@@ -53,7 +53,7 @@ async def emoji_stats(ctx: lightbulb.Context, user: hikari.Member) -> None:
             f"`#{rank + 1}` {emoji[rank][0]} used `{emoji[rank][1]}` {plural_or_not(emoji[rank][1])}!"
         )
 
-    (message_count, rank) = get_count_and_rank(cursor, user_id)
+    message_count, rank = get_count_and_rank(cursor, user_id)
     embed = (
         hikari.Embed(
             title=f"{user.display_name}'s Message Stats",

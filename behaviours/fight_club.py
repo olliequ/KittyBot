@@ -2,7 +2,6 @@ import re
 import hikari
 import behaviours
 
-
 CISSA_REGEX = re.compile(r"\bCISSA\b", re.IGNORECASE)
 
 

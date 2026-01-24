@@ -168,7 +168,7 @@ async def announce_rank_change(
     user_id: str,
     fallen_user: str,
 ):
-    (count, rank) = get_count_and_rank(cursor, user_id)
+    count, rank = get_count_and_rank(cursor, user_id)
     if count is None or rank is None:
         return
     await event.message.respond(
