@@ -41,9 +41,7 @@ class JsonChatMemory:
     def __init__(self) -> None:
         _ensure_parent(_CHAT_STORE_PATH)
         if _CHAT_STORE_PATH.exists():
-            self._chat_store = SimpleChatStore.from_persist_path(
-                str(_CHAT_STORE_PATH)
-            )
+            self._chat_store = SimpleChatStore.from_persist_path(str(_CHAT_STORE_PATH))
         else:
             self._chat_store = SimpleChatStore()
 

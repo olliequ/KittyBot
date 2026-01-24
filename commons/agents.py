@@ -185,9 +185,7 @@ def load():
         GoogleModel("gemini-2.5-flash"),
         GoogleModel("gemini-2.5-flash-lite"),
     )
-    _chat_agent = KittyAgent(
-        gemini_model_settings, fallback_model
-    )
+    _chat_agent = KittyAgent(gemini_model_settings, fallback_model)
     _meme_rater_agent = ReasonerMemeRater(
         gemini_model_settings,
         fallback_model,
