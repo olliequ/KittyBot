@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 import os
-from typing import Any, Iterable
+from typing import Any, Iterable, cast
 
 from llama_index.core.memory import ChatMemoryBuffer
 from llama_index.core.storage.chat_store import SimpleChatStore
@@ -49,10 +49,13 @@ class JsonChatMemory:
 
     def _buffer(self, key: str) -> ChatMemoryBuffer:
         if key not in self._buffers:
-            self._buffers[key] = ChatMemoryBuffer.from_defaults(
+            self._buffers[key] = cast(
+                ChatMemoryBuffer,
+                ChatMemoryBuffer.from_defaults(  # pyright: ignore[reportUnknownMemberType]
                 token_limit=_TOKEN_LIMIT,
                 chat_store=self._chat_store,
                 chat_store_key=key,
+                ),
             )
         return self._buffers[key]
 
@@ -64,7 +67,7 @@ class JsonChatMemory:
         for attr in ("store", "_store", "chat_store", "_chat_store"):
             store = getattr(self._chat_store, attr, None)
             if isinstance(store, dict):
-                return store
+                return cast(dict[str, Any], store)
         return None
 
     @staticmethod
@@ -72,10 +75,11 @@ class JsonChatMemory:
         if isinstance(value, list):
             return value
         if isinstance(value, dict):
+            value_dict = cast(dict[str, Any], value)
             for key in ("messages", "chat_history"):
-                candidate = value.get(key)
+                candidate = value_dict.get(key)
                 if isinstance(candidate, list):
-                    return candidate
+                    return cast(list[Any], candidate)
         return None
 
     def _enforce_size_limit(self) -> None:
