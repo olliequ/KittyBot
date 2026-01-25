@@ -1,11 +1,9 @@
 from pydantic import BaseModel, Field
 from pydantic_ai.models import Model
 from pydantic_ai.settings import ModelSettings
-from pydantic_ai.models.gemini import (
-    GeminiModel,
-    GeminiModelSettings,
-    GeminiSafetySettings,
-)
+from pydantic_ai.models.google import GoogleModel, GoogleModelSettings
+from google.genai.types import SafetySettingDict, HarmCategory, HarmBlockThreshold
+from pydantic_ai.models.fallback import FallbackModel
 from pydantic_ai.messages import BinaryContent
 from pydantic_ai import Agent, RunContext
 from typing import Final
@@ -13,7 +11,6 @@ import os
 import logging as log
 from commons.memory import memory
 import requests
-import uuid
 
 
 class KittyState(BaseModel):
@@ -44,11 +41,23 @@ generation_config: ModelSettings = {
     "max_tokens": 2000,
 }
 
-safety_settings: list[GeminiSafetySettings] = [
-    {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_ONLY_HIGH"},
-    {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_ONLY_HIGH"},
-    {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_ONLY_HIGH"},
-    {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_ONLY_HIGH"},
+safety_settings: list[SafetySettingDict] = [
+    {
+        "category": HarmCategory.HARM_CATEGORY_HARASSMENT,
+        "threshold": HarmBlockThreshold.BLOCK_ONLY_HIGH,
+    },
+    {
+        "category": HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+        "threshold": HarmBlockThreshold.BLOCK_ONLY_HIGH,
+    },
+    {
+        "category": HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+        "threshold": HarmBlockThreshold.BLOCK_ONLY_HIGH,
+    },
+    {
+        "category": HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+        "threshold": HarmBlockThreshold.BLOCK_ONLY_HIGH,
+    },
 ]
 
 DEFAULT_PROMPT = "You are the Savage Kitti Bot on Computer Science @ UniMelb Discord. Respond Appropriately. Kitti has a God Complex and doesn't hold back. You are gen z and reply succinct. User identity is {user}. Context of the conversation is {memory}"
@@ -85,7 +94,7 @@ class KittyAgent:
         self.agent = Agent(
             self.model,
             model_settings=self.model_settings,
-            result_type=KittyAnswer,
+            output_type=KittyAnswer,
             deps_type=KittyState,
         )
 
@@ -98,31 +107,16 @@ class KittyAgent:
     async def run(self, query: str, user: str = "ANON", prompt: str | None = None):
         if prompt:
             self.prompt = prompt
-        user_memory = memory.query(
-            query_texts=[query], n_results=5, where={"user": user}
-        )
-        user_memory = "\n".join(
-            [document for document in user_memory["documents"][0]]
-            if user_memory["documents"]
-            else []
-        )
-        general_memory = memory.query(query_texts=[query], n_results=5)
-        general_memory = "\n".join(
-            [document for document in general_memory["documents"][0]]
-            if general_memory["documents"]
-            else []
-        )
+        user_memory = memory.get_user_context(user)
+        general_memory = memory.get_global_context()
         context = f"User Context: {user_memory}\nGeneral Context: {general_memory}"
         state = KittyState(query=query, user=user, memory=context)
         try:
             response = await self.agent.run(query, deps=state)
         except Exception as e:
             raise Exception(f"Error running agent: {e}")
-        messages = f"\nQuery: {user}: {query}\nResponse: {response.data.answer}"
-        memory.add(
-            ids=[str(uuid.uuid4())], metadatas=[{"user": user}], documents=[messages]
-        )
-        return response.data.answer
+        memory.add_turn(user, query, response.output.answer)
+        return response.output.answer
 
 
 class ReasonerMemeRater:
@@ -146,10 +140,10 @@ class ReasonerMemeRater:
             self.eye_model,
             model_settings=self.eye_model_settings,
             deps_type=MemeState,
-            result_type=MemeDescription,
+            output_type=MemeDescription,
         )
         self.reasoner = Agent(
-            self.reasoner_model, deps_type=MemeDescription, result_type=MemeAnswer
+            self.reasoner_model, deps_type=MemeDescription, output_type=MemeAnswer
         )
 
         @self.eyes.system_prompt(dynamic=True)
@@ -175,14 +169,14 @@ class ReasonerMemeRater:
         )
         try:
             eyes_response = await self.eyes.run([image], deps=state)
-            log.info(f"Eyes response: {eyes_response.data.description}")
+            log.info(f"Eyes response: {eyes_response.output.description}")
             response = await self.reasoner.run(
-                eyes_response.data.description, deps=eyes_response.data
+                eyes_response.output.description, deps=eyes_response.output
             )
-            log.info(response.data)
+            log.info(response.output)
         except Exception as e:
             raise Exception(f"Error running agent: {e}")
-        return response.data
+        return response.output
 
 
 _chat_agent: KittyAgent
@@ -191,17 +185,20 @@ _meme_rater_agent: ReasonerMemeRater
 
 def load():
     global _chat_agent, _meme_rater_agent
-    gemini_model_settings = GeminiModelSettings(
+    gemini_model_settings = GoogleModelSettings(
         **generation_config,  # general model settings can also be specified
-        gemini_safety_settings=safety_settings,
+        google_safety_settings=safety_settings,
     )
-    _chat_agent = KittyAgent(
-        gemini_model_settings, GeminiModel("gemini-2.0-flash-lite")
+    fallback_model = FallbackModel(
+        GoogleModel("gemini-3-flash-preview"),
+        GoogleModel("gemini-2.5-flash"),
+        GoogleModel("gemini-2.5-flash-lite"),
     )
+    _chat_agent = KittyAgent(gemini_model_settings, fallback_model)
     _meme_rater_agent = ReasonerMemeRater(
         gemini_model_settings,
-        GeminiModel("gemini-2.0-flash-lite"),
-        GeminiModel("gemini-2.0-flash-lite"),
+        fallback_model,
+        fallback_model,
         EYE_RATE_PROMPT,
         REASONER_MEME_PROMPT,
     )

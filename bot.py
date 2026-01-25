@@ -29,7 +29,6 @@ import behaviours
 import commons.agents
 import commons.scheduler
 
-
 bot = lightbulb.BotApp(
     os.environ["BOT_TOKEN"],
     prefix="+",

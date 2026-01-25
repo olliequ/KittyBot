@@ -1,12 +1,11 @@
 [project]
 name = "kittybot"
-version = "0.1.0"
+version = "0.1.1"
 description = "A bot for the CS@unimelb Discord server."
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "beautifulsoup4>=4.13.3",
-    "chromadb>=1.0.9",
     "cowsay==6.1",
     "dotenv==0.9.9",
     "emoji==2.11.1",
@@ -18,15 +17,16 @@ dependencies = [
     "imagehash==4.3.2",
     "langcodes==3.5.0",
     "languagemodels==0.24.0",
-    "matplotlib==3.10.0",
-    "numpy==2.2.4",
-    "pandas==2.2.3",
-    "pillow==11.1.0",
+    "llama-index-core>=0.10.0",
+    "matplotlib==3.10.8",
+    "numpy==2.4.1",
+    "pandas==3.0.0",
+    "pillow==12.1.0",
     "pilmoji==2.0.4",
-    "pydantic==2.10.6",
-    "pydantic-ai==0.0.30",
-    "uvloop==0.21.0 ; sys_platform != 'win32'",
-    "wordcloud>=1.9.4",
+    "pydantic==2.12.5",
+    "pydantic-ai==1.47.0",
+    "uvloop==0.22.1 ; sys_platform != 'win32'",
+    "wordcloud==1.9.6",
 ]
 
 [dependency-groups]

@@ -24,7 +24,7 @@ def emoji_size(font: ImageFont.FreeTypeFont, emoji: str) -> tuple[float, float]:
     """
     Return (width, height)
     """
-    (left, top, right, bottom) = font.getbbox(emoji)
+    left, top, right, bottom = font.getbbox(emoji)
     return (right, bottom)
 
 

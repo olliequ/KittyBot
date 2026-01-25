@@ -5,7 +5,6 @@ import os
 import behaviours
 from commons import message_utils
 
-
 ALLOWED_STEMS = ["rant", "vent"]
 ALLOWED_PREFIXES = ["anti-", "co-"]
 ALLOWED_STEMS_PIPED = "|".join(ALLOWED_STEMS)

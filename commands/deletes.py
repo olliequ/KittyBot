@@ -10,12 +10,10 @@ async def show_deletes(ctx: lightbulb.Context) -> None:
     if ctx.member is None:
         return
     cursor = db.cursor()
-    cursor.execute(
-        """
+    cursor.execute("""
         SELECT user, count FROM message_deletes
         ORDER BY count DESC
-        LIMIT 5"""
-    )
+        LIMIT 5""")
     deletes = cursor.fetchall()
     top_deleter = get_member(ctx, deletes[0][0])
     delete_list = list[str]()
