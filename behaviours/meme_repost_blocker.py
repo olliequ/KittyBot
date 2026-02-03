@@ -1,4 +1,5 @@
 import os
+import logging
 from typing import Sequence
 
 import hikari
@@ -36,6 +37,13 @@ async def main(event: hikari.GuildMessageCreateEvent) -> None:
         file_extension = file_name_match.group(1)
         image_file_extensions = ["bmp", "gif", "jpg", "jpeg", "png", "tiff", "webp"]
         if file_extension in image_file_extensions:
+            logging.info(
+                "meme_repost_blocker: processing image attachment %s (msg=%s, channel=%s, guild=%s)",
+                file_name,
+                event.message_id,
+                event.channel_id,
+                event.guild_id,
+            )
             # Calculate the approximate hash of the image
             # Download the file from the specified URL
             response = requests.get(attachment.url)
@@ -46,6 +54,11 @@ async def main(event: hikari.GuildMessageCreateEvent) -> None:
             image_hash = imagehash.phash(image, HASH_SIZE)
             image = Image.open(file_buffer)
             hash_color = imagehash.colorhash(image, HASH_SIZE)
+            logging.info(
+                "meme_repost_blocker: computed hashes phash=%s colorhash=%s",
+                str(image_hash),
+                str(hash_color),
+            )
             # Check if the approximate hash exists in the database
             c.execute(
                 """
@@ -63,6 +76,10 @@ async def main(event: hikari.GuildMessageCreateEvent) -> None:
             )
 
             results: _Results = c.fetchall()
+            logging.info(
+                "meme_repost_blocker: hash check returned %d candidate(s)",
+                len(results),
+            )
             valid_results: _Results = []
             for result in results:
                 # We have a match in the database, but we need to verify that message has not been since deleted
@@ -100,8 +117,16 @@ async def main(event: hikari.GuildMessageCreateEvent) -> None:
                 ),
             )
             db.commit()
+            logging.info(
+                "meme_repost_blocker: stored hashes for message %s", event.message_id
+            )
 
             if len(valid_results) > 0:
+                logging.info(
+                    "meme_repost_blocker: duplicate detected for message %s (matched message %s)",
+                    event.message_id,
+                    valid_results[0][1],
+                )
                 # OK, message is actually a duplicate of an existing one
                 message_id = valid_results[0][1]
                 channel_id = valid_results[0][2]
@@ -113,13 +138,14 @@ async def main(event: hikari.GuildMessageCreateEvent) -> None:
 
 def load() -> None:
     def hammingDistance(a: str, b: str):
-        return imagehash.hex_to_hash(a) - imagehash.hex_to_hash(b)
+        return int(imagehash.hex_to_hash(a) - imagehash.hex_to_hash(b))
 
     db.create_function("hammingDistance", 2, hammingDistance)
 
     def hammingDistanceColor(a: str, b: str):
-        return imagehash.hex_to_flathash(a, HASH_SIZE) - imagehash.hex_to_flathash(
-            b, HASH_SIZE
+        return int(
+            imagehash.hex_to_flathash(a, HASH_SIZE)
+            - imagehash.hex_to_flathash(b, HASH_SIZE)
         )
 
     db.create_function("hammingDistanceColor", 2, hammingDistanceColor)
