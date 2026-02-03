@@ -117,7 +117,9 @@ async def main(event: hikari.GuildMessageCreateEvent) -> None:
                 ),
             )
             db.commit()
-            logging.info("meme_repost_blocker: stored hashes for message %s", event.message_id)
+            logging.info(
+                "meme_repost_blocker: stored hashes for message %s", event.message_id
+            )
 
             if len(valid_results) > 0:
                 logging.info(
