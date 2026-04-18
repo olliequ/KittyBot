@@ -19,6 +19,7 @@ eight_ball_responses = [
     "Yes, definitely.",
     "You may rely on it.",
     "As I see it, yes.",
+    "Effectively yes.",
     "Most likely.",
     "Outlook good.",
     "Yes.",
