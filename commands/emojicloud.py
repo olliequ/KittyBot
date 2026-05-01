@@ -111,7 +111,7 @@ async def main(ctx: lightbulb.Context) -> None:
             width_factor = height / width  # Over 1 if longer than taller
             if ti[1] == "custom":
                 ti[0].seek(fi % ti[0].n_frames)
-            resized_img = ti[0].resize((p[2], int(p[2] * width_factor))).convert("RGBA")
+            resized_img = ti[0].resize((p[2], p[2] * width_factor)).convert("RGBA")
             new_im.paste(resized_img, (p[0], p[1]), resized_img.convert("RGBA"))
             frames.append(new_im)
 
