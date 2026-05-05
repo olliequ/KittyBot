@@ -8,6 +8,7 @@ See the `docs` folder to see how to quickly spin up a local test Kitti developme
 - Answers questions targeted to her with a magic 8 ball response.
 - Detects reposted images (especially useful for meme repost detection).
 - `/advice` command: Returns a piece of life advice :)
+- `/cashrate` command: Returns the latest RBA cash rate, or the rate for a given date.
 - `/deletesinquiry` command: Returns a list of the users which have the most amount of deleted messages.
 - `/emojicloud` command: Returns a 'wordcloud' of all emojis (unicode _and_ custom emojis -- animated included!) used to-date by a specified user.
 - `/emojilovers` command: For a specified emoji in the server, returns the top 5 users of it in order.
